@@ -53,6 +53,26 @@ return [
             ],
         ],
 
+        // Agrégateurs d'offres (Indeed, HelloWork, Meteojob, sites carrière…) via leurs API officielles.
+        // Chaque offre garde son lien : « Postuler » renvoie l'utilisateur vers l'offre d'origine.
+        'adzuna' => [
+            'target'   => 'jobs',
+            'importer' => App\Content\Import\AdzunaImporter::class,
+            'enabled'  => Env::get('ADZUNA_APP_ID', '') !== '',
+            'every'    => 360,   // offre gratuite : 250 appels / jour
+            'options'  => [
+                'app_id' => Env::get('ADZUNA_APP_ID', ''), 'app_key' => Env::get('ADZUNA_APP_KEY', ''),
+                'where'  => 'Clermont-Ferrand', 'distance' => 15, 'max_pages' => 10,
+            ],
+        ],
+        'jooble' => [
+            'target'   => 'jobs',
+            'importer' => App\Content\Import\JoobleImporter::class,
+            'enabled'  => Env::get('JOOBLE_API_KEY', '') !== '',
+            'every'    => 360,
+            'options'  => ['key' => Env::get('JOOBLE_API_KEY', ''), 'location' => 'Clermont-Ferrand', 'radius' => 15, 'max_pages' => 10],
+        ],
+
         // Exemple : agence immobilière partenaire qui exporte au format Poliris (passerelle « myClermont » dans son logiciel)
         // 'agence-dupont' => [
         //     'target'   => 'housing',

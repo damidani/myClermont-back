@@ -170,6 +170,35 @@ return [
         assert_true(!in_array('https://autre.fr/biens/3', $asked, true), 'reste sur le site');
     },
 
+    'Adzuna : lien gardé, salaire estimé ignoré, contrat déduit' => function () {
+        $i = App\Content\Import\AdzunaImporter::map([
+            'id' => '42', 'title' => '<strong>Alternance</strong> développeur H/F', 'description' => 'Rejoignez-nous',
+            'redirect_url' => 'https://www.adzuna.fr/land/ad/42', 'company' => ['display_name' => 'ACME'], 'contract_type' => 'permanent',
+            'salary_min' => 30000, 'salary_is_predicted' => '1', 'category' => ['tag' => 'it-jobs'],
+            'location' => ['area' => ['France', 'Auvergne-Rhône-Alpes', 'Clermont-Ferrand']],
+        ]);
+        assert_same('adz-42', $i['external_id']);
+        assert_same('Alternance développeur', $i['title']);
+        assert_same('alternance', $i['contract']);
+        assert_same('tech', $i['category']);
+        assert_same('https://www.adzuna.fr/land/ad/42', $i['application_url']);
+        assert_same('Clermont-Ferrand', $i['city']);
+        assert_true(!isset($i['salary_min_cents']));
+        assert_same(null, App\Content\Import\AdzunaImporter::map(['id' => '1', 'title' => 'x']), 'sans lien : ignorée');
+    },
+
+    'Jooble : lien et source d\'origine conservés' => function () {
+        $i = App\Content\Import\JoobleImporter::map([
+            'id' => 77, 'title' => 'Serveur (H/F)', 'snippet' => 'Restaurant place de Jaude', 'link' => 'https://fr.jooble.org/desc/77',
+            'company' => 'Le Bistrot', 'location' => 'Clermont-Ferrand, Puy-de-Dôme', 'salary' => '1 900 € par mois', 'type' => 'CDD', 'source' => 'indeed.fr',
+        ]);
+        assert_same('jbl-77', $i['external_id']);
+        assert_same('cdd', $i['contract']);
+        assert_same([190000, 'month'], [$i['salary_min_cents'], $i['salary_period']]);
+        assert_same('https://fr.jooble.org/desc/77', $i['url']);
+        assert_same('Offre publiée sur indeed.fr', $i['notice']);
+    },
+
     'HTTP : HTTPS obligatoire pour les imports' => function () {
         try {
             (new HttpClient())->request('GET', 'http://exemple.fr');

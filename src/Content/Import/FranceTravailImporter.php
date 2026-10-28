@@ -159,7 +159,7 @@ final class FranceTravailImporter implements Importer
         ]));
         $data = json_decode($r['body'], true) ?: [];
         if ($r['status'] !== 200 || empty($data['access_token'])) {
-            throw new \RuntimeException("France Travail : authentification refusée (HTTP {$r['status']}). Vérifier les identifiants et l'abonnement à l'API.");
+            throw new \RuntimeException("France Travail : authentification refusée (HTTP {$r['status']} " . ($data['error'] ?? '') . "). Vérifier les identifiants et l'abonnement à l'API.");
         }
         Cache::store()->set($key, $data['access_token'], max(60, (int) ($data['expires_in'] ?? 1499) - 60));
 

@@ -100,6 +100,8 @@ final class AgenceXmlImporter implements Importer
 | Importeur | Pour | Source | Cible |
 |---|---|---|---|
 | `FranceTravailImporter` | Offres d'emploi | API officielle « Offres d'emploi v2 » de France Travail | `jobs` |
+| `AdzunaImporter` | Offres d'emploi | API officielle Adzuna, qui agrège Indeed, HelloWork, Meteojob, sites carrière… | `jobs` |
+| `JoobleImporter` | Offres d'emploi | API partenaire Jooble, qui agrège des milliers de sites d'emploi | `jobs` |
 | `PolirisImporter` | Annonces immobilières | Export **Poliris** des logiciels d'agences (Hektor, Apimo, AC3, Netty…) | `housing` |
 | `JsonLdImporter` | Emploi et immobilier | Données schema.org (`JobPosting`, `Apartment`, `RealEstateListing`…) des sites partenaires | `jobs`, `housing` |
 | `JsonFeedImporter` | Tout | Flux JSON au format normalisé ci-dessous | toutes |
@@ -144,6 +146,24 @@ Conversion d'une offre :
 - **Coordonnées du recruteur** : jamais importées. La candidature se fait sur France Travail (source en `contact_mode = external`).
 - **Plafond** : l'API ne renvoie pas plus de 3 150 offres par recherche. Au-delà, découper avec `queries`, par exemple `[['typeContrat' => 'CDI'], ['typeContrat' => 'CDD,MIS,SAI']]`.
 - **Offres retirées** : une offre retirée chez France Travail est archivée au passage suivant.
+
+### Agrégateurs d'offres : Adzuna et Jooble (couverture type Indeed)
+
+Ces deux services collectent légalement les offres des grands portails et des sites carrière, puis les redistribuent par API.
+
+| | Adzuna | Jooble |
+|---|---|---|
+| Inscription | https://developer.adzuna.com (gratuit) | https://jooble.org/api/about (clé envoyée par e-mail) |
+| `.env` | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | `JOOBLE_API_KEY` |
+| Fréquence | 6 h (offre gratuite : 250 appels par jour) | 6 h |
+
+**Liens conservés** : chaque offre garde son lien d'origine. Il est enregistré dans `external_url` et `application_url`, et les sources sont en `contact_mode = external` : « Postuler » ouvre l'offre chez Adzuna ou Jooble, qui redirige vers le site d'origine. Une offre sans lien est ignorée.
+
+Autres règles :
+- Le salaire *estimé* par Adzuna n'est jamais affiché.
+- Jooble indique le site d'origine, affiché sous la forme « Offre publiée sur indeed.fr ».
+- Le contrat est déduit du titre et du texte : alternance, stage, intérim, CDD…
+- Une même offre peut arriver par plusieurs agrégateurs. Activer une seule source au début, puis comparer.
 
 ### Agences immobilières (Poliris)
 
@@ -334,7 +354,10 @@ Pour des sources autorisées (ressourcerie, recyclerie, association…). Ces ann
 
 Sources autorisées pour peupler la carte : **OpenStreetMap** (licence ODbL : réutilisation libre avec la mention « © les contributeurs d'OpenStreetMap » et partage des améliorations de la base), les données ouvertes de la métropole et de l'office de tourisme (data.gouv.fr), et vos partenaires. Pour OSM, écrire un `Importer` qui interroge l'API Overpass sur la zone de Clermont (restaurants, cafés, stations-service, musées, parcs…) et convertit les éléments vers ce format.
 
-## ⚠️ À propos de leboncoin (et des sites d'annonces en général)
+## ⚠️ À propos de leboncoin, Indeed (et des portails d'annonces en général)
+
+Pour Indeed, la voie autorisée passe par les agrégateurs ci-dessus, Adzuna et Jooble. Ils reprennent ses offres avec l'accord des diffuseurs, et le lien renvoie vers l'offre.
+
 
 Récupérer automatiquement les annonces de leboncoin (scraping) **n'est pas une bonne option** :
 

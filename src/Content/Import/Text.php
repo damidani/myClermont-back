@@ -96,4 +96,21 @@ final class Text
 
         return [min($amounts), count($amounts) > 1 ? max($amounts) : null, $period];
     }
+
+    /** Contrat déduit du titre / texte d'une offre (« Alternance », « Stage », « CDD 6 mois »…), sinon $default. */
+    public static function contract(string $text, string $default = 'cdi'): string
+    {
+        $t = mb_strtolower($text);
+
+        return match (true) {
+            str_contains($t, 'alternance') || str_contains($t, 'apprenti') || str_contains($t, 'contrat pro') => 'alternance',
+            (bool) preg_match('/\bstages?\b|\bstagiaire\b/u', $t) => 'stage',
+            str_contains($t, 'intérim') || str_contains($t, 'interim') => 'interim',
+            str_contains($t, 'saisonni') => 'saisonnier',
+            str_contains($t, 'freelance') || str_contains($t, 'indépendant') || str_contains($t, 'auto-entrepreneur') => 'freelance',
+            (bool) preg_match('/\bcdd\b/u', $t) => 'cdd',
+            (bool) preg_match('/\bcdi\b/u', $t) => 'cdi',
+            default => $default,
+        };
+    }
 }
