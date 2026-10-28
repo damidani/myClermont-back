@@ -58,7 +58,11 @@ final class App
 
     public function handle(Request $request): Response
     {
+        $started = microtime(true);
         Context::reset();
+        // Identifiant fourni par l'app (pour ses propres logs) ou généré ici
+        $clientId = (string) $request->header('X-Request-Id', '');
+        Context::$requestId = preg_match('/^[A-Za-z0-9._-]{8,64}$/', $clientId) ? $clientId : bin2hex(random_bytes(8));
         try {
             $router = new Router();
             (require $this->root . '/routes/api.php')($router, $this->modules);
@@ -71,7 +75,40 @@ final class App
             $response = $this->renderException($e);
         }
 
-        return $this->finalize($response);
+        return $this->conditional($request, $this->finalize($response))
+            ->withHeader('X-Request-Id', Context::$requestId)
+            ->withHeader('Server-Timing', 'app;dur=' . round((microtime(true) - $started) * 1000, 1));
+    }
+
+    /**
+     * ETag automatique sur toutes les lectures (GET 200 en JSON) : si l'app renvoie If-None-Match
+     * avec la même empreinte, la réponse est un 304 vide (rien à télécharger ni à décoder).
+     * Les routes qui calculent déjà leur ETag (carte) le gardent.
+     */
+    private function conditional(Request $request, Response $response): Response
+    {
+        if ($request->method !== 'GET' || $response->status !== 200 || $response->payload === null || isset($response->headers['ETag'])) {
+            return $response;
+        }
+        // Les points / badges gagnés pendant la requête doivent toujours parvenir à l'app
+        if (Context::meta() !== []) {
+            return $response;
+        }
+        $response->body = json_encode($response->payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $etag = 'W/"' . substr(hash('xxh128', $response->body), 0, 22) . '"';
+        $response->withHeader('ETag', $etag);
+        if ($response->headers['Cache-Control'] === 'no-store') {
+            $response->withHeader('Cache-Control', 'private, no-cache');
+        }
+
+        $match = array_map('trim', explode(',', (string) $request->header('If-None-Match', '')));
+        if (in_array($etag, $match, true)) {
+            return Response::notModified($etag)
+                ->withHeader('Cache-Control', $response->headers['Cache-Control'])
+                ->withHeader('X-Content-Type-Options', 'nosniff');
+        }
+
+        return $response;
     }
 
     /**

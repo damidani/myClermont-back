@@ -95,6 +95,124 @@ final class AgenceXmlImporter implements Importer
 }
 ```
 
+## Importeurs fournis
+
+| Importeur | Pour | Source | Cible |
+|---|---|---|---|
+| `FranceTravailImporter` | Offres d'emploi | API officielle « Offres d'emploi v2 » de France Travail | `jobs` |
+| `PolirisImporter` | Annonces immobilières | Export **Poliris** des logiciels d'agences (Hektor, Apimo, AC3, Netty…) | `housing` |
+| `JsonLdImporter` | Emploi et immobilier | Données schema.org (`JobPosting`, `Apartment`, `RealEstateListing`…) des sites partenaires | `jobs`, `housing` |
+| `JsonFeedImporter` | Tout | Flux JSON au format normalisé ci-dessous | toutes |
+
+Commandes :
+
+```bash
+php bin/console import:preview <slug> 3   # affiche les 3 premiers éléments récupérés, n'écrit rien : à faire avant d'activer une source
+php bin/console import:run <slug>         # lance un import maintenant
+php bin/console import:status             # dernier passage de chaque source
+php bin/console import:all [--force]      # cron toutes les 5 min : ne lance que les sources « dues »
+```
+
+Chaque source a sa fréquence (`every`, en minutes, défaut 60). Une source en échec est retentée au bout de 15 min. `enabled => false` la met en pause.
+
+### Offres d'emploi France Travail
+
+1. Créer un compte sur https://francetravail.io, puis une application, et l'abonner à l'API **Offres d'emploi v2** (gratuit).
+2. Renseigner dans `.env` (ou `.env.docker`) :
+   ```ini
+   FRANCE_TRAVAIL_CLIENT_ID=PAR_myclermont_…
+   FRANCE_TRAVAIL_CLIENT_SECRET=…
+   FRANCE_TRAVAIL_COMMUNE=63113     # Clermont-Ferrand
+   FRANCE_TRAVAIL_DISTANCE=15       # km autour
+   ```
+3. `php bin/console migrate` (crée la source `france-travail`), puis `php bin/console import:preview france-travail`.
+
+La source est active dès que les identifiants sont présents, et tourne toutes les heures.
+
+Conversion d'une offre :
+
+| France Travail | myClermont |
+|---|---|
+| Contrat | `CDI` → cdi ; `MIS` → intérim ; `SAI` → saisonnier ; alternance (apprentissage, professionnalisation) → alternance ; sinon cdd |
+| Code ROME | Catégorie, via `config/imports.php › france_travail.rome_categories` (`M18` → tech, `G16` → hôtellerie…) |
+| Salaire | « Mensuel de 2000 Euros à 2500 Euros » → fourchette en centimes et période. Libellé repris tel quel s'il n'est pas lisible |
+| « Postuler » | Lien de candidature de l'offre, sinon offre d'origine |
+| Lieu | Ville et coordonnées fournies par France Travail |
+
+- **(H/F)** est retiré des titres.
+- **Profil recherché** : expérience, formation, compétences, qualités et permis.
+- **Coordonnées du recruteur** : jamais importées. La candidature se fait sur France Travail (source en `contact_mode = external`).
+- **Plafond** : l'API ne renvoie pas plus de 3 150 offres par recherche. Au-delà, découper avec `queries`, par exemple `[['typeContrat' => 'CDI'], ['typeContrat' => 'CDD,MIS,SAI']]`.
+- **Offres retirées** : une offre retirée chez France Travail est archivée au passage suivant.
+
+### Agences immobilières (Poliris)
+
+Toutes les agences utilisent un logiciel qui diffuse leurs annonces vers les portails au format **Poliris**. Le format vient de SeLoger et il est devenu le standard du secteur : un fichier `annonces.csv`, souvent dans un ZIP avec les photos.
+
+Pour qu'une agence partenaire apparaisse dans l'app :
+
+1. L'agence ajoute une passerelle « myClermont » dans son logiciel. Le fichier est alors déposé par FTP chez nous, ou publié à une URL.
+2. Déclarer la source :
+   ```bash
+   php bin/console source:add agence-dupont "Agence Dupont" partner --attribution="Annonce proposée par l'Agence Dupont"
+   ```
+3. Ajouter dans `config/imports.php` :
+   ```php
+   'agence-dupont' => [
+       'target'   => 'housing',
+       'importer' => App\Content\Import\PolirisImporter::class,
+       'every'    => 360,
+       'options'  => [
+           'url'          => 'file:///var/www/myclermont/storage/imports/agence-dupont/annonces.zip',  // ou https://…
+           'postal_codes' => ['63'],     // biens hors du Puy-de-Dôme ignorés
+       ],
+   ],
+   ```
+
+Comportement :
+
+| Élément | Traitement |
+|---|---|
+| Encodage | Fichiers en ISO-8859-1 ou Windows-1252 convertis automatiquement |
+| Retenus | Location, vente, colocation |
+| Ignorés | Bureaux, parkings, terrains, fonds de commerce, viager, location de vacances |
+| Photos | URL HTTPS reprises telles quelles. Photos du ZIP vérifiées (vraies images, 8 Mo max) puis copiées dans `public/media/imports/<source>/`, une seule fois par photo |
+| Position | Pas de coordonnées dans Poliris : le bien est placé au centre de son quartier ou de sa commune (géocodeur national IGN, sans clé, résultats mis en cache 30 jours). Jamais l'adresse exacte |
+| Contacts | Nom, e-mail et téléphone de l'agence importés pour transmettre les demandes du formulaire. Jamais affichés |
+
+**Colonnes** : les numéros de colonnes suivent Poliris 4.x (`PolirisImporter::COLUMNS`). Si le fichier d'un logiciel s'en écarte, les corriger dans `options.columns`, par exemple `['energy_class' => 176]`. Vérifier avec `import:preview`.
+
+### Sites partenaires (schema.org / JSON-LD)
+
+Les sites carrière et les logiciels de recrutement publient leurs offres en `JobPosting`, parce que Google for Jobs l'exige : Welcome to the Jungle, Teamtailor, Flatchr, Taleez, sites d'entreprises… Beaucoup de sites d'agences publient aussi leurs biens en schema.org.
+
+```php
+'volvic-carrieres' => [
+    'target'   => 'jobs',
+    'importer' => App\Content\Import\JsonLdImporter::class,
+    'every'    => 720,
+    'options'  => [
+        'kind'      => 'jobs',                                    // ou housing
+        'urls'      => ['https://carrieres.exemple.fr/sitemap.xml'],  // pages de liste ou sitemaps
+        'follow'    => '#/offres/[\w-]+$#',                       // liens de fiches à ouvrir
+        'max_pages' => 300,
+        'defaults'  => ['company_name' => 'Volvic'],              // complète ce que le site ne fournit pas
+    ],
+],
+```
+
+Le robot est respectueux du site :
+
+- il lit `robots.txt` et respecte ses règles ;
+- il reste sur le site de départ ;
+- il ouvre une page à la fois, avec une pause d'une seconde (`delay_ms`) ;
+- il s'arrête après `max_pages` pages ;
+- il s'identifie comme `myClermont-importer`.
+
+Une page en erreur n'arrête pas l'import. Pour le logement, la position fournie est arrondie à environ 100 m.
+
+> **À réserver aux sites qui l'autorisent** : un partenaire, ou un accord écrit. Ce robot n'est pas destiné aux portails d'annonces (voir plus bas).
+
 ## Format normalisé — logement (`target: housing`)
 
 C'est le format à transmettre aux partenaires : `{"items": [ … ]}`.
@@ -162,7 +280,7 @@ C'est le format à transmettre aux partenaires : `{"items": [ … ]}`.
 | `cover_letter` | `none`, `optional`, `required` | | défaut `optional` |
 | `contact_email` | e-mail | | Destinataire des candidatures (jamais affiché) |
 
-Source d'offres autorisée à étudier : l'**API Offres d'emploi de France Travail** (francetravail.io), gratuite après inscription, qui permet de filtrer par commune. Il suffira d'écrire l'`Importer` correspondant (authentification OAuth2 + conversion vers le format ci-dessus), avec la source en `contact_mode = external` pour que « Postuler » renvoie vers l'offre d'origine.
+Les offres France Travail arrivent automatiquement : voir [Importeurs fournis](#importeurs-fournis).
 
 ## Format normalisé — services (`target: services`)
 
@@ -224,9 +342,10 @@ Récupérer automatiquement les annonces de leboncoin (scraping) **n'est pas une
 - **Technique** : le site est protégé contre les robots ; un scraper casse sans prévenir, et l'IP du serveur finit bloquée.
 - **Image** : afficher les annonces d'un concurrent sans accord expose l'app à un retrait des stores ou à une mise en demeure.
 
-Le système est prêt pour toutes les sources **autorisées** :
+Le système est prêt pour toutes les sources **autorisées**, et les importeurs fournis couvrent les cas courants :
 
-- **Partenariats** avec des agences immobilières, résidences étudiantes, bailleurs sociaux : la plupart exportent déjà leurs annonces via leur logiciel (flux XML/JSON vers les portails) ; il suffit d'écrire l'importer de leur format, ou de leur demander notre format normalisé.
+- **Partenariats** avec des agences immobilières, résidences étudiantes et bailleurs sociaux. Leur logiciel exporte déjà en Poliris : `PolirisImporter`, sans développement.
+- **Emploi** : France Travail, l'API officielle qui couvre la majorité des offres locales (`FranceTravailImporter`), et les sites carrière des entreprises partenaires (`JsonLdImporter`).
 - **Accords officiels** avec un portail qui propose une API ou un programme partenaire.
 - **Open data** (pour l'agenda : données publiques des collectivités et offices de tourisme, sous licence ouverte).
 

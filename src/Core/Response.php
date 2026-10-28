@@ -57,6 +57,9 @@ final class Response
 
     public ?string $rawBody = null;
 
+    /** JSON déjà encodé (calcul de l'ETag) : évite de l'encoder deux fois. */
+    public ?string $body = null;
+
     /** Écrit la réponse au fil de l'eau (Server-Sent Events) : chaque morceau est envoyé dès qu'il est prêt. */
     public ?\Closure $streamer = null;
 
@@ -115,6 +118,6 @@ final class Response
         }
 
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        echo $this->body ?? json_encode($this->payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
 }

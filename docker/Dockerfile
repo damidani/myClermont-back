@@ -3,8 +3,8 @@
 FROM php:8.3-fpm-bookworm
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends nginx supervisor cron msmtp-mta ca-certificates tzdata \
- && docker-php-ext-install -j"$(nproc)" pdo_mysql opcache \
+ && apt-get install -y --no-install-recommends nginx supervisor cron msmtp-mta ca-certificates tzdata libzip-dev \
+ && docker-php-ext-install -j"$(nproc)" pdo_mysql opcache zip \
  && pecl install apcu \
  && docker-php-ext-enable apcu \
  && rm -rf /var/lib/apt/lists/* /tmp/pear /etc/nginx/sites-enabled/default \

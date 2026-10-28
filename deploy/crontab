@@ -12,7 +12,7 @@
 # Notifications push (nouveaux messages) et expiration des petites annonces
 * * * * * php /var/www/myclermont/bin/console push:send > /dev/null 2>&1
 15 * * * * php /var/www/myclermont/bin/console classifieds:maintenance > /dev/null 2>&1
-# Imports automatiques (partenaires, flux) — toutes les heures
-5 * * * * php /var/www/myclermont/bin/console import:all >> /var/www/myclermont/storage/logs/imports.log 2>&1
+# Imports automatiques : chaque source à sa fréquence (config/imports.php › every)
+*/5 * * * * php /var/www/myclermont/bin/console import:all >> /var/www/myclermont/storage/logs/imports.log 2>&1
 # Rotation des logs applicatifs : conserve 30 jours
 0 3 * * * find /var/www/myclermont/storage/logs -name 'app-*.log' -mtime +30 -delete

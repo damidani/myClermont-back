@@ -37,6 +37,7 @@ final class Logger
             'time'    => gmdate('c'),
             'level'   => $level,
             'message' => $message,
+            'request' => Context::$requestId,
             'context' => $context,
             'ip'      => $_SERVER['REMOTE_ADDR'] ?? null,
             'uri'     => $_SERVER['REQUEST_URI'] ?? null,

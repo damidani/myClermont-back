@@ -13,6 +13,9 @@ final class Context
 {
     private static array $meta = [];
 
+    /** Identifiant de la requête (en-tête X-Request-Id) : relie une erreur vue dans l'app à sa ligne de log. */
+    public static ?string $requestId = null;
+
     public static function pushMeta(string $key, mixed $value): void
     {
         self::$meta[$key][] = $value;
@@ -26,5 +29,6 @@ final class Context
     public static function reset(): void
     {
         self::$meta = [];
+        self::$requestId = null;
     }
 }

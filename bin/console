@@ -247,7 +247,12 @@ switch ($command) {
 
     case 'import:run':
     case 'import:all':
-        $slugs = $command === 'import:all' ? array_keys((array) Config::get('imports.sources', [])) : [$positional[0] ?? $fail('Usage : php bin/console import:run <slug>')];
+        // import:all ne lance que les sources « dues » (fréquence « every » de config/imports.php) ; --force les lance toutes
+        $slugs = match (true) {
+            $command === 'import:run' => [$positional[0] ?? $fail('Usage : php bin/console import:run <slug>')],
+            isset($options['force'])  => array_keys(array_filter((array) Config::get('imports.sources', []), static fn ($c) => ($c['enabled'] ?? true) !== false)),
+            default                   => ImportRunner::due(),
+        };
         $exit = 0;
         foreach ($slugs as $slug) {
             try {
@@ -264,6 +269,31 @@ switch ($command) {
             }
         }
         exit($exit);
+
+    case 'import:status':
+        foreach ((array) Config::get('imports.sources', []) as $slug => $config) {
+            $r = Database::fetch(
+                'SELECT r.* FROM import_runs r JOIN content_sources s ON s.id = r.source_id WHERE s.slug = :s ORDER BY r.id DESC LIMIT 1', ['s' => $slug],
+            );
+            $out(sprintf('%-28s %-8s toutes les %3d min  %s', $slug, ($config['enabled'] ?? true) === false ? 'off' : $config['target'], (int) ($config['every'] ?? 60),
+                $r ? "{$r['started_at']} UTC · {$r['status']} · {$r['fetched']} reçus, {$r['created']} créés, {$r['updated']} maj, {$r['unpublished']} dépubliés, {$r['errors']} erreurs" : 'jamais lancé'));
+        }
+        break;
+
+    case 'import:preview':
+        // Vérifier une nouvelle source avant de l'activer : rien n'est écrit en base
+        $slug = $positional[0] ?? $fail('Usage : php bin/console import:preview <slug> [nombre]');
+        $config = Config::get('imports.sources.' . $slug) ?? $fail("Source non configurée : {$slug}");
+        $limit = max(1, (int) ($positional[1] ?? 3));
+        $n = 0;
+        foreach ((new $config['importer']())->fetch(($config['options'] ?? []) + ['_source' => $slug]) as $item) {
+            $out(json_encode($item, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            if (++$n >= $limit) {
+                break;
+            }
+        }
+        $out("{$n} élément(s) affiché(s).");
+        break;
 
     case 'jobs:send-applications':
         $r = (new \App\Modules\Jobs\ApplicationDispatcher())->dispatch();
@@ -699,7 +729,9 @@ switch ($command) {
           explore:seed-demo                Crée le contenu de démo de l'écran Explorer
           places:seed-demo                 Crée des lieux de démo (fiche Place de Jaude + repères)
           source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
-          import:run <slug> | import:all   Lance un import (config/imports.php)
+          import:run <slug> | import:all [--force]   Lance un import (import:all : seulement les sources dues)
+          import:status                    État des sources importées (dernier passage, résultat)
+          import:preview <slug> [n]        Affiche les n premiers éléments récupérés, sans rien enregistrer
           sign <METHOD> <path> [body] …    Génère une commande curl signée (tests)
         TXT);
 }

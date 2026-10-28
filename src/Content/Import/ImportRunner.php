@@ -50,7 +50,7 @@ final class ImportRunner
         try {
             /** @var Importer $importer */
             $importer = new $config['importer']();
-            foreach ($importer->fetch($config['options'] ?? []) as $item) {
+            foreach ($importer->fetch(($config['options'] ?? []) + ['_source' => $sourceSlug]) as $item) {
                 $stats['fetched']++;
                 try {
                     if (!isset($item['external_id']) || !is_scalar($item['external_id']) || $item['external_id'] === '') {
@@ -94,6 +94,33 @@ final class ImportRunner
         }
 
         return ['source' => $sourceSlug, 'status' => $status] + $stats + ['messages' => $messages];
+    }
+
+    /**
+     * Sources à lancer maintenant : chaque source a sa fréquence (« every » en minutes, défaut 60)
+     * et une source en échec est retentée plus tard (au plus toutes les 15 min) sans attendre sa fréquence normale.
+     *
+     * @return list<string>
+     */
+    public static function due(): array
+    {
+        $due = [];
+        foreach ((array) Config::get('imports.sources', []) as $slug => $config) {
+            if (($config['enabled'] ?? true) === false) {
+                continue;
+            }
+            $last = Database::fetch(
+                'SELECT r.started_at, r.status FROM import_runs r JOIN content_sources s ON s.id = r.source_id
+                 WHERE s.slug = :s ORDER BY r.id DESC LIMIT 1',
+                ['s' => $slug],
+            );
+            $every = $last !== null && $last['status'] === 'failed' ? min(15, (int) ($config['every'] ?? 60)) : (int) ($config['every'] ?? 60);
+            if ($last === null || strtotime($last['started_at'] . ' UTC') <= time() - $every * 60 + 30) {
+                $due[] = (string) $slug;
+            }
+        }
+
+        return $due;
     }
 
     /** Empreinte d'un élément importé : s'il n'a pas changé, aucune écriture. */

@@ -10,6 +10,17 @@ Spécification machine : [openapi.yaml](openapi.yaml)
 - Les identifiants exposés sont des UUID (jamais les ID internes).
 - Toutes les réponses contiennent l'en-tête `X-Server-Time` (heure du serveur) pour corriger le décalage d'horloge de l'appareil.
 
+### En-têtes communs
+
+| En-tête | Sens | Rôle |
+|---|---|---|
+| `X-Request-Id` | requête → réponse | Identifiant de la requête, présent dans chaque ligne de log du serveur. L'app peut envoyer le sien (8 à 64 caractères `A-Z a-z 0-9 . _ -`), sinon le serveur en génère un. Le joindre à tout signalement de bug |
+| `ETag` / `If-None-Match` | réponse / requête | Sur **toutes** les lectures (`GET` réussi). Renvoyer l'`ETag` reçu dans `If-None-Match` : si rien n'a changé, la réponse est un **304 sans corps**, et l'app réaffiche ce qu'elle a déjà |
+| `Cache-Control` | réponse | `private, no-cache` sur les lectures : à garder en cache, mais toujours à revalider. `no-store` sur tout le reste |
+| `Server-Timing` | réponse | Temps de traitement côté serveur (`app;dur=3.2`, en ms). Utile pour le suivi de performance dans l'app |
+
+Le cache HTTP natif applique le 304 tout seul, sans code supplémentaire : `URLCache` sur iOS, le `Cache` d'OkHttp sur Android. Les en-têtes de signature changent à chaque requête mais ne gênent pas, car ce cache est indexé par URL. Une réponse qui annonce des points ou des badges gagnés (`meta`) n'est jamais servie en 304.
+
 ### Enveloppe de réponse
 
 Succès :

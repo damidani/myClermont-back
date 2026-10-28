@@ -61,3 +61,22 @@ Mise à jour : `docker compose up -d --build`. Les migrations s'exécutent toute
 - **Emails** : `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` (Brevo, Mailjet, OVH…).
 - `PHP_FPM_MAX_CHILDREN` : compter environ 30 Mo par worker. Le conteneur `web` utilise environ 60 Mo au repos.
 - Le port MySQL n'est pas exposé sur l'hôte.
+
+## Imports automatiques
+
+Les imports (offres France Travail, agences en Poliris, sites partenaires) tournent dans le cron du conteneur. Réglages dans `.env.docker` :
+
+```ini
+FRANCE_TRAVAIL_CLIENT_ID=…
+FRANCE_TRAVAIL_CLIENT_SECRET=…
+```
+
+Commandes utiles :
+
+```bash
+docker compose exec web php bin/console import:status
+docker compose exec web php bin/console import:preview france-travail 3
+docker compose exec web php bin/console import:run france-travail
+```
+
+Un fichier Poliris déposé par une agence se place dans le volume `storage`, sous `storage/imports/<source>/`. Détails dans [IMPORTS.md](IMPORTS.md).
