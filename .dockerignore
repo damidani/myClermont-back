@@ -1,0 +1,12 @@
+.env
+.env.docker
+.git
+.idea
+.vscode
+vendor
+storage/logs/*
+storage/cache/*
+storage/private/*
+public/media/*
+tests
+docker-compose.yml

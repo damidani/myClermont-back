@@ -1,0 +1,47 @@
+# myClermont — tout l'environnement en une commande :
+#   cp .env.docker.example .env.docker   (puis changer les mots de passe)
+#   docker compose up -d --build
+#   → API : http://localhost:8080/v1/health   back-office : http://localhost:8080/admin
+#
+# Conteneur "web" : Nginx + PHP-FPM 8.3 (OPcache, APCu) + cron (imports, emails, maintenance)
+# Conteneur "db"  : MariaDB 11 (données dans le volume db-data)
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: myclermont/web:latest
+    restart: unless-stopped
+    env_file: .env.docker
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - storage:/var/www/myclermont/storage        # .env (clés générées), logs, CV/documents privés
+      - media:/var/www/myclermont/public/media     # photos / vidéos publiées
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    env_file: .env.docker
+    environment:
+      MARIADB_AUTO_UPGRADE: "1"
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--innodb-buffer-pool-size=256M", "--max-connections=200"]
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  storage:
+  media:
+  db-data:

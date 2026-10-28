@@ -1,0 +1,11 @@
+# Uniquement si Apache est utilisé (Nginx recommandé, voir deploy/nginx.conf)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Transmet l'en-tête Authorization à PHP
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+Options -Indexes

@@ -1,0 +1,705 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Outils en ligne de commande.  Usage : php bin/console <commande> [options]
+ */
+
+use App\Cache\MysqlStore;
+use App\Content\Import\ImportRunner;
+use App\Modules\Housing\ContactDispatcher;
+use App\Core\App;
+use App\Core\Config;
+use App\Core\Database;
+use App\Modules\Account\Repositories\UserRepository;
+use App\Modules\Gamification\GamificationService;
+use App\Modules\Premium\PremiumService;
+use App\Repositories\DeviceRepository;
+use App\Repositories\RefreshTokenRepository;
+use App\Security\Signature;
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+$root = dirname(__DIR__);
+require $root . '/vendor/autoload.php';
+
+$args = array_slice($argv, 1);
+$command = array_shift($args) ?? 'help';
+$options = [];
+$positional = [];
+foreach ($args as $arg) {
+    if (preg_match('/^--([\w-]+)(?:=(.*))?$/s', $arg, $m)) {
+        $options[$m[1]] = $m[2] ?? true;
+    } else {
+        $positional[] = $arg;
+    }
+}
+
+$out = static fn (string $line = '') => fwrite(STDOUT, $line . PHP_EOL);
+$fail = static function (string $message): never {
+    fwrite(STDERR, "\033[31m{$message}\033[0m" . PHP_EOL);
+    exit(1);
+};
+
+/** Remplace (ou ajoute) une variable dans .env */
+$setEnv = static function (string $file, string $key, string $value): void {
+    $content = is_file($file) ? (string) file_get_contents($file) : '';
+    $line = $key . '=' . $value;
+    $pattern = '/^' . preg_quote($key, '/') . '=.*$/m';
+    $content = preg_match($pattern, $content)
+        ? preg_replace_callback($pattern, static fn () => $line, $content)
+        : rtrim($content) . PHP_EOL . $line . PHP_EOL;
+    file_put_contents($file, $content);
+};
+
+// Les commandes de configuration doivent lire le .env, jamais le cache
+if (!in_array($command, ['key:generate', 'config:clear', 'help'], true)) {
+    Config::load($root);
+    App::bootModules();
+}
+
+$findUser = static function (?string $email) use ($fail): array {
+    return ($email ? (new UserRepository())->findByEmail($email) : null) ?? $fail('Utilisateur introuvable : ' . $email);
+};
+
+switch ($command) {
+    case 'key:generate':
+        $env = $root . '/.env';
+        if (!is_file($env)) {
+            copy($root . '/.env.example', $env);
+            $out('.env créé depuis .env.example');
+        }
+        $current = (string) file_get_contents($env);
+        $force = isset($options['force']);
+
+        if ($force || preg_match('/^APP_KEY=\s*(#.*)?$/m', $current)) {
+            $setEnv($env, 'APP_KEY', base64_encode(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES)));
+            $out('APP_KEY générée.');
+            if ($force) {
+                $out("\033[33mATTENTION : les secrets appareils existants deviennent illisibles, tous les appareils devront se réenregistrer.\033[0m");
+            }
+        }
+        if ($force || preg_match('/^JWT_SECRET=\s*(#.*)?$/m', $current)) {
+            $setEnv($env, 'JWT_SECRET', base64_encode(random_bytes(64)));
+            $out('JWT_SECRET généré.');
+        }
+        if ($force || str_contains($current, 'CHANGE_ME')) {
+            $year = date('Y');
+            $ios = base64_encode(random_bytes(32));
+            $android = base64_encode(random_bytes(32));
+            $setEnv($env, 'APP_SIGNING_KEYS', "\"ios-{$year}-1:ios:{$ios},android-{$year}-1:android:{$android}\"");
+            $out('Clés application générées (à intégrer dans les apps) :');
+            $out("  iOS     : keyId=ios-{$year}-1      secret={$ios}");
+            $out("  Android : keyId=android-{$year}-1  secret={$android}");
+        }
+        $out('Terminé. Pensez à relancer `php bin/console config:cache` en production.');
+        break;
+
+    case 'app-key:add':
+        // php bin/console app-key:add ios ios-2027-1  => ajoute une clé (rotation)
+        [$platform, $keyId] = $positional + [null, null];
+        if (!in_array($platform, ['ios', 'android'], true) || !$keyId) {
+            $fail('Usage : php bin/console app-key:add <ios|android> <keyId>');
+        }
+        $secret = base64_encode(random_bytes(32));
+        $env = $root . '/.env';
+        preg_match('/^APP_SIGNING_KEYS="?([^"\n]*)"?$/m', (string) file_get_contents($env), $m);
+        $keys = array_filter(explode(',', $m[1] ?? ''));
+        $keys[] = "{$keyId}:{$platform}:{$secret}";
+        $setEnv($env, 'APP_SIGNING_KEYS', '"' . implode(',', $keys) . '"');
+        $out("Clé ajoutée : keyId={$keyId} secret={$secret}");
+        $out('Pour révoquer une ancienne clé, supprimez-la de APP_SIGNING_KEYS dans .env.');
+        break;
+
+    case 'migrate':
+        $pdo = Database::connection();
+        $pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name VARCHAR(191) PRIMARY KEY, ran_at DATETIME NOT NULL) ENGINE=InnoDB');
+        $done = array_column(Database::fetchAll('SELECT name FROM migrations'), 'name');
+        $files = glob($root . '/database/migrations/*.sql') ?: [];
+        sort($files);
+        $count = 0;
+        foreach ($files as $file) {
+            $name = basename($file);
+            if (in_array($name, $done, true)) {
+                continue;
+            }
+            $out("Migration : {$name}");
+            $pdo->exec((string) file_get_contents($file));
+            Database::execute('INSERT INTO migrations (name, ran_at) VALUES (:n, :d)', ['n' => $name, 'd' => gmdate('Y-m-d H:i:s')]);
+            $count++;
+        }
+        \App\Admin\Schema::forget(); // le back-office relit le schéma
+        $out($count ? "{$count} migration(s) exécutée(s)." : 'Base déjà à jour.');
+        break;
+
+    case 'config:cache':
+        @unlink($root . '/storage/cache/config.php');
+        Config::load($root);
+        $export = '<?php return ' . var_export(Config::all(), true) . ';' . PHP_EOL;
+        file_put_contents($root . '/storage/cache/config.php', $export, LOCK_EX);
+        chmod($root . '/storage/cache/config.php', 0640);
+        $out('Configuration mise en cache (storage/cache/config.php). Rechargez PHP-FPM.');
+        break;
+
+    case 'config:clear':
+        @unlink($root . '/storage/cache/config.php');
+        $out('Cache de configuration supprimé.');
+        break;
+
+    case 'cache:prune':
+        $out('Entrées de cache expirées supprimées : ' . MysqlStore::prune());
+        $out('Refresh tokens expirés supprimés : ' . RefreshTokenRepository::prune());
+        break;
+
+    case 'admin:create':
+        // Crée (ou réinitialise) un compte du back-office web /admin
+        [$email, $name] = [mb_strtolower(trim((string) ($positional[0] ?? ''))), trim((string) ($positional[1] ?? ''))];
+        $role = (string) ($options['role'] ?? 'admin');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $name === '' || !in_array($role, ['admin', 'editor', 'moderator'], true)) {
+            $fail('Usage : php bin/console admin:create <email> "<Nom>" [--role=admin|editor|moderator]');
+        }
+        $password = getenv('ADMIN_PASSWORD') ?: null;
+        if ($password === null) {
+            fwrite(STDOUT, 'Mot de passe (12 caractères min.) : ');
+            system('stty -echo 2>/dev/null');
+            $password = trim((string) fgets(STDIN));
+            system('stty echo 2>/dev/null');
+            $out();
+        }
+        mb_strlen($password) >= 12 || $fail('12 caractères minimum.');
+        $now = gmdate('Y-m-d H:i:s');
+        Database::execute(
+            "INSERT INTO admin_users (email, name, password_hash, role, status, created_at, updated_at) VALUES (:e, :n, :h, :r, 'active', :d, :d)
+             ON DUPLICATE KEY UPDATE name = VALUES(name), password_hash = VALUES(password_hash), role = VALUES(role), status = 'active', updated_at = VALUES(updated_at)",
+            ['e' => $email, 'n' => $name, 'h' => password_hash($password, PASSWORD_ARGON2ID), 'r' => $role, 'd' => $now],
+        );
+        $out("Administrateur {$email} ({$role}) prêt. Connexion : https://<votre-domaine>/admin");
+        break;
+
+    case 'device:block':
+    case 'device:unblock':
+        $uid = strtolower((string) ($positional[0] ?? ''));
+        if ($uid === '') {
+            $fail("Usage : php bin/console {$command} <device-id>");
+        }
+        $repo = new DeviceRepository();
+        $repo->setStatus($uid, $command === 'device:block' ? 'blocked' : 'active') || $fail('Appareil introuvable ou déjà dans cet état.');
+        if ($command === 'device:block' && ($device = $repo->findByUid($uid, true))) {
+            (new RefreshTokenRepository())->revokeAllForDevice((int) $device['id']);
+        }
+        $out($command === 'device:block' ? "Appareil {$uid} bloqué, sessions révoquées." : "Appareil {$uid} débloqué.");
+        $out('Note : avec APCu, lancer cette commande ne vide pas le cache de PHP-FPM ; il expire seul en ' . Config::get('security.device_cache_ttl') . ' s.');
+        break;
+
+    case 'premium:grant':
+        // php bin/console premium:grant lea@example.fr 30 [--source=promo]
+        $user = $findUser($positional[0] ?? null);
+        $days = (int) ($positional[1] ?? 0);
+        $days > 0 || $fail('Usage : php bin/console premium:grant <email> <jours> [--source=admin]');
+        $until = (new PremiumService())->grant((int) $user['id'], $days, (string) ($options['source'] ?? 'admin'));
+        $out("Premium actif pour {$user['username']} jusqu'au {$until} UTC.");
+        break;
+
+    case 'premium:revoke':
+        $user = $findUser($positional[0] ?? null);
+        (new PremiumService())->revoke((int) $user['id']);
+        $out("Premium retiré pour {$user['username']}.");
+        break;
+
+    case 'gamification:recheck':
+        // Après avoir abaissé un seuil de badge : php bin/console gamification:recheck [email]
+        $service = new GamificationService();
+        $ids = isset($positional[0])
+            ? [(int) $findUser($positional[0])['id']]
+            : array_map('intval', array_column(Database::fetchAll("SELECT id FROM users WHERE status = 'active'"), 'id'));
+        $unlocked = 0;
+        foreach ($ids as $id) {
+            $unlocked += count($service->recheckBadges($id));
+        }
+        $out(count($ids) . " utilisateur(s) vérifié(s), {$unlocked} badge(s) débloqué(s).");
+        break;
+
+    case 'source:add':
+        // php bin/console source:add agence-dupont "Agence Dupont" partner [--contact=internal|external] [--auto-publish] [--attribution="…"] [--website=https://…] [--logo=https://…]
+        [$slug, $name, $kind] = $positional + [null, null, null];
+        if (!$slug || !$name || !in_array($kind, ['partner', 'import'], true) || !preg_match('/^[a-z0-9-]{2,60}$/', $slug)) {
+            $fail('Usage : php bin/console source:add <slug> <nom> <partner|import> [--contact=internal|external] [--auto-publish] [--attribution=…]');
+        }
+        $contact = (string) ($options['contact'] ?? ($kind === 'import' ? 'external' : 'internal'));
+        Database::execute(
+            'INSERT INTO content_sources (slug, name, kind, website_url, logo_url, attribution, contact_mode, auto_publish, created_at)
+             VALUES (:slug, :name, :kind, :web, :logo, :attr, :contact, :auto, :d)
+             ON DUPLICATE KEY UPDATE name = :name2, kind = :kind2, website_url = :web2, logo_url = :logo2, attribution = :attr2,
+                                     contact_mode = :contact2, auto_publish = :auto2',
+            [
+                'slug' => $slug, 'name' => $name, 'kind' => $kind, 'web' => $options['website'] ?? null, 'logo' => $options['logo'] ?? null,
+                'attr' => $options['attribution'] ?? null, 'contact' => $contact, 'auto' => isset($options['auto-publish']) ? 1 : 0, 'd' => gmdate('Y-m-d H:i:s'),
+                'name2' => $name, 'kind2' => $kind, 'web2' => $options['website'] ?? null, 'logo2' => $options['logo'] ?? null,
+                'attr2' => $options['attribution'] ?? null, 'contact2' => $contact, 'auto2' => isset($options['auto-publish']) ? 1 : 0,
+            ],
+        );
+        $out("Source {$slug} enregistrée (contact : {$contact}, publication " . (isset($options['auto-publish']) ? 'automatique' : 'après validation') . ').');
+        break;
+
+    case 'import:run':
+    case 'import:all':
+        $slugs = $command === 'import:all' ? array_keys((array) Config::get('imports.sources', [])) : [$positional[0] ?? $fail('Usage : php bin/console import:run <slug>')];
+        $exit = 0;
+        foreach ($slugs as $slug) {
+            try {
+                $r = (new ImportRunner())->run($slug);
+                $out(sprintf('%s : %s — %d reçus, %d créés, %d mis à jour, %d inchangés, %d dépubliés, %d erreurs',
+                    $slug, $r['status'], $r['fetched'], $r['created'], $r['updated'], $r['unchanged'], $r['unpublished'], $r['errors']));
+                foreach ($r['messages'] as $m) {
+                    $out('   · ' . $m);
+                }
+                $exit = $r['status'] === 'failed' ? 1 : $exit;
+            } catch (Throwable $e) {
+                fwrite(STDERR, "{$slug} : {$e->getMessage()}\n");
+                $exit = 1;
+            }
+        }
+        exit($exit);
+
+    case 'jobs:send-applications':
+        $r = (new \App\Modules\Jobs\ApplicationDispatcher())->dispatch();
+        $out("Candidatures transmises : {$r['sent']}, en échec : {$r['failed']}");
+        break;
+
+    case 'jobs:maintenance':
+        // Archive les offres expirées et supprime les documents périmés (RGPD)
+        $out('Offres archivées : ' . (new \App\Modules\Jobs\JobRepository())->archiveExpired());
+        $out('Documents supprimés : ' . (new \App\Content\Documents\DocumentStore())->purge());
+        break;
+
+    case 'jobs:seed-demo':
+        $cat = array_column(Database::fetchAll('SELECT id, slug FROM job_categories'), 'id', 'slug');
+        $demo = [
+            ['tech', 'cdi', 'hybrid', 'Développeur·se iOS SwiftUI', 'Studio Volcan · Démo', 'Clermont-Ferrand', 3800000, 4500000, 'year',
+             "Conception d'interfaces iOS, SwiftUI, tests et collaboration produit.",
+             "Conception d'interfaces iOS, SwiftUI, tests et collaboration produit. Tu rejoindras une équipe locale et participeras à des projets variés. Cette description est fictive et sert uniquement à tester le parcours de candidature."],
+            ['communication', 'cdd', 'onsite', 'Chargé·e de communication', 'Maison des Puys · Démo', 'Chamalières', 2800000, 3200000, 'year',
+             'Réseaux sociaux, communication événementielle et création de contenus.', 'Poste fictif de démonstration.'],
+            ['education', 'alternance', 'hybrid', 'Alternance marketing digital', 'Auvergne Campus · Démo', 'Clermont-Ferrand', null, null, null,
+             'Campagnes numériques, analyse de trafic et gestion de projets.', 'Alternance fictive de démonstration.'],
+            ['tech', 'cdi', 'remote', 'Développeur·se backend PHP', 'Puy Tech · Démo', 'Clermont-Ferrand', 4000000, 5000000, 'year',
+             'API, MySQL et performance.', 'Poste fictif de démonstration.'],
+        ];
+        Database::execute("DELETE FROM job_offers WHERE source_id = 1 AND external_id LIKE 'demo-%'");
+        foreach ($demo as $i => [$c, $contract, $mode, $title, $company, $city, $min, $max, $period, $summary, $desc]) {
+            $now = gmdate('Y-m-d H:i:s', time() - $i * 7200);
+            $id = Database::insert(
+                'INSERT INTO job_offers (uid, source_id, external_id, category_id, contract, work_mode, title, company_name, summary, description,
+                        missions, profile, city, salary_min_cents, salary_max_cents, salary_period, salary_label, badge_label, image_caption, notice,
+                        cover_letter_mode, status, published_at, created_at, updated_at)
+                 VALUES (:uid, 1, :ext, :cat, :contract, :mode, :title, :company, :summary, :descr, :missions, :profile, :city, :min, :max,
+                         :period, :slabel, \'DÉMO\', \'Découvre l\'\'entreprise\', :notice, \'optional\', \'published\', :p, :c, :u)',
+                [
+                    'uid' => \App\Security\Crypto::uuid4(), 'ext' => 'demo-' . ($i + 1), 'cat' => $cat[$c], 'contract' => $contract, 'mode' => $mode,
+                    'title' => $title, 'company' => $company, 'summary' => $summary, 'descr' => $desc,
+                    'missions' => json_encode(["Participer aux projets de l'équipe", 'Collaborer avec les différents interlocuteurs', "Contribuer à l'amélioration continue"], JSON_UNESCAPED_UNICODE),
+                    'profile' => 'Autonomie, esprit d\'équipe, curiosité et motivation. Les critères exacts seront précisés dans les annonces réelles.',
+                    'city' => $city, 'min' => $min, 'max' => $max, 'period' => $period, 'slabel' => $min === null ? 'Selon grille alternance' : null,
+                    'notice' => 'Annonce fictive : aucune entreprise ne recevra de candidature.', 'p' => $now, 'c' => $now, 'u' => $now,
+                ],
+            );
+            foreach ([1, 2, 3] as $pos) {
+                Database::execute('INSERT INTO job_images (offer_id, url, position) VALUES (:o, :u, :p)', ['o' => $id, 'u' => "https://picsum.photos/seed/myclermont-job-{$i}-{$pos}/1200/800", 'p' => $pos]);
+            }
+        }
+        (new \App\Modules\Jobs\JobRepository())->forgetCounts();
+        $out(count($demo) . ' offres de démo créées (2 CDI, 1 CDD, 1 alternance).');
+        break;
+
+    case 'explore:seed-demo':
+        // Reprend l'écran Explorer des maquettes : 4 stories, 1 événement flash, 2 exclusivités, « À découvrir »
+        $sec = array_column(Database::fetchAll('SELECT id, slug FROM explore_sections'), 'id', 'slug');
+        $now = gmdate('Y-m-d H:i:s');
+        $uuid = static fn () => \App\Security\Crypto::uuid4();
+        $img = static fn (string $seed) => "https://picsum.photos/seed/myclermont-{$seed}/1080/1920";
+        foreach (['explore_items', 'explore_highlights', 'offers', 'explore_stories'] as $table) {
+            Database::execute("DELETE FROM {$table} WHERE " . ($table === 'offers' ? 'notice' : ($table === 'explore_stories' ? 'subtitle' : ($table === 'explore_items' ? 'subtitle' : 'badge_label'))) . " LIKE '%émo%'");
+        }
+        foreach ([['Les volcans', 'volcans', 'mountain'], ['Sortir ce soir', 'soir', 'mic'], ['Gourmandises', 'gourmand', 'fork-knife'], ['Clermont secret', 'secret', 'sparkles']] as $i => [$title, $seed, $icon]) {
+            $id = Database::insert(
+                "INSERT INTO explore_stories (uid, title, subtitle, cover_url, icon, sort_order, status, updated_at) VALUES (:u, :t, 'My Clermont · Story démo', :c, :i, :o, 'published', :d)",
+                ['u' => $uuid(), 't' => $title, 'c' => $img($seed . '-cover'), 'i' => $icon, 'o' => $i, 'd' => $now],
+            );
+            foreach (['La ville s\'anime', 'Les bons plans du moment', 'À toi de jouer'] as $pos => $slideTitle) {
+                Database::execute(
+                    "INSERT INTO explore_story_slides (story_id, position, media_url, title, body, caption, cta_label, link_type, link_id)
+                     VALUES (:s, :p, :m, :t, 'Explore Clermont-Ferrand et ses environs avec My Clermont.', 'Contenu de démonstration', :cta, :lt, :lid)",
+                    ['s' => $id, 'p' => $pos, 'm' => $img("{$seed}-{$pos}"), 't' => $slideTitle, 'cta' => $pos === 2 ? 'Voir l\'agenda' : null,
+                     'lt' => $pos === 2 ? 'screen' : null, 'lid' => $pos === 2 ? 'agenda' : null],
+                );
+            }
+        }
+        Database::execute(
+            "INSERT INTO explore_highlights (uid, badge_label, tag_label, title, subtitle, image_url, location_label, link_type, link_id, status)
+             VALUES (:u, 'ÉDITION FLASH · DÉMO', 'HOT', 'Clermont by Night', 'Une soirée au cœur de la ville', :img, 'Centre-ville · Clermont-Ferrand', 'screen', 'agenda', 'published')",
+            ['u' => $uuid(), 'img' => $img('flash')],
+        );
+        $offerIds = [];
+        foreach ([['Brunch au centre-ville', '-30 %', 'fork-knife', 'restaurants', 'BRUNCH30'], ['Pause bien-être', '-20 %', 'sparkles', 'bons-plans', 'ZEN20']] as $i => [$title, $discount, $icon, $s, $code]) {
+            $offerIds[] = $u = $uuid();
+            Database::execute(
+                "INSERT INTO offers (uid, section_id, partner_name, title, subtitle, description, conditions, discount_label, icon, redemption_mode, code,
+                                     badge_label, notice, sort_order, status, created_at)
+                 VALUES (:u, :sec, 'Partenaire démo', :t, 'Offre de démonstration', 'Offre fictive pour tester l''écran.', 'Une utilisation par personne.',
+                         :d, :i, 'code', :code, 'Exclusivité My Clermont', 'Offre de démonstration : aucun partenaire réel.', :o, 'published', :now)",
+                ['u' => $u, 'sec' => $sec[$s], 't' => $title, 'd' => $discount, 'i' => $icon, 'code' => $code, 'o' => $i, 'now' => $now],
+            );
+        }
+        $items = [
+            ['bons-plans', 'Brunch au centre-ville', 'Exclusivité · -30 %', 'fork-knife', 'offer', $offerIds[0]],
+            ['bons-plans', 'Pause bien-être', 'Exclusivité · -20 %', 'sparkles', 'offer', $offerIds[1]],
+            ['agenda', 'Concerts et spectacles', 'Culture · Sorties', 'mic', 'screen', 'agenda'],
+            ['activites', 'Explorer la chaîne des Puys', 'Nature · Balades', 'mountain', 'screen', 'agenda'],
+            ['restaurants', 'Les cafés à découvrir', 'Gastronomie · Centre-ville', 'coffee', 'screen', 'services'],
+            ['logement', 'Studio proche du centre', 'Logement · 650 € / mois', 'house', 'screen', 'housing'],
+            ['emploi', 'Serveur / Serveuse', 'Emploi · Clermont-Ferrand', 'briefcase', 'screen', 'jobs'],
+            ['annonces', 'Vélo de ville', 'Petites annonces', 'bike', 'screen', 'classifieds'],
+            ['transports', 'Transports de la métropole', 'Mobilité · T2C', 'bus', 'screen', 'mobility'],
+        ];
+        foreach ($items as $i => [$s, $title, $subtitle, $icon, $lt, $lid]) {
+            Database::execute(
+                "INSERT INTO explore_items (uid, section_id, title, subtitle, icon, link_type, link_id, sort_order, status) VALUES (:u, :s, :t, :st, :i, :lt, :lid, :o, 'published')",
+                ['u' => $uuid(), 's' => $sec[$s], 't' => $title, 'st' => $subtitle . ' · démo', 'i' => $icon, 'lt' => $lt, 'lid' => $lid, 'o' => $i],
+            );
+        }
+        $out('Explorer de démo créé : 4 stories, 1 événement flash, 2 exclusivités (codes BRUNCH30, ZEN20), ' . count($items) . ' éléments « À découvrir ».');
+        break;
+
+    case 'places:seed-demo':
+        $cat = array_column(Database::fetchAll('SELECT id, slug FROM place_categories'), 'id', 'slug');
+        Database::execute("DELETE FROM places WHERE source_id = 1 AND external_id LIKE 'demo-%'");
+        $now = gmdate('Y-m-d H:i:s');
+        $insert = static function (string $ext, string $c, string $name, float $lat, float $lng, array $extra = []) use ($cat, $now): void {
+            $row = $extra + [
+                'tagline' => null, 'badge_label' => null, 'description' => null, 'address' => null, 'hours_label' => null, 'opening_hours' => null,
+                'access_label' => null, 'parking_label' => null, 'price_label' => null, 'facts' => null, 'highlights' => null, 'timeline' => null,
+                'tip' => null, 'sources_label' => null, 'tags' => null, 'is_partner' => 0, 'is_must_see' => 0, 'display_rating' => null,
+            ];
+            Database::execute(
+                'INSERT INTO places (uid, source_id, external_id, category_id, name, tagline, badge_label, description, latitude, longitude, address, postal_code,
+                                     hours_label, opening_hours, access_label, parking_label, price_label, facts, highlights, timeline, tip, sources_label, tags,
+                                     is_partner, is_must_see, display_rating, display_rating_label, status, created_at, updated_at)
+                 VALUES (:uid, 1, :ext, :cat, :name, :tagline, :badge, :descr, :lat, :lng, :address, :cp, :hours, :oh, :access, :parking, :price,
+                         :facts, :hl, :tl, :tip, :sources, :tags, :partner, :must, :rating, :rlabel, \'published\', :c, :u)',
+                ['uid' => \App\Security\Crypto::uuid4(), 'ext' => $ext, 'cat' => $cat[$c], 'name' => $name, 'tagline' => $row['tagline'], 'badge' => $row['badge_label'],
+                 'descr' => $row['description'], 'lat' => (string) $lat, 'lng' => (string) $lng, 'address' => $row['address'], 'cp' => $row['address'] ? '63000' : null,
+                 'hours' => $row['hours_label'], 'oh' => $row['opening_hours'], 'access' => $row['access_label'], 'parking' => $row['parking_label'],
+                 'price' => $row['price_label'], 'facts' => $row['facts'], 'hl' => $row['highlights'], 'tl' => $row['timeline'], 'tip' => $row['tip'],
+                 'sources' => $row['sources_label'], 'tags' => $row['tags'], 'partner' => $row['is_partner'], 'must' => $row['is_must_see'],
+                 'rating' => $row['display_rating'], 'rlabel' => $row['display_rating'] ? 'note démo' : null, 'c' => $now, 'u' => $now],
+            );
+        };
+        $j = static fn (array $v) => json_encode($v, JSON_UNESCAPED_UNICODE);
+        $insert('demo-jaude', 'monuments', 'Place de Jaude', 45.777300, 3.081600, [
+            'tagline' => 'Le grand salon à ciel ouvert de Clermont', 'badge_label' => 'À DÉCOUVRIR', 'is_must_see' => 1, 'display_rating' => '4.8',
+            'description' => "Avec ses 35 000 m², Jaude est le point de rendez-vous du centre-ville : on y vient faire du shopping, prendre le tram ou s'asseoir face au Vercingétorix de Bartholdi.",
+            'address' => 'Place de Jaude', 'hours_label' => 'Accès libre · 24 h/24', 'opening_hours' => $j(['always_open' => true]),
+            'access_label' => 'Tram A, arrêt Jaude · station C.vélo', 'parking_label' => 'Parkings souterrains à proximité', 'price_label' => 'Gratuit',
+            'facts' => $j([['icon' => 'area', 'value' => '35 000 m²', 'label' => 'de superficie'], ['icon' => 'horse', 'value' => '1903', 'label' => 'le Vercingétorix de Bartholdi'], ['icon' => 'tram', 'value' => '2006', 'label' => 'le tram A traverse la place']]),
+            'highlights' => $j([['icon' => 'horse', 'title' => 'Le Vercingétorix', 'text' => 'Statue équestre en bronze érigée en 1903, signée Bartholdi.'], ['icon' => 'museum', 'title' => 'Saint-Pierre-des-Minimes', 'text' => 'Église de style jésuite.']]),
+            'timeline' => $j([['year' => '1630', 'text' => "Construction de l'église Saint-Pierre-des-Minimes."], ['year' => '1903', 'text' => 'Le Vercingétorix de Bartholdi s\'installe sur la place.'], ['year' => '2006', 'text' => 'Mise en service du tram.']]),
+            'tip' => 'Donne rendez-vous « au pied du Vercingétorix » : c\'est le repère le plus simple du centre-ville, à deux pas du tram.',
+            'sources_label' => 'Sources : office de tourisme, Wikipédia. Informations indicatives, à vérifier avant ta visite.',
+        ]);
+        $insert('demo-puy-de-dome', 'volcans', 'Sommet du puy de Dôme', 45.772600, 2.964400, ['is_must_see' => 1, 'tags' => 'volcan', 'tagline' => 'Le géant de la chaîne des Puys']);
+        // Repères génériques autour du centre pour tester la carte (positions fictives)
+        $types = ['restaurants', 'cafes', 'culture', 'sport', 'parcs', 'patisseries', 'bars', 'carburant'];
+        mt_srand(63000);
+        for ($i = 1; $i <= 40; $i++) {
+            $c = $types[$i % count($types)];
+            $insert("demo-{$i}", $c, ucfirst($c) . " démo {$i}", 45.7773 + (mt_rand(-200, 200) / 10000), 3.0816 + (mt_rand(-300, 300) / 10000), [
+                'is_partner' => $i === 7 ? 1 : 0, 'tags' => $c === 'restaurants' || $c === 'patisseries' ? 'gourmand' : null,
+                'opening_hours' => $j(['mon' => [['09:00', '19:00']], 'tue' => [['09:00', '19:00']], 'wed' => [['09:00', '19:00']], 'thu' => [['09:00', '19:00']], 'fri' => [['09:00', '23:00']], 'sat' => [['10:00', '23:00']], 'sun' => []]),
+            ]);
+        }
+        (new \App\Modules\Places\PlaceRepository())->forgetPins();
+        $out('42 lieux de démo créés (Place de Jaude complète, puy de Dôme, 40 repères fictifs autour du centre).');
+        break;
+
+    case 'push:send':
+        $r = (new \App\Modules\Messaging\Push\PushDispatcher())->dispatch();
+        $out("Notifications envoyées : {$r['sent']}, sans appareil : {$r['skipped']}, en échec : {$r['failed']}");
+        break;
+
+    case 'classifieds:maintenance':
+        $out('Annonces expirées : ' . (new \App\Modules\Classifieds\ClassifiedRepository())->expireOld());
+        break;
+
+    case 'classifieds:seed-demo':
+        $seller = Database::fetch("SELECT id FROM users WHERE email = 'habitant.demo@myclermont.invalid'")['id'] ?? Database::insert(
+            "INSERT INTO users (uid, email, password_hash, username, status, created_at, updated_at) VALUES (:uid, 'habitant.demo@myclermont.invalid', :h, 'Habitant_11', 'active', :c, :u)",
+            ['uid' => \App\Security\Crypto::uuid4(), 'h' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), 'c' => gmdate('Y-m-d H:i:s'), 'u' => gmdate('Y-m-d H:i:s')],
+        );
+        $cat = array_column(Database::fetchAll('SELECT id, slug FROM classified_categories'), 'id', 'slug');
+        $demo = [
+            ['maison-deco', 'Bureau en bois', 'Bureau en bois massif, quelques traces d\'usage.', 9000, 'good', 'Clermont-Ferrand'],
+            ['sport-loisirs', 'Chaussures de randonnée', 'Pointure 42, portées trois fois.', 4500, 'very_good', 'Aubière'],
+            ['dons', 'Don de plantes', 'Boutures de plantes vertes à récupérer gratuitement.', 0, 'good', 'Montferrand'],
+            ['bricolage', 'Perceuse-visseuse', 'Avec deux batteries et chargeur.', 7000, 'good', 'Royat'],
+        ];
+        Database::execute("DELETE FROM classifieds WHERE user_id = :u AND badge_label = 'DÉMO'", ['u' => $seller]);
+        foreach ($demo as $i => [$c, $title, $desc, $price, $cond, $loc]) {
+            $now = gmdate('Y-m-d H:i:s', time() - $i * 600);
+            Database::execute(
+                "INSERT INTO classifieds (uid, user_id, category_id, title, description, price_cents, is_free, item_condition, location_label, badge_label, notice,
+                                          status, published_at, expires_at, created_at, updated_at)
+                 VALUES (:uid, :u, :cat, :t, :d, :p, :free, :cond, :loc, 'DÉMO', 'Annonce fictive : aucune transaction réelle.', 'active', :pub, :exp, :c, :up)",
+                ['uid' => \App\Security\Crypto::uuid4(), 'u' => $seller, 'cat' => $cat[$c], 't' => $title, 'd' => $desc, 'p' => $price, 'free' => $price === 0 ? 1 : 0,
+                 'cond' => $cond, 'loc' => $loc, 'pub' => $now, 'exp' => gmdate('Y-m-d H:i:s', time() + 60 * 86400), 'c' => $now, 'up' => $now],
+            );
+        }
+        (new \App\Modules\Classifieds\ClassifiedRepository())->forgetCounts();
+        $out(count($demo) . ' annonces de démo créées (vendeur « Habitant_11 », non connectable).');
+        break;
+
+    case 'services:send-quotes':
+        $r = (new \App\Modules\Services\QuoteDispatcher())->dispatch();
+        $out("Demandes de devis transmises : {$r['sent']}, en échec : {$r['failed']}");
+        break;
+
+    case 'media:purge':
+        $out('Médias non utilisés supprimés : ' . (new \App\Content\Media\MediaStore())->purgeUnattached());
+        break;
+
+    case 'community:moderation':
+        // Publications masquées après signalements : php bin/console community:moderation [--restore=<uid>|--delete=<uid>]
+        if (isset($options['restore'])) {
+            Database::execute("UPDATE community_posts SET status = 'visible', reports_count = 0 WHERE uid = :u AND status = 'hidden'", ['u' => $options['restore']]);
+            $out('Publication rétablie.');
+            break;
+        }
+        if (isset($options['delete'])) {
+            $post = Database::fetch('SELECT id FROM community_posts WHERE uid = :u', ['u' => $options['delete']]) ?? $fail('Publication introuvable.');
+            (new \App\Modules\Community\PostRepository())->delete((int) $post['id']);
+            $out('Publication supprimée.');
+            break;
+        }
+        foreach (Database::fetchAll("SELECT p.uid, p.type, p.reports_count, LEFT(p.body, 80) AS excerpt, u.username FROM community_posts p JOIN users u ON u.id = p.user_id WHERE p.status = 'hidden' ORDER BY p.id DESC LIMIT 50") as $p) {
+            $out("{$p['uid']}  [{$p['type']}] {$p['reports_count']} signalement(s)  @{$p['username']} : {$p['excerpt']}");
+        }
+        break;
+
+    case 'community:seed-demo':
+        $user = static function (string $name, string $hood) {
+            $email = strtolower($name) . '.demo@myclermont.invalid';
+            $existing = Database::fetch('SELECT id FROM users WHERE email = :e', ['e' => $email]);
+            if ($existing) {
+                return (int) $existing['id'];
+            }
+            $hoodId = Database::fetch('SELECT id FROM neighborhoods WHERE slug = :s', ['s' => $hood])['id'] ?? null;
+            $now = gmdate('Y-m-d H:i:s');
+            return Database::insert(
+                'INSERT INTO users (uid, email, password_hash, username, neighborhood_id, status, created_at, updated_at) VALUES (:uid, :e, :h, :n, :hood, \'active\', :c, :u)',
+                ['uid' => \App\Security\Crypto::uuid4(), 'e' => $email, 'h' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), 'n' => $name, 'hood' => $hoodId, 'c' => $now, 'u' => $now],
+            );
+        };
+        $repo = new \App\Modules\Community\PostRepository();
+        $camille = $user('Camille', 'centre-jaude');
+        $thomas = $user('Thomas', 'montferrand');
+        $id1 = $repo->create($camille, 'text', 'Bienvenue dans la communauté My Clermont ! Partagez vos découvertes, vos questions et vos bons plans.', null, [], []);
+        $id2 = $repo->create($thomas, 'poll', 'Quel type de sortie préférez-vous ce week-end ?', null, ['Concert', 'Randonnée', 'Restaurant'], []);
+        Database::execute("UPDATE community_posts SET badge_label = 'DÉMO', neighborhood_id = (SELECT neighborhood_id FROM users WHERE users.id = community_posts.user_id) WHERE id IN (:a, :b)", ['a' => $id1, 'b' => $id2]);
+        $out('2 publications de démo créées (comptes Camille et Thomas, non connectables). Les publications photo / vidéo se testent depuis l\'app.');
+        break;
+
+    case 'services:seed-demo':
+        $cat = array_column(Database::fetchAll('SELECT id, slug FROM service_categories'), 'id', 'slug');
+        $demo = [
+            ['maison-travaux', 'Atelier Plomberie des Puys', 'Dépannage et entretien des installations sanitaires. Fiche et entreprise fictives.', ['Plomberie', 'Dépannage', 'Installation'], 'plombier plomberie fuite chauffe-eau', 'Lun–Ven · 8h–18h (démo)', 'Sur devis', 4.8, 45.7772, 3.0870, 8],
+            ['maison-travaux', 'Électricité Jaude', 'Mise aux normes et dépannage électrique. Fiche fictive.', ['Dépannage', 'Mise aux normes', 'Domotique'], 'électricien electricite tableau', 'Lun–Sam · 8h–19h (démo)', 'À partir de 60 €', 4.6, 45.7773, 3.0816, 10],
+            ['informatique', 'Puy Dépannage PC', 'Réparation d\'ordinateurs et assistance à domicile. Fiche fictive.', ['Réparation', 'Installation', 'Cours'], 'ordinateur informatique réparation', 'Mar–Sam · 10h–18h (démo)', 'À partir de 40 €', 4.7, 45.7830, 3.0900, 15],
+            ['animaux', 'Pattes & Volcans', 'Garde et promenade d\'animaux. Fiche fictive.', ['Promenade', 'Garde', 'Visites'], 'chien chat garde promeneur', '7j/7 (démo)', 'À partir de 15 €', 4.9, 45.7700, 3.0950, 6],
+        ];
+        Database::execute("DELETE FROM service_providers WHERE source_id = 1 AND external_id LIKE 'demo-%'");
+        foreach ($demo as $i => [$c, $name, $desc, $services, $kw, $hours, $price, $rating, $lat, $lng, $radius]) {
+            $now = gmdate('Y-m-d H:i:s');
+            Database::execute(
+                'INSERT INTO service_providers (uid, source_id, external_id, category_id, name, summary, description, services, keywords, hours_label, price_label,
+                        latitude, longitude, service_radius_km, display_rating, display_rating_label, badge_label, notice, status, published_at, created_at, updated_at)
+                 VALUES (:uid, 1, :ext, :cat, :name, :summary, :descr, :services, :kw, :hours, :price, :lat, :lng, :radius, :rating,
+                         \'note de démonstration\', \'DÉMO\', \'Fiche fictive : aucune demande n\'\'est transmise à un professionnel.\', \'published\', :p, :c, :u)',
+                ['uid' => \App\Security\Crypto::uuid4(), 'ext' => 'demo-' . ($i + 1), 'cat' => $cat[$c], 'name' => $name, 'summary' => $desc, 'descr' => $desc,
+                 'services' => json_encode($services, JSON_UNESCAPED_UNICODE), 'kw' => $kw, 'hours' => $hours, 'price' => $price, 'lat' => (string) $lat,
+                 'lng' => (string) $lng, 'radius' => (string) $radius, 'rating' => (string) $rating, 'p' => $now, 'c' => $now, 'u' => $now],
+            );
+        }
+        (new \App\Modules\Services\ServiceRepository())->forgetCounts();
+        $out(count($demo) . ' professionnels de démo créés.');
+        break;
+
+    case 'housing:send-contacts':
+        $r = (new ContactDispatcher())->dispatch();
+        $out("Demandes transmises : {$r['sent']}, en échec : {$r['failed']}");
+        break;
+
+    case 'housing:seed-demo':
+        $hood = static fn (string $slug) => Database::fetch('SELECT id FROM neighborhoods WHERE slug = :s', ['s' => $slug])['id'] ?? null;
+        $demo = [
+            ['rent', 'apartment', 'T2 lumineux proche Jaude', 69000, 44, 2, 1, 0, 'Centre-ville', 'centre-jaude', 45.7775, 3.0815, 'balcony,equipped_kitchen,near_tram,double_glazing',
+             'Appartement lumineux dans un immeuble de caractère, à proximité des commerces et des transports. Photos illustratives.'],
+            ['rent', 'studio', 'Studio meublé étudiant aux Cézeaux', 47500, 22, 1, 0, 1, 'Les Cézeaux', 'les-cezeaux', 45.7590, 3.1110, 'equipped_kitchen,near_tram,fiber,student',
+             'Studio meublé idéal pour étudiant, à deux pas du campus.'],
+            ['sale', 'apartment', 'T3 rénové à Montferrand', 18900000, 68, 3, 2, 0, 'Montferrand', 'montferrand', 45.7930, 3.1140, 'elevator,cellar,double_glazing',
+             'Appartement entièrement rénové dans le quartier historique de Montferrand.'],
+            ['sale', 'house', 'Maison avec jardin à Chanturgue', 34500000, 120, 5, 4, 0, 'Chanturgue', 'chanturgue', 45.7960, 3.0790, 'garden,parking,terrace',
+             'Maison familiale avec vue sur la chaîne des Puys.'],
+            ['colocation', 'room', 'Chambre en colocation près de la gare', 39000, 14, 1, 1, 1, 'La Gare', 'la-gare', 45.7790, 3.1000, 'fiber,near_tram,pets_allowed',
+             'Chambre dans une colocation de 4 personnes, ambiance conviviale.'],
+        ];
+        Database::execute("DELETE FROM housing_listings WHERE source_id = 1 AND external_id LIKE 'demo-%'");
+        foreach ($demo as $i => [$tx, $type, $title, $price, $surface, $rooms, $bedrooms, $furnished, $district, $hoodSlug, $lat, $lng, $features, $desc]) {
+            $now = gmdate('Y-m-d H:i:s', time() - $i * 3600);
+            $id = Database::insert(
+                'INSERT INTO housing_listings (uid, source_id, external_id, transaction, property_type, title, description, price_cents, surface_m2,
+                        rooms, bedrooms, furnished, features, district_label, neighborhood_id, latitude, longitude, image_caption, notice,
+                        contact_email, status, published_at, created_at, updated_at)
+                 VALUES (:uid, 1, :ext, :tx, :type, :title, :descr, :price, :surface, :rooms, :bedrooms, :furnished, :features, :district,
+                         :hood, :lat, :lng, :caption, :notice, NULL, \'published\', :p, :c, :u)',
+                [
+                    'uid' => \App\Security\Crypto::uuid4(), 'ext' => 'demo-' . ($i + 1), 'tx' => $tx, 'type' => $type, 'title' => $title, 'descr' => $desc,
+                    'price' => $price, 'surface' => (string) $surface, 'rooms' => $rooms, 'bedrooms' => $bedrooms, 'furnished' => $furnished,
+                    'features' => $features, 'district' => $district, 'hood' => $hood($hoodSlug), 'lat' => (string) $lat, 'lng' => (string) $lng,
+                    'caption' => 'Photos d\'illustration · démo', 'notice' => 'Annonce fictive : aucune prise de contact réelle.',
+                    'p' => $now, 'c' => $now, 'u' => $now,
+                ],
+            );
+            foreach ([1, 2, 3] as $pos) {
+                Database::execute('INSERT INTO housing_images (listing_id, url, position) VALUES (:l, :u, :p)',
+                    ['l' => $id, 'u' => "https://picsum.photos/seed/myclermont-{$i}-{$pos}/1200/800", 'p' => $pos]);
+            }
+        }
+        (new \App\Modules\Housing\HousingRepository())->forgetCounts();
+        $out(count($demo) . ' annonces de démo créées (2 locations, 2 ventes, 1 colocation).');
+        break;
+
+    case 'events:seed-demo':
+        // Crée des événements fictifs relatifs à aujourd'hui (pour développer l'app)
+        $tz = new DateTimeZone('Europe/Paris');
+        $cat = array_column(Database::fetchAll('SELECT id, slug FROM event_categories'), 'id', 'slug');
+        $demo = [
+            ['sport', 'Match de rugby — soirée supporters', 1, '19:00', 120, 'Stade Marcel-Michelin', '107 Avenue de la République', 45.7899, 3.1162, 'Billetterie à confirmer', null,
+             "Une soirée autour du rugby clermontois.\nÉvénement fictif utilisé pour tester l'agenda.", [['18:00', 'Accueil du public'], ['19:00', 'Animation sportive'], ['21:00', 'Fin prévisionnelle']], ''],
+            ['musique', 'Concert au cœur de Clermont', 2, '20:00', 150, 'Centre-ville', 'Place de Jaude', 45.7772, 3.0820, 'À partir de 15 € · démo', 1500,
+             'Concert en plein air place de Jaude.', [['19:30', 'Ouverture des portes'], ['20:00', 'Première partie'], ['21:00', 'Concert']], ''],
+            ['nature', 'Lever de soleil au sommet du puy de Dôme', 3, '06:30', 180, 'Puy de Dôme', 'Orcines', 45.7726, 2.9644, 'Gratuit', 0,
+             'Randonnée guidée jusqu\'au sommet.', [['06:30', 'Départ du col de Ceyssat'], ['07:45', 'Lever de soleil']], 'volcan'],
+            ['gastronomie', 'Marché des producteurs auvergnats', 4, '09:00', 240, 'Place Saint-Pierre', null, 45.7797, 3.0864, 'Entrée libre', 0,
+             'Fromages AOP, charcuterie et produits locaux.', [], 'gourmand'],
+            ['culture', 'Visite nocturne de la cathédrale', 5, '21:00', 90, 'Cathédrale Notre-Dame-de-l\'Assomption', 'Place de la Victoire', 45.7786, 3.0864, '8 € · démo', 800,
+             'Découverte de la cathédrale de pierre de Volvic à la lanterne.', [], 'volcan'],
+            ['famille', 'Après-midi jeux au jardin Lecoq', 6, '14:00', 180, 'Jardin Lecoq', null, 45.7720, 3.0890, 'Gratuit', 0,
+             'Jeux en bois et ateliers pour enfants.', [], ''],
+            ['sport', 'Course des volcans', 8, '09:30', 150, 'Vulcania', 'Saint-Ours', 45.8142, 2.9420, 'À partir de 12 € · démo', 1200,
+             'Trail de 15 km entre les volcans.', [['08:30', 'Retrait des dossards'], ['09:30', 'Départ']], 'volcan'],
+        ];
+        $now = gmdate('Y-m-d H:i:s');
+        foreach ($demo as $i => [$c, $title, $inDays, $time, $minutes, $venue, $address, $lat, $lng, $priceLabel, $priceCents, $desc, $programme, $tags]) {
+            $start = (new DateTimeImmutable("today +{$inDays} days {$time}", $tz))->setTimezone(new DateTimeZone('UTC'));
+            $slug = 'demo-' . ($i + 1) . '-' . trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(iconv('UTF-8', 'ASCII//TRANSLIT', $title))), '-');
+            Database::execute('DELETE FROM events WHERE slug = :s', ['s' => $slug]);
+            $id = Database::insert(
+                'INSERT INTO events (uid, slug, category_id, title, description, image_url, image_caption, starts_at, ends_at, venue_name, city, address,
+                                     latitude, longitude, price_label, price_min_cents, tags, notice, status, is_featured, created_at, updated_at)
+                 VALUES (:uid, :slug, :cat, :title, :descr, NULL, :caption, :start, :end, :venue, \'Clermont-Ferrand\', :address,
+                         :lat, :lng, :plabel, :pcents, :tags, :notice, \'published\', :featured, :c, :u)',
+                [
+                    'uid' => \App\Security\Crypto::uuid4(), 'slug' => $slug, 'cat' => $cat[$c], 'title' => $title, 'descr' => $desc,
+                    'caption' => 'Visuel d\'illustration · démo', 'start' => $start->format('Y-m-d H:i:s'),
+                    'end' => $start->modify("+{$minutes} minutes")->format('Y-m-d H:i:s'), 'venue' => $venue, 'address' => $address,
+                    'lat' => (string) $lat, 'lng' => (string) $lng, 'plabel' => $priceLabel, 'pcents' => $priceCents, 'tags' => $tags ?: null,
+                    'notice' => 'Événement fictif : aucune réservation ni billetterie réelle.', 'featured' => $i === 0 ? 1 : 0, 'c' => $now, 'u' => $now,
+                ],
+            );
+            foreach ($programme as $pos => [$t, $label]) {
+                Database::execute('INSERT INTO event_schedule_items (event_id, time, label, position) VALUES (:e, :t, :l, :p)', ['e' => $id, 't' => $t, 'l' => $label, 'p' => $pos]);
+            }
+        }
+        $out(count($demo) . ' événements de démo créés (slug demo-*). Relancer la commande les recrée à partir d\'aujourd\'hui.');
+        break;
+
+    case 'sign':
+        /*
+         * Génère une commande curl signée pour tester l'API à la main.
+         *   Appareil : php bin/console sign GET /v1/devices/me --device-id=… --token=… --secret=…
+         *   Clé app  : php bin/console sign POST /v1/devices/register '{"platform":"ios"}' --key-id=ios-2026-1 --device-id=…
+         */
+        [$method, $target, $body] = $positional + [null, null, ''];
+        if (!$method || !$target) {
+            $fail('Usage : php bin/console sign <METHOD> <path?query> [body] --device-id=… (--token=… --secret=… | --key-id=…) [--base=https://…]');
+        }
+        $deviceId = (string) ($options['device-id'] ?? $fail('--device-id requis'));
+        [$path, $query] = array_pad(explode('?', $target, 2), 2, '');
+        $timestamp = (string) time();
+        $nonce = bin2hex(random_bytes(16));
+
+        if (isset($options['key-id'])) {
+            $key = Config::get('security.app_keys.' . $options['key-id']) ?? $fail('keyId inconnu');
+            $secret = $key['secret'];
+            $headers = ['X-Key-Id' => $options['key-id']];
+        } else {
+            $secret = (string) ($options['secret'] ?? $fail('--secret requis'));
+            $headers = ['X-Device-Token' => (string) ($options['token'] ?? $fail('--token requis'))];
+            if (isset($options['bearer'])) {
+                $headers['Authorization'] = 'Bearer ' . $options['bearer'];
+            }
+        }
+
+        $signature = Signature::sign($secret, Signature::stringToSign($method, $path, $query, $timestamp, $nonce, $deviceId, $body));
+        $headers += ['X-Device-Id' => $deviceId, 'X-Timestamp' => $timestamp, 'X-Nonce' => $nonce, 'X-Signature' => $signature];
+
+        $base = rtrim((string) ($options['base'] ?? 'http://127.0.0.1:8080'), '/');
+        $cmd = 'curl -sS -X ' . strtoupper($method) . ' ' . escapeshellarg($base . $target);
+        foreach ($headers as $name => $value) {
+            $cmd .= " \\\n  -H " . escapeshellarg("{$name}: {$value}");
+        }
+        if ($body !== '') {
+            $cmd .= " \\\n  -H 'Content-Type: application/json' --data-raw " . escapeshellarg($body);
+        }
+        $out($cmd);
+        break;
+
+    default:
+        $out(<<<TXT
+        Commandes disponibles :
+          key:generate [--force]           Génère APP_KEY, JWT_SECRET et les clés application
+          app-key:add <ios|android> <id>   Ajoute une clé application (rotation)
+          migrate                          Exécute les migrations SQL en attente
+          config:cache                     Compile la configuration (production)
+          config:clear                     Supprime le cache de configuration
+          cache:prune                      Purge les entrées expirées (à mettre en cron)
+          admin:create <email> "<Nom>"     Crée / réinitialise un compte du back-office [--role=admin|editor|moderator]
+          device:block <device-id>         Bloque un appareil et révoque ses sessions
+          device:unblock <device-id>       Débloque un appareil
+          premium:grant <email> <jours>    Attribue / prolonge le premium [--source=admin]
+          premium:revoke <email>           Retire le premium
+          gamification:recheck [email]     Réévalue les badges (après changement de seuils)
+          events:seed-demo                 Crée 7 événements fictifs (développement)
+          housing:seed-demo                Crée 5 annonces fictives (développement)
+          housing:send-contacts            Transmet les demandes de contact par e-mail (cron)
+          jobs:seed-demo                   Crée 4 offres d'emploi fictives (développement)
+          jobs:send-applications           Transmet les candidatures (CV en pièce jointe) par e-mail (cron)
+          jobs:maintenance                 Archive les offres expirées, supprime les CV périmés (cron)
+          services:seed-demo               Crée 4 professionnels fictifs (développement)
+          services:send-quotes             Transmet les demandes de devis par e-mail (cron)
+          community:seed-demo              Crée 2 publications fictives (développement)
+          community:moderation [--restore=<id>|--delete=<id>]   Publications masquées après signalements
+          media:purge                      Supprime les photos / vidéos jamais publiées (cron)
+          classifieds:seed-demo            Crée 4 petites annonces fictives (développement)
+          classifieds:maintenance          Passe en « expirée » les annonces arrivées à échéance (cron)
+          push:send                        Envoie les notifications push en attente (cron)
+          explore:seed-demo                Crée le contenu de démo de l'écran Explorer
+          places:seed-demo                 Crée des lieux de démo (fiche Place de Jaude + repères)
+          source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
+          import:run <slug> | import:all   Lance un import (config/imports.php)
+          sign <METHOD> <path> [body] …    Génère une commande curl signée (tests)
+        TXT);
+}

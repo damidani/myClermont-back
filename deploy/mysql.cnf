@@ -1,0 +1,24 @@
+# /etc/mysql/mysql.conf.d/99-myclermont.cnf
+# Point de départ pour un serveur dédié (à ajuster selon la RAM).
+
+[mysqld]
+default-time-zone          = '+00:00'
+character-set-server       = utf8mb4
+collation-server           = utf8mb4_unicode_ci
+
+# ~60-70 % de la RAM si MySQL est seul sur la machine
+innodb_buffer_pool_size    = 1G
+innodb_log_file_size       = 256M
+innodb_flush_method        = O_DIRECT
+# 1 = durabilité totale (recommandé). 2 = plus rapide, mais ~1 s de données perdues possible si l'OS plante
+innodb_flush_log_at_trx_commit = 1
+
+max_connections            = 200
+skip-name-resolve          = ON
+
+slow_query_log             = ON
+long_query_time            = 0.2
+slow_query_log_file        = /var/log/mysql/slow.log
+
+# Écoute locale uniquement (l'API est sur la même machine ou réseau privé)
+bind-address               = 127.0.0.1

@@ -1,0 +1,14 @@
+/vendor/
+.env
+/storage/logs/*
+!/storage/logs/.gitkeep
+/public/media/*
+!/public/media/.gitkeep
+/storage/private/*
+!/storage/private/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep
+.idea/
+.vscode/
+.DS_Store
+.env.docker

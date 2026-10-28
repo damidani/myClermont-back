@@ -1,0 +1,2393 @@
+openapi: 3.1.0
+info:
+  title: myClermont API
+  version: 1.0.0
+  description: |
+    API des applications mobiles myClermont (iOS / Android).
+
+    Toutes les routes sauf `/health` exigent une **signature HMAC-SHA256** (voir docs/SECURITE.md).
+    Ces en-têtes ne peuvent pas être générés depuis Swagger UI : utiliser `php bin/console sign`.
+servers:
+  - url: https://api.myclermont.fr/v1
+    description: Production
+  - url: http://127.0.0.1:8080/v1
+    description: Développement local
+
+tags:
+  - name: Système
+  - name: Appareils
+  - name: Authentification
+  - name: Utilisateurs
+  - name: Gamification
+  - name: Favoris
+  - name: Premium
+  - name: Agenda
+  - name: Logement
+  - name: Emploi
+  - name: Documents
+  - name: Communauté
+  - name: Services
+  - name: Mobilité
+  - name: Petites annonces
+  - name: Messagerie
+  - name: Explorer
+  - name: Carte & lieux
+
+paths:
+  /health:
+    get:
+      tags: [Système]
+      summary: Disponibilité et heure serveur
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          status: { type: string, example: ok }
+                          server_time: { type: integer, example: 1793139600 }
+
+  /devices/register:
+    post:
+      tags: [Appareils]
+      summary: Enregistrer l'appareil (signé avec la clé application)
+      security:
+        - appSignature: []
+      parameters:
+        - $ref: '#/components/parameters/KeyId'
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform]
+              properties:
+                platform: { type: string, enum: [ios, android] }
+                model: { type: [string, 'null'], maxLength: 100, example: 'iPhone15,2' }
+                os_version: { type: [string, 'null'], maxLength: 50, example: '18.1' }
+                app_version: { type: [string, 'null'], maxLength: 30, example: '1.4.0' }
+                push_token: { type: [string, 'null'], maxLength: 255 }
+      responses:
+        '201':
+          description: Appareil créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceRegistrationResponse' }
+        '200':
+          description: Appareil existant, identifiants renouvelés
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceRegistrationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /devices/me:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+      - $ref: '#/components/parameters/DeviceToken'
+      - $ref: '#/components/parameters/Timestamp'
+      - $ref: '#/components/parameters/Nonce'
+      - $ref: '#/components/parameters/Signature'
+    get:
+      tags: [Appareils]
+      summary: Appareil courant
+      security:
+        - deviceSignature: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Device' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [Appareils]
+      summary: Mettre à jour l'appareil (push token, version...)
+      security:
+        - deviceSignature: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model: { type: [string, 'null'], maxLength: 100 }
+                os_version: { type: [string, 'null'], maxLength: 50 }
+                app_version: { type: [string, 'null'], maxLength: 30 }
+                push_token: { type: [string, 'null'], maxLength: 255 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Device' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /auth/register:
+    post:
+      tags: [Authentification]
+      summary: Créer un compte
+      security:
+        - deviceSignature: []
+      parameters: &deviceHeaders
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, username]
+              properties:
+                email: { type: string, format: email, maxLength: 191 }
+                password: { type: string, minLength: 8, maxLength: 128, format: password }
+                username: { $ref: '#/components/schemas/Username' }
+                neighborhood_id: { type: [integer, 'null'] }
+                referral_code: { type: [string, 'null'], maxLength: 8 }
+      responses:
+        '201':
+          description: Compte créé, session ouverte
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      tags: [Authentification]
+      summary: Connexion
+      security:
+        - deviceSignature: []
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Session ouverte
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      tags: [Authentification]
+      summary: Renouveler les jetons (le refresh token est à usage unique)
+      security:
+        - deviceSignature: []
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Nouvelle paire de jetons
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Tokens' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Authentification]
+      summary: Déconnexion de cet appareil
+      security:
+        - deviceSignature: []
+          bearer: []
+      parameters: *deviceHeaders
+      responses:
+        '204': { description: Session fermée }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /users/me:
+    get:
+      tags: [Utilisateurs]
+      summary: Utilisateur connecté
+      security:
+        - deviceSignature: []
+          bearer: []
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [Utilisateurs]
+      summary: Modifier le profil
+      security:
+        - deviceSignature: []
+          bearer: []
+      parameters: *deviceHeaders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { $ref: '#/components/schemas/Username' }
+                bio: { type: [string, 'null'], maxLength: 500 }
+                neighborhood_id: { type: [integer, 'null'] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /users/me/password:
+    put:
+      tags: [Utilisateurs]
+      summary: Changer le mot de passe (ferme toutes les sessions, renvoie de nouveaux jetons)
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters: *deviceHeaders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string, format: password }
+                new_password: { type: string, minLength: 8, maxLength: 128, format: password }
+      responses:
+        '200':
+          description: Nouveaux jetons
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { $ref: '#/components/schemas/Tokens' } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /users/{username}:
+    get:
+      tags: [Utilisateurs]
+      summary: Profil public
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { $ref: '#/components/schemas/User' } }
+        '404': { description: user_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /users/username-available:
+    get:
+      tags: [Utilisateurs]
+      summary: Disponibilité d'un pseudo
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - { name: username, in: query, required: true, schema: { $ref: '#/components/schemas/Username' } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: object
+                        properties: { username: { type: string }, available: { type: boolean } }
+
+  /neighborhoods:
+    get:
+      tags: [Utilisateurs]
+      summary: Quartiers de Clermont-Ferrand
+      security: [{ deviceSignature: [] }]
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { type: array, items: { $ref: '#/components/schemas/Neighborhood' } } }
+
+  /badges:
+    get:
+      tags: [Gamification]
+      summary: Catalogue des badges avec progression
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/Badge'
+                            - properties:
+                                earned: { type: boolean }
+                                points: { type: integer }
+                                progress:
+                                  type: object
+                                  properties: { current: { type: integer }, target: { type: integer } }
+
+  /users/me/points:
+    get:
+      tags: [Gamification]
+      summary: Solde et historique des points
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 30 } }
+        - { name: before, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          balance: { type: integer }
+                          history:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id: { type: integer }
+                                amount: { type: integer }
+                                reason: { type: string }
+                                created_at: { type: string, format: date-time }
+
+  /users/me/favorites:
+    get:
+      tags: [Favoris]
+      summary: Liste des favoris, ou filtre des ids en favori (paramètre ids)
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: type, in: query, schema: { type: string, example: place } }
+        - { name: ids, in: query, description: 'ids séparés par des virgules (200 max), requiert type', schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 30 } }
+        - { name: before, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type: { type: string }
+                            id: { type: string }
+                            item: { type: [object, 'null'] }
+                            created_at: { type: string, format: date-time }
+
+  /users/me/favorites/{type}/{id}:
+    parameters:
+      - { name: type, in: path, required: true, schema: { type: string, example: place } }
+      - { name: id, in: path, required: true, schema: { type: string, maxLength: 64 } }
+      - $ref: '#/components/parameters/DeviceId'
+      - $ref: '#/components/parameters/DeviceToken'
+      - $ref: '#/components/parameters/Timestamp'
+      - $ref: '#/components/parameters/Nonce'
+      - $ref: '#/components/parameters/Signature'
+    put:
+      tags: [Favoris]
+      summary: Ajouter aux favoris (idempotent)
+      security: [{ deviceSignature: [], bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/FavoriteState' }
+        '404': { description: favorite_target_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    delete:
+      tags: [Favoris]
+      summary: Retirer des favoris (idempotent)
+      security: [{ deviceSignature: [], bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/FavoriteState' }
+
+  /users/me/premium:
+    get:
+      tags: [Premium]
+      summary: Statut premium
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters: *deviceHeaders
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          is_premium: { type: boolean }
+                          until: { type: [string, 'null'], format: date-time }
+                          source: { type: [string, 'null'] }
+                          perks: { type: object, properties: { points_multiplier: { type: number } } }
+
+  /events:
+    get:
+      tags: [Agenda]
+      summary: Liste de l'agenda (événements à venir)
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: category, in: query, schema: { type: string, example: sport } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: neighborhood_id, in: query, schema: { type: integer } }
+        - { name: free, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: featured, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Event' } }
+                  meta:
+                    type: object
+                    properties:
+                      categories: { type: array, items: { $ref: '#/components/schemas/EventCategory' } }
+                      total: { type: integer }
+                      next_cursor: { type: [string, 'null'] }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /events/categories:
+    get:
+      tags: [Agenda]
+      summary: Catégories avec nombre d'événements à venir
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { type: array, items: { $ref: '#/components/schemas/EventCategory' } } }
+
+  /events/{id}:
+    get:
+      tags: [Agenda]
+      summary: Fiche événement (id = UUID ou slug)
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { $ref: '#/components/schemas/EventDetail' } }
+        '404': { description: event_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /events/{id}/calendar.ics:
+    get:
+      tags: [Agenda]
+      summary: Fichier iCalendar
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: Fichier .ics
+          content:
+            text/calendar:
+              schema: { type: string }
+
+  /events/{id}/participation:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - $ref: '#/components/parameters/DeviceId'
+      - $ref: '#/components/parameters/DeviceToken'
+      - $ref: '#/components/parameters/Timestamp'
+      - $ref: '#/components/parameters/Nonce'
+      - $ref: '#/components/parameters/Signature'
+    put:
+      tags: [Agenda]
+      summary: Je participe (idempotent, +5 points la première fois)
+      security: [{ deviceSignature: [], bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/ParticipationState' }
+        '404': { description: event_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: 'event_cancelled, event_ended, event_full', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Agenda]
+      summary: Annuler la participation (idempotent)
+      security: [{ deviceSignature: [], bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/ParticipationState' }
+
+  /users/me/events:
+    get:
+      tags: [Agenda]
+      summary: Événements auxquels je participe
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: past, in: query, schema: { type: string, enum: ['1'] } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { type: array, items: { $ref: '#/components/schemas/Event' } } }
+
+  /housing:
+    get:
+      tags: [Logement]
+      summary: Annonces (mode liste)
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: transaction, in: query, schema: { type: string, enum: [rent, sale, colocation] } }
+        - { name: furnished, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: max_price, in: query, description: euros, schema: { type: integer } }
+        - { name: min_rooms, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: neighborhood_id, in: query, schema: { type: integer } }
+        - { name: property_type, in: query, schema: { type: string } }
+        - { name: bbox, in: query, description: 'minLat,minLng,maxLat,maxLng', schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [recent, price_asc, price_desc] } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Listing' } }
+                  meta:
+                    type: object
+                    properties:
+                      transactions:
+                        type: array
+                        items: { type: object, properties: { code: { type: string }, label: { type: string }, count: { type: integer } } }
+                      all_count: { type: integer }
+                      total: { type: [integer, 'null'] }
+                      next_cursor: { type: [string, 'null'] }
+
+  /housing/map:
+    get:
+      tags: [Logement]
+      summary: Épingles pour la vue carte
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - { name: transaction, in: query, schema: { type: string, enum: [rent, sale, colocation] } }
+        - { name: furnished, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: max_price, in: query, description: euros, schema: { type: integer } }
+        - { name: min_rooms, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: neighborhood_id, in: query, schema: { type: integer } }
+        - { name: property_type, in: query, schema: { type: string } }
+        - { name: bbox, in: query, description: 'minLat,minLng,maxLat,maxLng', schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            transaction: { type: string }
+                            latitude: { type: number }
+                            longitude: { type: number }
+                            price_label: { type: string }
+
+  /housing/filters:
+    get:
+      tags: [Logement]
+      summary: Valeurs et libellés des filtres
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK }
+
+  /housing/{id}:
+    get:
+      tags: [Logement]
+      summary: Fiche annonce
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { $ref: '#/components/schemas/ListingDetail' } }
+        '404': { description: listing_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /housing/{id}/contact:
+    post:
+      tags: [Logement]
+      summary: Contacter l'annonceur (formulaire)
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 120 }
+                email: { type: string, format: email }
+                phone: { type: [string, 'null'], maxLength: 30 }
+                message: { type: string, minLength: 10, maxLength: 2000 }
+      responses:
+        '201': { description: Demande enregistrée (transmise par e-mail) }
+        '404': { description: listing_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: 'contact_external (details.url), listing_inactive', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { description: 'contact_already_sent, too_many_requests', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /jobs:
+    get:
+      tags: [Emploi]
+      summary: Offres d'emploi et de stage
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: contract, in: query, schema: { type: string, enum: [cdi, cdd, alternance, stage, freelance, interim, saisonnier] } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: work_mode, in: query, schema: { type: string, enum: [onsite, hybrid, remote] } }
+        - { name: city, in: query, schema: { type: string } }
+        - { name: min_salary, in: query, description: euros par an, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: array, items: { $ref: '#/components/schemas/Job' } }
+                  meta:
+                    type: object
+                    properties:
+                      contracts: { type: array, items: { type: object, properties: { code: { type: string }, label: { type: string }, color: { type: string }, count: { type: integer } } } }
+                      all_count: { type: integer }
+                      total: { type: [integer, 'null'] }
+                      next_cursor: { type: [string, 'null'] }
+
+  /jobs/filters:
+    get:
+      tags: [Emploi]
+      summary: Contrats, rythmes et catégories
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK }
+
+  /jobs/{id}:
+    get:
+      tags: [Emploi]
+      summary: Fiche offre
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties: { data: { $ref: '#/components/schemas/JobDetail' } }
+        '404': { description: job_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /jobs/{id}/apply:
+    post:
+      tags: [Emploi]
+      summary: Postuler (documents envoyés au préalable via /documents)
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, cv_document_id]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 120 }
+                email: { type: string, format: email }
+                phone: { type: [string, 'null'] }
+                message: { type: [string, 'null'], maxLength: 3000 }
+                cv_document_id: { type: string, format: uuid }
+                cover_letter_document_id: { type: [string, 'null'], format: uuid }
+      responses:
+        '201': { description: Candidature enregistrée, transmise par e-mail avec les PDF }
+        '404': { description: job_not_found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '409': { description: 'already_applied, apply_external (details.url), job_inactive', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /users/me/applications:
+    get:
+      tags: [Emploi]
+      summary: Mes candidatures
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK }
+
+  /documents:
+    post:
+      tags: [Documents]
+      summary: Envoyer un PDF (corps brut, 5 Mo max)
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: kind, in: query, required: true, schema: { type: string, enum: [cv, cover_letter] } }
+        - { name: filename, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/pdf:
+            schema: { type: string, format: binary }
+      responses:
+        '201':
+          description: Document stocké
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          kind: { type: string }
+                          filename: { type: string }
+                          size_bytes: { type: integer }
+        '413': { description: payload_too_large, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '415': { description: unsupported_document, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /documents/{id}:
+    delete:
+      tags: [Documents]
+      summary: Supprimer un document pas encore joint
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '204': { description: Supprimé }
+
+  /community/posts:
+    get:
+      tags: [Communauté]
+      summary: "Fil d'actualité"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: filter, in: query, schema: { type: string, enum: [discussions, polls, photos, videos] } }
+        - { name: neighborhood_id, in: query, schema: { type: integer } }
+        - { name: author, in: query, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: [Communauté]
+      summary: "Créer un post"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties: { type: { type: string, enum: [text, poll, photos, photo, video] }, body: { type: [string, 'null'] }, poll_options: { type: array, items: { type: string } }, media_ids: { type: array, items: { type: string, format: uuid } } }
+      responses:
+        '201': { description: Publication créée }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /community/posts/{id}:
+    get:
+      tags: [Communauté]
+      summary: "Publication"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Communauté]
+      summary: "Supprimer sa publication"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '204': { description: Supprimée }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /community/posts/{id}/like:
+    put:
+      tags: [Communauté]
+      summary: "Aimer (idempotent)"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Communauté]
+      summary: "Ne plus aimer"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /community/posts/{id}/vote:
+    put:
+      tags: [Communauté]
+      summary: "Voter à un sondage"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [option_id]
+              properties: { option_id: { type: integer } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /community/posts/{id}/comments:
+    get:
+      tags: [Communauté]
+      summary: "Commentaires"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: [Communauté]
+      summary: "Commenter"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties: { body: { type: string, maxLength: 1000 } }
+      responses:
+        '201': { description: Commentaire créé }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /community/comments/{id}:
+    delete:
+      tags: [Communauté]
+      summary: "Supprimer son commentaire"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '204': { description: Supprimé }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /community/posts/{id}/report:
+    post:
+      tags: [Communauté]
+      summary: "Signaler"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string, enum: [spam, harassment, hate, inappropriate, false_info, other] }, details: { type: [string, 'null'] } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /media:
+    post:
+      tags: [Communauté]
+      summary: "Envoyer une photo ou une vidéo (corps brut)"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+          video/mp4: { schema: { type: string, format: binary } }
+          video/quicktime: { schema: { type: string, format: binary } }
+      responses:
+        '201': { description: Média stocké (id, url, dimensions) }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /services:
+    get:
+      tags: [Services]
+      summary: "Annuaire"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [relevance, rating] } }
+        - { name: favorites, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: page, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /services/categories:
+    get:
+      tags: [Services]
+      summary: "Catégories avec compteurs"
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /services/{id}:
+    get:
+      tags: [Services]
+      summary: "Fiche professionnel"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /services/{id}/quote:
+    post:
+      tags: [Services]
+      summary: "Demander un devis"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties: { name: { type: string }, email: { type: string, format: email }, phone: { type: [string, 'null'] }, postal_code: { type: [string, 'null'] }, preferred_date: { type: [string, 'null'], format: date }, message: { type: string } }
+      responses:
+        '201': { description: Demande enregistrée }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /services/{id}/review:
+    put:
+      tags: [Services]
+      summary: "Avis vérifié"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties: { rating: { type: integer, minimum: 1, maximum: 5 }, comment: { type: [string, 'null'] } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /mobility/destinations:
+    get:
+      tags: [Mobilité]
+      summary: "Destinations rapides"
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /mobility/journeys:
+    get:
+      tags: [Mobilité]
+      summary: "Itinéraires en transports en commun"
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, example: '45.7773,3.0816' } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: datetime, in: query, schema: { type: string, format: date-time } }
+        - { name: represents, in: query, schema: { type: string, enum: [departure, arrival] } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /mobility/places:
+    get:
+      tags: [Mobilité]
+      summary: "Autocomplétion des lieux"
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /mobility/traffic:
+    get:
+      tags: [Mobilité]
+      summary: "Info trafic T2C"
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /classifieds:
+    get:
+      tags: [Petites annonces]
+      summary: "Liste des annonces"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: free, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: max_price, in: query, schema: { type: integer } }
+        - { name: neighborhood_id, in: query, schema: { type: integer } }
+        - { name: favorites, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: sort, in: query, schema: { type: string, enum: [recent, price_asc, price_desc] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: [Petites annonces]
+      summary: "Déposer une annonce"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, category, condition]
+              properties: { title: { type: string, maxLength: 100 }, category: { type: string }, description: { type: [string, 'null'] }, is_free: { type: boolean }, price_cents: { type: integer }, condition: { type: string, enum: [new, very_good, good, fair, for_parts] }, location_label: { type: [string, 'null'] }, neighborhood_id: { type: [integer, 'null'] }, media_ids: { type: array, maxItems: 6, items: { type: string } } }
+      responses:
+        '201': { description: Annonce publiée }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /classifieds/filters:
+    get:
+      tags: [Petites annonces]
+      summary: "Catégories, états, tris, limites"
+      security: [{ deviceSignature: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /classifieds/{id}:
+    get:
+      tags: [Petites annonces]
+      summary: "Fiche annonce"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    patch:
+      tags: [Petites annonces]
+      summary: "Modifier son annonce"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties: { title: { type: string, maxLength: 100 }, category: { type: string }, description: { type: [string, 'null'] }, is_free: { type: boolean }, price_cents: { type: integer }, condition: { type: string, enum: [new, very_good, good, fair, for_parts] }, location_label: { type: [string, 'null'] }, neighborhood_id: { type: [integer, 'null'] }, media_ids: { type: array, maxItems: 6, items: { type: string } } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Petites annonces]
+      summary: "Supprimer son annonce"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '204': { description: Supprimée }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /classifieds/{id}/status:
+    patch:
+      tags: [Petites annonces]
+      summary: "Réservé / vendu / remise en ligne"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties: { status: { type: string, enum: [active, reserved, sold] }, renew: { type: boolean } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /classifieds/{id}/contact:
+    post:
+      tags: [Petites annonces]
+      summary: "Contacter le vendeur (ouvre la conversation)"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties: { message: { type: string }, client_id: { type: [string, 'null'] } }
+      responses:
+        '201': { description: Conversation ouverte + premier message }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /classifieds/{id}/report:
+    post:
+      tags: [Petites annonces]
+      summary: "Signaler"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string, enum: [scam, prohibited, duplicate, wrong_category, offensive, other] }, details: { type: [string, 'null'] } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /users/me/classifieds:
+    get:
+      tags: [Petites annonces]
+      summary: "Mes annonces"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /conversations:
+    get:
+      tags: [Messagerie]
+      summary: "Boîte de réception"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: archived, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /conversations/unread-count:
+    get:
+      tags: [Messagerie]
+      summary: "Nombre de messages non lus"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /conversations/{id}:
+    get:
+      tags: [Messagerie]
+      summary: "En-tête de conversation"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Messagerie]
+      summary: "Masquer la conversation"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '204': { description: Masquée }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /conversations/{id}/messages:
+    get:
+      tags: [Messagerie]
+      summary: "Messages (before / after)"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: before, in: query, schema: { type: integer } }
+        - { name: after, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: [Messagerie]
+      summary: "Envoyer un message"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties: { body: { type: string, maxLength: 2000 }, client_id: { type: [string, 'null'] } }
+      responses:
+        '201': { description: Message envoyé }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /conversations/{id}/read:
+    post:
+      tags: [Messagerie]
+      summary: "Marquer comme lu"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties: { message_id: { type: [integer, 'null'] } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /conversations/{id}/report:
+    post:
+      tags: [Messagerie]
+      summary: "Signaler une conversation"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string, enum: [scam, harassment, spam, other] }, details: { type: [string, 'null'] }, block: { type: boolean } }
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /users/{id}/block:
+    put:
+      tags: [Messagerie]
+      summary: "Bloquer un utilisateur"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Messagerie]
+      summary: "Débloquer"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /explore:
+    get:
+      tags: [Explorer]
+      summary: "Écran Explorer complet (un appel)"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: section, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/discover:
+    get:
+      tags: [Explorer]
+      summary: "À découvrir (pagination)"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: section, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/stories/{id}:
+    get:
+      tags: [Explorer]
+      summary: "Diapositives d'une story"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/stories/{id}/view:
+    post:
+      tags: [Explorer]
+      summary: "Story vue"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '204': { description: Enregistré }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/offers:
+    get:
+      tags: [Explorer]
+      summary: "Exclusivités"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: section, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/offers/{id}:
+    get:
+      tags: [Explorer]
+      summary: "Fiche exclusivité"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/offers/{id}/claim:
+    post:
+      tags: [Explorer]
+      summary: "Profiter de l'offre (révèle le code)"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '201': { description: Offre utilisée (code, écran à présenter ou lien) }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/search:
+    get:
+      tags: [Explorer]
+      summary: "Recherche globale"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /explore/weather:
+    get:
+      tags: [Explorer]
+      summary: "Météo actuelle"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Explorer }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /places/pins:
+    get:
+      tags: [Carte & lieux]
+      summary: "Tous les repères (compact, du plus proche au plus loin)"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: near, in: query, schema: { type: string, example: '45.7773,3.0816' } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: filter, in: query, schema: { type: string, enum: [partners, must_see] } }
+        - { name: If-None-Match, in: header, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: Repères + ETag }
+        '304': { description: Rien n'a changé }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /places/pins/stream:
+    get:
+      tags: [Carte & lieux]
+      summary: "Repères en flux SSE par anneaux de distance"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: near, in: query, schema: { type: string, example: '45.7773,3.0816' } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: filter, in: query, schema: { type: string, enum: [partners, must_see] } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: text/event-stream (meta, pins…, done) }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /places/nearby:
+    get:
+      tags: [Carte & lieux]
+      summary: "Liste des lieux proches"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: near, in: query, schema: { type: string, example: '45.7773,3.0816' } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: filter, in: query, schema: { type: string, enum: [partners, must_see] } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Carte & lieux }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /places/search:
+    get:
+      tags: [Carte & lieux]
+      summary: "Recherche de lieux"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: near, in: query, schema: { type: string, example: '45.7773,3.0816' } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Carte & lieux }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /places/{id}:
+    get:
+      tags: [Carte & lieux]
+      summary: "Fiche lieu"
+      security: [{ deviceSignature: [] }, { deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: near, in: query, schema: { type: string, example: '45.7773,3.0816' } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200': { description: OK — voir docs/API.md › Carte & lieux }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /places/{id}/review:
+    put:
+      tags: [Carte & lieux]
+      summary: "Donner mon avis"
+      security: [{ deviceSignature: [], bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/DeviceToken'
+        - $ref: '#/components/parameters/Timestamp'
+        - $ref: '#/components/parameters/Nonce'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [rating], properties: { rating: { type: integer, minimum: 1, maximum: 5 }, comment: { type: [string, 'null'] } } }
+      responses:
+        '200': { description: OK — voir docs/API.md › Carte & lieux }
+        default: { description: Erreur, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+components:
+  securitySchemes:
+    deviceSignature:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: HMAC-SHA256 avec le device_secret (+ X-Device-Id, X-Device-Token, X-Timestamp, X-Nonce)
+    appSignature:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: HMAC-SHA256 avec la clé application (+ X-Key-Id, X-Device-Id, X-Timestamp, X-Nonce)
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    KeyId:
+      name: X-Key-Id
+      in: header
+      required: true
+      schema: { type: string, example: ios-2026-1 }
+    DeviceId:
+      name: X-Device-Id
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    DeviceToken:
+      name: X-Device-Token
+      in: header
+      required: true
+      schema: { type: string, maxLength: 128 }
+    Timestamp:
+      name: X-Timestamp
+      in: header
+      required: true
+      description: Secondes Unix UTC, tolérance ± 300 s
+      schema: { type: integer }
+    Nonce:
+      name: X-Nonce
+      in: header
+      required: true
+      schema: { type: string, pattern: '^[A-Za-z0-9_-]{16,64}$' }
+    Signature:
+      name: X-Signature
+      in: header
+      required: true
+      schema: { type: string, pattern: '^[a-f0-9]{64}$' }
+
+  schemas:
+    Success:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean, const: true }
+        data: {}
+        meta:
+          type: object
+          properties:
+            rewards: { $ref: '#/components/schemas/Rewards' }
+
+    Error:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: invalid_signature }
+            message: { type: string }
+            details:
+              type: object
+              additionalProperties: { type: string }
+
+    Device:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        platform: { type: string, enum: [ios, android] }
+        model: { type: [string, 'null'] }
+        os_version: { type: [string, 'null'] }
+        app_version: { type: [string, 'null'] }
+        push_enabled: { type: boolean }
+        status: { type: string, enum: [active, blocked] }
+        created_at: { type: string, format: date-time }
+
+    DeviceRegistrationResponse:
+      allOf:
+        - $ref: '#/components/schemas/Success'
+        - properties:
+            data:
+              type: object
+              properties:
+                device: { $ref: '#/components/schemas/Device' }
+                device_token: { type: string }
+                device_secret: { type: string, description: Transmis une seule fois - à stocker dans le Keychain / Keystore }
+                server_time: { type: integer }
+                signature_window: { type: integer, example: 300 }
+
+    Username:
+      type: string
+      pattern: '^(?!\.)[A-Za-z0-9_.]{3,30}(?<!\.)$'
+      example: lea_63
+
+    Neighborhood:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        name: { type: string }
+
+    Badge:
+      type: object
+      properties:
+        code: { type: string, enum: [welcome, curious, explorer, ambassador, volcano, gourmand] }
+        name: { type: string }
+        description: { type: string }
+        earned_at: { type: [string, 'null'], format: date-time }
+
+    User:
+      type: object
+      description: email, referral_code et premium_until uniquement sur le profil de l'utilisateur lui-même
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        bio: { type: [string, 'null'] }
+        neighborhood: { oneOf: [{ $ref: '#/components/schemas/Neighborhood' }, { type: 'null' }] }
+        points: { type: integer }
+        is_premium: { type: boolean }
+        badges: { type: array, items: { $ref: '#/components/schemas/Badge' } }
+        created_at: { type: string, format: date-time }
+        email: { type: string, format: email }
+        referral_code: { type: string }
+        premium_until: { type: [string, 'null'], format: date-time }
+
+    EventCategory:
+      type: object
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        icon: { type: string }
+        color: { type: string, example: '#D63A5E' }
+        count: { type: integer }
+
+    Event:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        title: { type: string }
+        category: { $ref: '#/components/schemas/EventCategory' }
+        image:
+          type: [object, 'null']
+          properties:
+            url: { type: string, format: uri }
+            caption: { type: [string, 'null'] }
+        starts_at: { type: string, format: date-time, example: '2026-10-28T19:00:00+01:00' }
+        ends_at: { type: string, format: date-time }
+        duration_minutes: { type: integer }
+        state: { type: string, enum: [upcoming, ongoing, past, cancelled] }
+        venue:
+          type: object
+          properties:
+            name: { type: string }
+            city: { type: string }
+            address: { type: [string, 'null'] }
+            latitude: { type: [number, 'null'] }
+            longitude: { type: [number, 'null'] }
+        price:
+          type: object
+          properties:
+            label: { type: [string, 'null'] }
+            min_cents: { type: [integer, 'null'] }
+            is_free: { type: boolean }
+        source: { $ref: '#/components/schemas/Source' }
+        external_url: { type: [string, 'null'] }
+        is_featured: { type: boolean }
+        participants_count: { type: integer }
+        is_favorite: { type: [boolean, 'null'], description: null si non connecté }
+        is_participating: { type: [boolean, 'null'], description: null si non connecté }
+
+    EventDetail:
+      allOf:
+        - $ref: '#/components/schemas/Event'
+        - properties:
+            description: { type: [string, 'null'] }
+            programme:
+              type: array
+              items:
+                type: object
+                properties:
+                  time: { type: string, example: '18:00' }
+                  label: { type: string }
+            notice: { type: [string, 'null'] }
+            ticket_url: { type: [string, 'null'] }
+            capacity: { type: [integer, 'null'] }
+            is_full: { type: boolean }
+            share_url: { type: string, format: uri }
+            calendar_url: { type: string }
+
+    Source:
+      type: [object, 'null']
+      description: null = contenu publié par myClermont
+      properties:
+        slug: { type: string }
+        kind: { type: string, enum: [partner, import] }
+        name: { type: string }
+        logo_url: { type: [string, 'null'] }
+        attribution: { type: [string, 'null'] }
+
+    Listing:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        transaction: { type: object, properties: { code: { type: string, enum: [rent, sale, colocation] }, label: { type: string } } }
+        property_type: { type: object, properties: { code: { type: string }, label: { type: string } } }
+        title: { type: string }
+        price:
+          type: object
+          properties:
+            cents: { type: integer }
+            period: { type: [string, 'null'], enum: [month, null] }
+            label: { type: string, example: '690 € / mois' }
+        location:
+          type: object
+          properties:
+            district: { type: [string, 'null'] }
+            city: { type: string }
+            label: { type: string }
+            neighborhood: { type: [object, 'null'] }
+        surface_m2: { type: [number, 'null'] }
+        rooms: { type: [integer, 'null'] }
+        bedrooms: { type: [integer, 'null'] }
+        furnished: { type: boolean }
+        features:
+          type: array
+          items: { type: object, properties: { code: { type: string }, label: { type: string }, icon: { type: string } } }
+        cover_url: { type: [string, 'null'] }
+        image_count: { type: integer }
+        source: { $ref: '#/components/schemas/Source' }
+        is_favorite: { type: [boolean, 'null'] }
+        published_at: { type: [string, 'null'], format: date-time }
+
+    ListingDetail:
+      allOf:
+        - $ref: '#/components/schemas/Listing'
+        - properties:
+            images: { type: array, items: { type: string } }
+            image_caption: { type: [string, 'null'] }
+            description: { type: [string, 'null'] }
+            charges: { type: [object, 'null'] }
+            floor: { type: [integer, 'null'] }
+            energy_class: { type: [string, 'null'] }
+            available_from: { type: [string, 'null'], format: date }
+            coordinates: { type: [object, 'null'] }
+            income_hint:
+              type: [object, 'null']
+              properties:
+                ratio: { type: integer }
+                monthly_cents: { type: integer }
+                label: { type: string }
+                text: { type: string }
+            notice: { type: [string, 'null'] }
+            is_active: { type: boolean }
+            contact:
+              type: object
+              properties:
+                mode: { type: string, enum: [form, external, none] }
+                url: { type: [string, 'null'] }
+                label: { type: string }
+            share_url: { type: string }
+
+    Job:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        company: { type: object, properties: { name: { type: string }, logo_url: { type: [string, 'null'] } } }
+        category: { type: object, properties: { slug: { type: string }, name: { type: string }, icon: { type: string } } }
+        contract: { type: object, properties: { code: { type: string }, label: { type: string }, color: { type: string } } }
+        work_mode: { type: object, properties: { code: { type: string }, label: { type: string }, icon: { type: string } } }
+        summary: { type: [string, 'null'] }
+        city: { type: string }
+        salary:
+          type: [object, 'null']
+          properties:
+            min_cents: { type: [integer, 'null'] }
+            max_cents: { type: [integer, 'null'] }
+            period: { type: [string, 'null'], enum: [year, month, hour, null] }
+            label: { type: string, example: '38 000–45 000 € / an' }
+        badge: { type: [string, 'null'] }
+        is_new: { type: boolean }
+        source: { $ref: '#/components/schemas/Source' }
+        is_favorite: { type: [boolean, 'null'] }
+        published_at: { type: [string, 'null'], format: date-time }
+
+    JobDetail:
+      allOf:
+        - $ref: '#/components/schemas/Job'
+        - properties:
+            images: { type: array, items: { type: string } }
+            image_caption: { type: [string, 'null'] }
+            description: { type: [string, 'null'] }
+            missions: { type: array, items: { type: string } }
+            profile: { type: [string, 'null'] }
+            start_date: { type: [string, 'null'], format: date }
+            duration: { type: [string, 'null'] }
+            notice: { type: [string, 'null'] }
+            is_active: { type: boolean }
+            apply:
+              type: object
+              properties:
+                mode: { type: string, enum: [form, external, none] }
+                url: { type: [string, 'null'] }
+                label: { type: string }
+                cv: { type: [string, 'null'], enum: [required, null] }
+                cover_letter: { type: [string, 'null'], enum: [none, optional, required, null] }
+            my_application:
+              type: [object, 'null']
+              properties:
+                id: { type: string }
+                status: { type: string, enum: [processing, sent] }
+                applied_at: { type: string, format: date-time }
+            share_url: { type: string }
+
+    Rewards:
+      type: array
+      description: Points / badges gagnés pendant la requête (présent dans meta.rewards de n'importe quelle réponse)
+      items:
+        type: object
+        properties:
+          action: { type: string }
+          points: { type: integer }
+          badges: { type: array, items: { $ref: '#/components/schemas/Badge' } }
+
+    Tokens:
+      type: object
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, const: Bearer }
+        expires_in: { type: integer, example: 900 }
+        refresh_token: { type: string }
+        refresh_expires_in: { type: integer, example: 2592000 }
+
+    SessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/Success'
+        - properties:
+            data:
+              type: object
+              properties:
+                user: { $ref: '#/components/schemas/User' }
+                tokens: { $ref: '#/components/schemas/Tokens' }
+
+  responses:
+    ParticipationState:
+      description: État de la participation
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Success'
+              - properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      is_participating: { type: boolean }
+                      participants_count: { type: integer }
+    FavoriteState:
+      description: État du favori
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Success'
+              - properties:
+                  data:
+                    type: object
+                    properties: { type: { type: string }, id: { type: string }, favorited: { type: boolean } }
+    Unauthorized:
+      description: Signature, appareil ou jeton invalide (voir error.code)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Appareil bloqué, compte désactivé ou plateforme incohérente
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Ressource déjà existante
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationFailed:
+      description: Données invalides (error.details = champ → message)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Limite de débit atteinte
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
