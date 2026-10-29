@@ -52,8 +52,8 @@ return [
 
     'routes : recherche validée, « Profiter de l\'offre » exige un compte' => function () {
         seed_device();
-        assert_same('validation_failed', app()->handle(signed_request('GET', '/v1/explore/search'))->payload['error']['code']);
-        assert_same('unauthenticated', app()->handle(signed_request('POST', '/v1/explore/offers/0e8b3c4a-1111-4222-8333-444455556666/claim'))->payload['error']['code']);
-        assert_same('unauthenticated', app()->handle(signed_request('POST', '/v1/explore/stories/0e8b3c4a-1111-4222-8333-444455556666/view'))->payload['error']['code']);
+        assert_same('validation_failed', err(app()->handle(signed_request('GET', '/v1/explore/search'))));
+        assert_same('unauthenticated', err(app()->handle(signed_request('POST', '/v1/explore/offers/0e8b3c4a-1111-4222-8333-444455556666/claim'))));
+        assert_same('unauthenticated', err(app()->handle(signed_request('POST', '/v1/explore/stories/0e8b3c4a-1111-4222-8333-444455556666/view'))));
     },
 ];

@@ -78,16 +78,16 @@ return [
     'upload : seuls les PDF sont acceptés (signature sur les octets du fichier)' => function () {
         seed_device();
         $res = app()->handle(signed_raw('POST', '/v1/documents', 'kind=cv', 'hello', 'text/plain'));
-        assert_same('unsupported_document', $res->payload['error']['code']);
+        assert_same('unsupported_document', err($res));
         $res = app()->handle(signed_raw('POST', '/v1/documents', 'kind=cv', "MZ\x90\x00 faux pdf", 'application/pdf'));
-        assert_same('unsupported_document', $res->payload['error']['code']);
+        assert_same('unsupported_document', err($res));
         $res = app()->handle(signed_raw('POST', '/v1/documents', 'kind=photo', '%PDF-1.7', 'application/pdf'));
-        assert_same('validation_failed', $res->payload['error']['code']);
+        assert_same('validation_failed', err($res));
     },
 
     'routes emploi montées' => function () {
         seed_device();
-        assert_same('job_not_found', app()->handle(signed_request('GET', '/v1/jobs/abc'))->payload['error']['code']);
-        assert_same('unauthenticated', app()->handle(signed_request('GET', '/v1/users/me/applications'))->payload['error']['code']);
+        assert_same('job_not_found', err(app()->handle(signed_request('GET', '/v1/jobs/abc'))));
+        assert_same('unauthenticated', err(app()->handle(signed_request('GET', '/v1/users/me/applications'))));
     },
 ];

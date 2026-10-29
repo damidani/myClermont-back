@@ -70,6 +70,6 @@ final class MessagingPresenter
         $d = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s.v', $value, new \DateTimeZone('UTC'))
             ?: new \DateTimeImmutable($value, new \DateTimeZone('UTC'));
 
-        return $d->format('Y-m-d\TH:i:s.v\Z');
+        return $d->format('Y-m-d\TH:i:s\Z'); // sans millisecondes : .iso8601 de Swift les refuse
     }
 }

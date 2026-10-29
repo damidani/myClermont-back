@@ -74,14 +74,14 @@ return [
         seed_device();
         foreach (['POST /v1/community/posts', 'POST /v1/media', 'PUT /v1/community/posts/0e8b3c4a-1111-4222-8333-444455556666/like'] as $route) {
             [$m, $p] = explode(' ', $route);
-            assert_same('unauthenticated', app()->handle(signed_request($m, $p, '{}'))->payload['error']['code'] ?? null, $route);
+            assert_same('unauthenticated', err(app()->handle(signed_request($m, $p, '{}'))), $route);
         }
     },
 
     'mobilité : coordonnées validées, service non configuré => 503' => function () {
         seed_device();
         $res = app()->handle(signed_request('GET', '/v1/mobility/journeys'));
-        assert_same('validation_failed', $res->payload['error']['code']);
+        assert_same('validation_failed', err($res));
 
         $req = static function (string $query) {
             $ts = (string) time();
@@ -89,14 +89,14 @@ return [
             $sig = App\Security\Signature::sign(DEVICE_SECRET, App\Security\Signature::stringToSign('GET', '/v1/mobility/journeys', $query, $ts, $nonce, DEVICE_UID, ''));
             return new App\Core\Request('GET', '/v1/mobility/journeys', $query, ['x-device-id' => DEVICE_UID, 'x-device-token' => DEVICE_TOKEN, 'x-timestamp' => $ts, 'x-nonce' => $nonce, 'x-signature' => $sig], '', '127.0.0.1');
         };
-        assert_same('from', array_key_first(app()->handle($req('from=48.85,2.35&to=45.77,3.08'))->payload['error']['details']), 'Paris hors zone');
-        assert_same('mobility_unavailable', app()->handle($req('from=45.7773,3.0816&to=45.7789,3.1001'))->payload['error']['code']);
+        assert_same('from', app()->handle($req('from=48.85,2.35&to=45.77,3.08'))->payload['error']['details']['field'], 'Paris hors zone');
+        assert_same('mobility_unavailable', err(app()->handle($req('from=45.7773,3.0816&to=45.7789,3.1001'))));
     },
 
     'mobilité : info trafic indique « non disponible » sans clé' => function () {
         seed_device();
         $res = app()->handle(signed_request('GET', '/v1/mobility/traffic'));
         assert_same(200, $res->status);
-        assert_same(false, $res->payload['meta']['available']);
+        assert_same(false, $res->payload['meta']['available'] ?? $res->payload['available'] ?? null);
     },
 ];

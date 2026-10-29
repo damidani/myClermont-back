@@ -57,6 +57,19 @@ final class Response
 
     public ?string $rawBody = null;
 
+    /** true = JSON envoyé tel quel, sans le contrat (routes de compatibilité au format historique). */
+    public bool $raw = false;
+
+    /** JSON au format exact fourni (tableau nu, clés libres) : Contract ne le transforme pas. */
+    public static function json(mixed $payload, int $status = 200): self
+    {
+        $response = new self($status, ['data' => $payload]);
+        $response->raw = true;
+        $response->payload = is_array($payload) ? $payload : ['value' => $payload];
+
+        return $response;
+    }
+
     /** JSON déjà encodé (calcul de l'ETag) : évite de l'encoder deux fois. */
     public ?string $body = null;
 

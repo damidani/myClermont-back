@@ -156,9 +156,10 @@ final class App
 
     private function finalize(Response $response): Response
     {
-        if (($response->payload['success'] ?? false) === true && Context::meta() !== []) {
+        if (!$response->raw && ($response->payload['success'] ?? false) === true && Context::meta() !== []) {
             $response->payload['meta'] = array_merge($response->payload['meta'] ?? [], Context::meta());
         }
+        Contract::apply($response);
 
         return $response
             ->withHeader('X-Content-Type-Options', 'nosniff')

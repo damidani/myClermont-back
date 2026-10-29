@@ -58,3 +58,9 @@ function signed_query(string $method, string $path, string $query, array $header
         'x-device-id' => DEVICE_UID, 'x-device-token' => DEVICE_TOKEN, 'x-timestamp' => $ts, 'x-nonce' => $nonce, 'x-signature' => $sig,
     ] + $headers, '', '127.0.0.1');
 }
+
+/** Code d'erreur détaillé (details.reason), sinon le code de la spec. */
+function err(\App\Core\Response $res): ?string
+{
+    return $res->payload['error']['details']['reason'] ?? $res->payload['error']['code'] ?? null;
+}

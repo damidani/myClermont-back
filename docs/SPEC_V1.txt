@@ -1,0 +1,1244 @@
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+MyClermont — Spécification de l'API back-
+end v1
+  ​Oct 29, 2026        · ​@Samuel
+
+
+Objet et périmètre
+Cette spécification décrit l'API REST v1 dont l'app iOS MyClermont a besoin pour
+remplacer ses données de démonstration par de vraies données, avant et après le
+lancement du 15 novembre 2026 (Android le 30 novembre). Elle est écrite à partir du code
+actuel de l'app (SwiftUI, build 16) et du site Next.js myclermont_officiel , qui sert déjà
+ /api/trafic et /evenements.json .
+
+Ce que l'API doit couvrir
+
+     Comptes : connexion, profil, préférences, suppression de compte.
+     Carte : lieux sélectionnés et partenaires, spots nature, photos, trafic, carburants
+     (proxy).
+     Sorties et événements, avec administration.
+     Clermont IA : réponse d'un modèle de langage avec des cartes cliquables.
+     Ma Ville : emploi, logement, bons plans, services, communauté, petites annonces.
+     Favoris, avis, abonnement My Clermont+, notifications push.
+
+Hors périmètre : le calcul d'itinéraire et le guidage (Apple Plans sur l'appareil), la
+recherche de lieux autour de soi (MapKit), la météo si elle reste en appel direct, le site
+vitrine.
+
+Mode d'emploi avec Claude Code
+
+ 1. Exporter ce document en Markdown et le placer dans le dépôt sous docs/API.md .
+ 2. Ajouter dans CLAUDE.md : « La spécification fait foi : docs/API.md . Toute route suit les
+     conventions de la section Architecture. Un écart = une question, pas une invention. »
+ 3. Construire lot par lot dans l'ordre du plan de livraison (dernière section). Chaque lot se
+    termine par ses tests et la mise à jour du fichier OpenAPI.
+ 4. Ne jamais modifier un contrat JSON déjà publié sans passer en /v2 : l'app en
+     production l'utilise.
+
+
+
+
+                                                                                           Page 1 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+Architecture et conventions
+Une seule API REST JSON, servie par le projet Next.js existant sous
+https://myclermont.app/api/v1 , adossée à PostgreSQL hébergé dans l'Union
+européenne.
+
+
+
+
+architecture · l'app, l'API et les services
+
+L’app n’appelle que l’API MyClermont, plus trois services gratuits sans clé ; tout ce qui
+demande une clé, un quota ou un paiement passe par le serveur.
+
+Briques proposées (à valider, voir la dernière section)
+
+
+  Brique                   Choix proposé                        Raison
+
+  Serveur                  Next.js 16, Route Handlers           Déjà en place avec
+                           ( src/app/api/v1/**/route.ts ),      src/app/api/trafic/route.ts
+                           TypeScript strict, runtime Node.js
+
+
+
+
+                                                                                          Page 2 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+  Brique                   Choix proposé                          Raison
+
+  Base                     PostgreSQL 16 managé en région UE      Relations comptes / favoris / avis,
+                           (Neon ou Supabase) + extension         recherches par distance
+                           PostGIS
+
+  Accès base               Drizzle ORM + drizzle-kit pour les     Typage strict, migrations SQL
+                           migrations                             relisibles
+
+  Validation               Zod sur chaque entrée et chaque        Un seul contrat pour l'app et les
+                           sortie, export OpenAPI 3.1             tests
+
+  Cache et                 Redis managé (Upstash)                 Cache trafic et IA, limites de débit
+  quotas
+
+  Fichiers                 Stockage compatible S3 (Cloudflare     Photos d'annonces, de posts, de
+                           R2 ou Supabase Storage), envois par    partenaires
+                           URL signée
+
+  Push                     APNs (clé .p8), FCM pour Android       Notifications et Live Activities
+
+  Tests                    Vitest + PostgreSQL de test (Docker)
+                           + tests de contrat sur les schémas
+                           Zod
+
+
+Conventions communes à toutes les routes
+
+     Chemins : ressources en anglais au pluriel ( /places , /events ), messages et libellés
+     en français, au tutoiement.
+     JSON : UTF-8, champs en camelCase, identiques aux structures Swift de l'app
+     ( ageLimit , allDay ).
+     Dates : ISO 8601 sans millisecondes, avec fuseau ( 2026-10-31T19:30:00+01:00 ou …
+     Z ). L'app décode avec la stratégie .iso8601 de Swift, qui rejette 2026-10-
+     31T18:30:00.000Z : ne jamais renvoyer Date.toISOString() tel quel.
+     Identifiants : UUID v7 pour les objets en base ; les événements gardent leur slug actuel
+     ( halloween-warhol-2026-10-31 ).
+     Géo : lat / lon en WGS84, distances en mètres. Zone servie : boîte
+     2.74,45.52,3.44,46.08 (lon/lat), la même que la carte de l'app.
+     Pagination : ?limit=20&cursor=… (limite max 50), réponse { "items": […],
+     "nextCursor": "…" | null } .
+     Authentification : Authorization: Bearer <accessToken> ; les lectures publiques
+     n'en ont pas besoin.
+     En-têtes envoyés par l'app : X-App-Version: 0.9.1 (16) , X-Platform:
+     ios|android , Accept-Language: fr-FR .
+
+
+
+                                                                                                      Page 3 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     Cache : lectures publiques en Cache-Control: public, s-maxage=…, stale-while-
+     revalidate=… ; réponses privées en no-store .
+     Versions : /v1 ne reçoit que des ajouts (nouveaux champs optionnels). Tout
+     changement cassant = /v2 .
+
+Erreurs : toujours le même corps, avec un message affichable tel quel dans l'app.
+
+   { "error": { "code": "validation_failed", "message": "Le titre doit faire au
+   moins 3 caractères.", "details": { "field": "title" } } }
+
+
+
+  HTTP           code                             Quand
+
+  400            validation_failed                Entrée refusée par Zod
+
+  401            unauthenticated                  Jeton absent ou expiré
+
+  403            forbidden                        Ressource d'un autre utilisateur, rôle insuffisant
+
+  403            plus_required                    Fonction réservée à My Clermont+
+
+  404            not_found                        Ressource inconnue ou supprimée
+
+  409            conflict                         Doublon (avis déjà publié, pseudo pris)
+
+  429            rate_limited                     Quota dépassé, avec Retry-After
+
+  503            upstream_unavailable             Service externe en panne (TomTom, Claude, flux
+                                                  carburants)
+
+
+
+
+Authentification et comptes
+La carte, les sorties et Explorer restent consultables sans compte. Un compte est
+demandé seulement pour publier (avis, posts, annonces), synchroniser ses favoris et
+s'abonner. Aujourd'hui, le profil vit sur le téléphone ( DemoAccount : nom, bio, quartier,
+avatar, favoris, notes) ; il doit migrer vers ces routes.
+
+Connexion
+
+     iOS : Sign in with Apple (répond aussi à la règle 4.8 de l'App Store, qui exige une option
+     respectueuse de la vie privée dès qu'une connexion Google est proposée).
+     Android : Google.
+     Secours : code à 6 chiffres envoyé par e-mail (lot 2).
+
+Jetons
+
+     Jeton d'accès JWT de 15 minutes, avec sub (id utilisateur) et role .
+
+
+
+                                                                                                       Page 4 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     Jeton de rafraîchissement opaque (64 octets), stocké haché en base, valable 60 jours.
+     Rotation à chaque usage. La réutilisation d'un ancien jeton révoque toute la famille.
+     L'app garde les deux jetons dans le Trousseau.
+
+Rôles : user , partner (gère la fiche d'un lieu ou ses offres), moderator , admin .
+
+
+  Méthode              Route                      Corps                         Réponse
+
+  POST                  /auth/apple               identityToken ,               AuthSession
+                                                  authorizationCode , nonce ,
+                                                  fullName?
+
+  POST                  /auth/google              idToken                       AuthSession
+
+  POST                  /auth/email/start         email                         204 (code envoyé,
+                                                                                valable 10 min)
+
+  POST                  /auth/email/verify        email , code                  AuthSession
+
+  POST                  /auth/refresh             refreshToken                  AuthSession
+
+  POST                  /auth/logout              refreshToken                  204
+
+  GET                   /me                       —                             User
+
+  PATCH                 /me                       displayName? , bio? ,         User
+                                                  neighborhood? , avatar? ,
+                                                  notificationsEnabled?
+
+  DELETE                /me                       —                             202 (suppression
+                                                                                sous 30 jours)
+
+  GET                   /me/export                —                             Archive JSON de
+                                                                                toutes les données
+                                                                                (RGPD, lot 3)
+
+
+
+
+                                                                                                  Page 5 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+   {
+       "accessToken": "eyJhbGciOi…",
+       "refreshToken": "mc_rt_9f3c…",
+       "expiresIn": 900,
+       "user": {
+           "id": "0192f0c4-7b1e-7c3a-9d41-5be2a8f0c311",
+           "displayName": "Alex Clermont",
+           "bio": "Toujours partant pour découvrir une nouvelle adresse",
+           "neighborhood": "Centre-ville",
+           "avatar": { "kind": "symbol", "value": "person.crop.circle.fill" },
+           "notificationsEnabled": true,
+           "role": "user",
+           "plus": { "active": false, "expiresAt": null },
+           "createdAt": "2026-11-13T09:12:44Z"
+       }
+   }
+
+
+Règles à tester
+
+       /auth/apple vérifie la signature du jeton avec les clés publiques d'Apple, aud =
+       com.myclermont.app , iss = https://appleid.apple.com , et le nonce (haché SHA-
+       256 côté app).
+       /auth/apple échange aussi authorizationCode contre un jeton Apple, gardé chiffré :
+       il sert à révoquer l'accès Apple lors de la suppression du compte, exigée par l'App
+       Store.
+       Apple ne transmet le nom qu'à la première connexion : fullName est enregistré
+       seulement à la création.
+       displayName : 2 à 40 caractères, unique sans tenir compte des accents ni de la casse
+       ( 409 conflict sinon). bio : 160 caractères maximum.
+       avatar : un symbole SF Symbols parmi une liste autorisée, ou { "kind": "photo",
+       "url": … } après envoi via /uploads .
+       DELETE /me désactive le compte tout de suite, révoque les jetons, puis efface les
+       données sous 30 jours. Les posts et commentaires restent visibles sous « Compte
+       supprimé ».
+
+
+Modèle de données
+28 tables PostgreSQL, en snake_case . Elles reprennent un pour un les structures Swift
+de l'app ( MapSpot , ClermontEvent , LocalJob , HousingListing , ClermontDeal ,
+ LocalService , CommunityPost , ClassifiedAd ), aujourd'hui remplies à la main ou
+stockées sur le téléphone.
+
+
+
+
+                                                                                          Page 6 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+Champs communs à toutes les tables de contenu : id (UUID v7), created_at ,
+ updated_at , status ( draft , pending , published , rejected , archived ),
+ deleted_at pour la suppression douce. Les prix sont des entiers en centimes
+( price_cents ) ; l'app reçoit en plus un libellé prêt à afficher ( priceLabel ).
+
+
+  Table                                       Champs principaux                   Relations                   Lot
+
+   users                                          display_name , bio ,            —                           1
+                                                  neighborhood , avatar_kind ,
+                                                  avatar_value , role ,
+                                                  notifications_enabled ,
+                                                  apple_sub , google_sub ,
+                                                  email , plus_expires_at
+
+   sessions                                       token_hash , family_id ,        users                       1
+                                                  device_id , expires_at ,
+                                                  revoked_at
+
+   devices                                        platform , push_token ,         users (facultatif)          1
+                                                  app_version , locale ,
+                                                  topics[]
+
+   places                                         slug , name , category ,        users (gérant)              1
+                                                  subtitle , address , geo
+                                              (PostGIS), phone , website ,
+                                               is_partner , partner_until ,
+                                               guide (JSON), nature (JSON)
+
+   place_photos                                   url , credit , source           places                      1
+                                              ( myclermont , partner ),
+                                               width , height , position
+
+   events                                         slug , title , kind , venue ,   places (facultatif)         1
+                                                  address , geo , start_at ,
+                                                  end_at , schedule , price ,
+                                                  age_limit , url , all_day ,
+                                                  summary , image_url
+
+   favorites                                      target_type , target_id (clé    users                       1
+                                              unique avec user_id )
+
+   reviews                                        rating (1 à 5), text (1 000     users , places ; unique     2
+                                              caractères max)                     ( user_id , place_id )
+
+   reports                                        target_type , target_id ,       users                       2
+                                                  reason , resolution
+
+
+
+
+                                                                                                            Page 7 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+  Table                                       Champs principaux                    Relations               Lot
+
+   user_blocks                                    blocked_user_id                  users                   2
+
+   uploads                                        key , mime , size_bytes ,        users                   2
+                                                  purpose , confirmed_at
+
+   jobs                                           title , company , location ,     users (émetteur)        2
+                                                  salary_label , contract ,
+                                                  work_mode , icon , summary ,
+                                                  description , apply_email ,
+                                                  expires_at
+
+   job_applications                               full_name , email , phone ,      jobs , users            2
+                                                  cv_upload_id , message           (facultatif)
+
+   housing_listings                               title , district , type ,        users (émetteur)        2
+                                                  price_cents , surface_m2 ,
+                                                  rooms , bedrooms , furnished ,
+                                                  features[] , description ,
+                                                  geo (approximative)
+
+   housing_contacts                               name , email , phone , message   housing_listings        2
+
+   deals                                          title , area , category ,        places (commerçant)     2
+                                                  original_cents ,
+                                                  reduced_cents ,
+                                                  discount_label ,
+                                                  exclusive_plus , image_url ,
+                                                  description , conditions ,
+                                                  starts_at , expires_at ,
+                                                  max_redemptions
+
+   deal_redemptions                               code , redeemed_at ,             deals , users           2
+                                                  validated_at
+
+   services                                       name , category , district ,     users (prestataire)     2
+                                                  icon , description ,
+                                                  specialties[] , hours ,
+                                                  price_label , geo , phone ,
+                                                  email
+
+   service_requests                               name , email , phone , message   services                2
+
+   community_posts                                kind , text , neighborhood ,     users                   2
+                                                  media[] , poll_options[] ,
+                                                  likes_count , comments_count
+
+
+
+
+                                                                                                         Page 8 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+  Table                                       Champs principaux                    Relations             Lot
+
+   community_comments                             message                          community_posts ,     2
+                                                                                   users
+
+   community_likes                            clé ( post_id , user_id )            community_posts ,     2
+                                                                                   users
+
+   community_votes                                option_index , clé ( post_id ,   community_posts ,     2
+                                                  user_id )                        users
+
+   classified_ads                                 title , category ,               users (vendeur)       2
+                                                  price_cents (0 = don),
+                                                  district , description ,
+                                                  condition , images[] (6 max)
+
+   conversations ,                                body , read_at                   classified_ads ,      3
+   messages                                                                        users
+
+   subscriptions                                  original_transaction_id ,        users                 3
+                                                  product_id , status ,
+                                                  expires_at , environment
+
+   ai_usage                                       day , questions , tokens_in ,    users ou devices      3
+                                                  tokens_out
+
+
+Valeurs fermées (enums), à reprendre telles quelles côté serveur
+
+      places.category : incontournable , evenement , spot , restaurant , fastFood ,
+      cafe , boulangerie , culture , nature , sport , carburant , lieu .
+     Types de spots nature ( places.nature.kinds ) : balade , panorama , peche ,
+      baignade , piqueNique , champignons , muguet .
+
+      events.kind : soiree , concert , spectacle , expo , famille , sport , marche ,
+      festival .
+
+      jobs.contract : CDI , CDD , Alternance , Stage , Freelance ; jobs.work_mode : Sur
+     site , Hybride , Télétravail .
+      housing_listings.type : Location , Colocation , Achat .
+
+      community_posts.kind : text , poll , photos , photoCaption , video . Dans l'app
+     actuelle, les valeurs brutes sont les libellés français ( Texte , Sondage …) : l'app
+     passera aux clés anglaises.
+      classified_ads.condition : Comme neuf , Très bon état , Bon état , État
+     correct .
+     Les catégories de services (10) et d'annonces (11) sont listées dans l'app ; elles sont
+     servies par GET /meta pour pouvoir évoluer sans nouvelle version.
+
+
+
+                                                                                                       Page 9 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+Favoris : l'app enregistre aujourd'hui des clés textuelles ( spot-<id> , place-<nom> ). À la
+première connexion, elle envoie ses favoris locaux à POST /me/favorites/import , qui les
+convertit en ( target_type , target_id ).
+
+
+
+Carte : lieux, photos, trafic, carburants
+L'API ne sert que les lieux que MyClermont édite (incontournables, partenaires, spots
+nature) : les commerces autour de l'utilisateur restent cherchés sur l'appareil avec Apple
+Plans, sans coût ni quota.
+
+
+  Méthode              Route                      Paramètres             Réponse               Cache
+
+  GET                   /meta                     —                      Enums, catégories,    1h
+                                                                         quartiers, version
+                                                                         minimale de l'app,
+                                                                         drapeaux de
+                                                                         fonctions
+
+  GET                   /places                   bbox? , category? ,    { items: Place[]      10 min
+                                                  partner? ,             } (sans pagination,
+                                                  updatedSince?          2 000 lieux max)
+
+  GET                   /places/{id}              —                      PlaceDetail           10 min
+
+  GET                   /places/{id}/photos       —                      { items: Photo[]      1h
+                                                                         }
+
+  GET                   /partners                 —                      { items: [{ key,      1h
+                                                                         name, placeId,
+                                                                         until }] }
+
+  GET                   /traffic/incidents        lat , lon , r (300 à   Contrat actuel de     60 s
+                                                  6 000 m)               /api/trafic
+
+  GET                   /fuel/stations            lat , lon ,            { items:              10 min
+                                                  radiusKm (10 max),     FuelStation[],
+                                                  fuel?                  updatedAt }
+
+
+ Place : exactement les champs de MapSpot dans l'app, pour un décodage sans
+adaptation.
+
+
+
+
+                                                                                               Page 10 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+   {
+       "id": "0192f0c5-2a41-7b10-8c3e-61f0d2b9a7e4",
+       "name": "Jardin Lecoq",
+       "category": "incontournable",
+       "latitude": 45.7706,
+       "longitude": 3.0897,
+       "subtitle": "Nature · à 1,1 km de Jaude",
+       "phone": null,
+       "website": "https://clermont-ferrand.fr",
+       "isPartner": false,
+       "demoName": "Jardin Lecoq",
+       "natureKind": null
+   }
+
+
+ PlaceDetail = Place + address , guide ( tagline , facts[] , highlights[] ,
+ timeline[] pour les incontournables), nature ( kinds[] , area , highlight , summary ,
+ facts[] , propice , warning ), photos[] , rating ( average , count ), partner ( since ,
+ dealIds[] ) ou null .
+
+ Photo : { "url", "credit", "source": "myclermont" | "partner", "width",
+"height" } . Images servies en WebP ou JPEG, 1 600 px de large au plus.
+
+Compatibilité avec l'app déjà livrée (build 16)
+
+       GET /photos/manifest.json est généré à partir de place_photos , au format actuel
+       { "spots": { "<nom du lieu>": [{ "url", "credit" }] } } . Les photos
+       Wikimedia et Look Around restent ajoutées par l'app.
+       /api/trafic reste en place et devient un alias de /api/v1/traffic/incidents .
+
+       /evenements.json reste servi à partir de la table events (section suivante).
+
+Trafic (déjà codé dans src/app/api/trafic/route.ts , à déplacer tel quel)
+
+       Un seul appel TomTom Incident Details v5 pour toute la métropole ( bbox
+       2.94,45.68,3.24,45.86 ), gardé en cache TRAFFIC_CACHE_SECONDS (300 s par défaut).
+       Les anciennes données restent servies 30 minutes si TomTom ne répond plus.
+       Le filtre par distance se fait ensuite sur le serveur. Il faut la variable TOMTOM_API_KEY ,
+       sinon la route répond 503 not_configured .
+       Réponse : { source, updatedAt, radius, incidents: [{ id, kind, title,
+       detail, from, to, roads[], delay, length, magnitude, start, end, path:
+       [[lat, lon]], distance }] } .
+
+Carburants (lot 3) : l'app lit aujourd'hui en direct le flux officiel data.economie.gouv.fr .
+Le proxy met ce flux en cache 10 minutes, renvoie les prix par carburant ( gazole , e10 ,
+ sp95 , sp98 , e85 , gplc ) avec leur date de relevé, et soulage l'app quand le flux est lent.
+
+
+
+
+                                                                                            Page 11 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+Sorties et événements
+La table events remplace le fichier public/evenements.json édité à la main. Elle
+alimente la carte (repères et zones « EN COURS »), Explorer, la liste des sorties et
+Clermont IA.
+
+
+  Méthode              Route                      Accès       Paramètres ou        Réponse
+                                                              corps
+
+  GET                   /events                   Public      from? (défaut :      { items:
+                                                              maintenant), to? ,   Event[],
+                                                              kind? , bbox? ,      nextCursor }
+                                                              limit? , cursor?
+
+  GET                   /events/{id}              Public      —                    Event
+
+  GET                   /evenements.json          Public      —                    Event[] (tableau
+                                                                                   nu, format actuel,
+                                                                                   événements non
+                                                                                   terminés)
+
+  POST                  /events/submissions       Compte      EventInput           202 , statut
+                                                                                   pending
+
+  POST                  /events                   partner ,   EventInput           201 Event
+                                                  admin
+
+  PATCH                 /events/{id}              Auteur,     EventInput           Event
+                                                  admin       partiel
+
+  DELETE                /events/{id}              Auteur,     —                    204
+                                                  admin
+
+
+ Event : les champs de ClermontEvent dans l'app, plus imageUrl et placeId facultatifs.
+
+
+
+
+                                                                                                  Page 12 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+   {
+       "id": "halloween-warhol-2026-10-31",
+       "title": "Halloween Night au Warhol",
+       "kind": "soiree",
+       "venue": "Le Warhol",
+       "address": "15 avenue du Roussillon, 63170 Aubière",
+       "latitude": 45.7531,
+       "longitude": 3.1132,
+       "start": "2026-10-31T18:00:00+01:00",
+       "end": "2026-11-01T05:00:00+01:00",
+       "schedule": null,
+       "price": null,
+       "ageLimit": "25 ans et plus",
+       "url": "https://www.instagram.com/lewarhol_clermont/",
+       "allDay": false,
+     "summary": "Le bar-club d’Aubière passe en mode Halloween : on boit, on
+   mange, on danse… déguisé, jusqu’à 5 h du matin.",
+       "imageUrl": null,
+       "placeId": null
+   }
+
+
+Règles
+
+       id = slug titre-date en minuscules sans accents, généré à la création et jamais
+       modifié (l'app s'en sert pour les favoris et les repères event-<id> ).
+       kind dans la liste fermée ; start obligatoire ; end ≥ start quand il est fourni.
+       schedule (« Tous les samedis, 8 h – 13 h ») prime sur l'affichage calculé.
+       À l'enregistrement, le serveur géocode address avec la Base adresse nationale ( api-
+       adresse.data.gouv.fr , gratuite) et remplit latitude / longitude . L'app n'a plus à
+       géocoder sur le téléphone.
+       Un événement hors de la boîte de la métropole est refusé ( 400 validation_failed ,
+       champ address ).
+       Les propositions publiques ( /events/submissions ) arrivent en pending et
+       apparaissent dans le back-office ; un organisateur (Jardin Secret, Coopérative de
+       Mai…) peut recevoir le rôle partner pour publier directement.
+       Tri par défaut : événements en cours d'abord, puis par date de début. Les événements
+       terminés depuis plus de 90 jours passent en archived .
+
+
+
+
+                                                                                          Page 13 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+Clermont IA
+Une seule route, POST /assistant/answer , renvoie exactement ce que l'app affiche déjà :
+un texte, des cartes cliquables et des relances. Aujourd'hui, les réponses sont fabriquées
+sur le téléphone par AssistantEngine (mots-clés) ; ce moteur reste le secours si la route
+ne répond pas.
+
+Requête
+
+   {
+       "question": "Que faire ce soir ? Et une pharmacie sur le chemin ?",
+       "conversationId": "0192f0d1-…",
+       "screen": "map",
+       "location": { "lat": 45.775, "lon": 3.085 }
+   }
+
+
+       screen : chat ou map . Sur la carte, la réponse privilégie les lieux à épingler.
+       location est arrondie à 0,005° (environ 500 m) par l'app et facultative (place de
+       Jaude par défaut).
+       question : 500 caractères maximum.
+
+Réponse : le format de AssistantReply / AssistantCard dans l'app.
+
+   {
+       "conversationId": "0192f0d1-…",
+       "text": "Ce soir, Halloween au Grand Mess commence à 19 h 30. Je t'affiche
+   aussi les pharmacies autour de toi.",
+       "cards": [
+         { "icon": "calendar", "tone": "soiree", "kicker": "CE SOIR · 19 H 30",
+   "title": "Halloween au Grand Mess", "detail": "Grand Mess", "badge": null,
+   "isPartner": false,
+         "link": { "type": "event", "eventId": "halloween-grand-mess-2026-10-31"
+   } }
+       ],
+     "nearbySearches": [ { "query": "pharmacie", "label": "pharmacie", "icon":
+   "cross.case.fill", "limit": 4 } ],
+       "followUps": ["Que faire ce soir ?", "Où se garer près de Jaude ?"]
+   }
+
+
+       link.type reprend l'enum AssistantLink : place (avec place: Place ),
+       fuelStation (avec place ), mapFilter ( category ), nature ( kind ou null ),
+       event ( eventId ), city ( destination : jobs , housing , deals , mobility , agenda ,
+       services , community , classifieds ), explore , weather .
+
+       tone remplace les couleurs : l'app garde sa palette et choisit les dégradés (catégorie
+       de lieu, type d'événement, module de Ma Ville).
+
+
+                                                                                          Page 14 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+      nearbySearches : le serveur n'a pas accès à Apple Plans. Pour « le coiffeur le plus
+     proche », il renvoie la requête et l'app la lance avec MapKit autour de l'utilisateur, puis
+     ajoute les cartes de lieux.
+
+Fonctionnement côté serveur
+
+ 1. Appel à l'API Claude d'Anthropic (clé ANTHROPIC_API_KEY , modèle dans
+      ANTHROPIC_MODEL ), avec des outils qui lisent la base :
+
+           search_events , search_places , list_deals , list_jobs , list_housing ,
+           list_services ;
+
+           fuel_prices (flux officiel), weather (MET Norway, comme l'app) ;
+           nearby_search , qui ne cherche rien et produit une entrée de nearbySearches .
+ 2. Consigne système : français, tutoiement, 120 mots maximum, aucun fait (adresse, prix,
+     horaire) qui ne vienne d'un outil, numéros d'urgence pour toute question de santé
+     urgente.
+ 3. Les cartes sont construites par le serveur à partir des résultats des outils, jamais
+     rédigées par le modèle : un lien pointe toujours vers un objet qui existe.
+ 4. Limites de coût : max_tokens 600, cache de la consigne système, même question dans
+     la même zone servie depuis le cache pendant 10 minutes.
+
+Quotas (à valider)
+
+     Sans My Clermont+ : 1 question découverte, comme le Chat aujourd'hui, puis 403
+     plus_required .
+     Avec My Clermont+ : 100 questions par jour (usage raisonnable).
+     Dans tous les cas : 10 questions par minute au plus.
+     Le compteur est tenu par compte, ou par appareil ( devices ) sans compte.
+
+Données personnelles
+
+     Les questions sont gardées 30 jours, sans la position, pour le débogage.
+     Rien n'est réutilisé pour entraîner un modèle.
+     La mention « Un modèle de langage sera branché » de l'app sera remplacée par la vraie
+     politique.
+
+Lot 3, facultatif : réponse en flux ( Accept: text/event-stream ), avec les événements
+ delta (texte), cards , puis done .
+
+
+
+
+                                                                                          Page 15 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+Ma Ville : emploi, logement, bons plans, services, communauté,
+annonces
+Les six modules de Ma Ville sont aujourd'hui des données de démonstration (« Démo », «
+fictif ») ; chacun devient une ressource avec liste paginée, fiche et action de contact. Les
+modules Mobilité (lien T2C) et Agenda (branché sur /events ) ne demandent pas de
+nouvelle route.
+
+
+  Module                   Routes                       Objet renvoyé         Action
+                                                        (champs de l'app)
+
+  Emploi                    GET /jobs ( contract? ,     Job : id , title ,    POST /jobs/{id}/applications :
+                            workMode? , q? ), GET       company ,             fullName , email , phone? ,
+                           /jobs/{id}                   location , salary ,   cvUploadId (PDF obligatoire),
+                                                        contract ,            message?
+                                                        workMode , icon ,
+                                                        summary ,
+                                                        description ,
+                                                        publishedAt ,
+                                                        expiresAt
+
+  Logement                  GET /housing ( type? ,      Housing : id ,        POST /housing/{id}/contacts :
+                            maxPrice? , minSurface? ,   title , district ,    name , email , phone? , message
+                            rooms? , district? ), GET   price ,
+                           /housing/{id}                priceLabel ,
+                                                        surface , rooms ,
+                                                        bedrooms , type ,
+                                                        furnished ,
+                                                        images[] ,
+                                                        features[] ,
+                                                        description ,
+                                                        latitude ,
+                                                        longitude
+
+  Bons plans                GET /deals ( category? ,    Deal : id , title ,   POST /deals/{id}/redeem → {
+                            area? ), GET /deals/{id}    merchant ,            code, expiresAt, qrPayload }
+                                                        placeId , area ,
+                                                        category ,
+                                                        original ,
+                                                        reduced ,
+                                                        discount ,
+                                                        exclusive ,
+                                                        imageUrl ,
+                                                        description ,
+                                                        conditions ,
+                                                        expiresAt
+
+
+
+
+                                                                                                            Page 16 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+  Module                   Routes                      Objet renvoyé         Action
+                                                       (champs de l'app)
+
+  Services                  GET /services              Service : id ,        POST /services/{id}/requests :
+                           ( category? , q? , lat? ,   name , category ,     name , email , phone? , message
+                            lon? ), GET                district , icon ,
+                           /services/{id}              description ,
+                                                       specialties[] ,
+                                                       hours , price ,
+                                                       rating ,
+                                                       ratingCount ,
+                                                       latitude ,
+                                                       longitude
+
+  Communauté                GET /community/posts       Post : id ,           POST / DELETE
+                           ( neighborhood? ), POST     author ,              /community/posts/{id}/like , POST
+                           /community/posts ,          neighborhood ,        /community/posts/{id}/vote , GET
+                            DELETE                     createdAt , kind ,    / POST
+                           /community/posts/{id}       text , media[] ,      /community/posts/{id}/comments
+                                                       poll ( options[] ,
+                                                       votes[] , myVote ),
+                                                       likes , liked ,
+                                                       commentsCount
+
+  Petites                   GET /classifieds           Ad : id , title ,     Lot 3 : POST
+  annonces                 ( category? , district? ,   category , price ,    /classifieds/{id}/messages , GET
+                            maxPrice? , q? ), POST     priceLabel («         /conversations , GET / POST
+                           /classifieds , PATCH /      Gratuit » si 0),      /conversations/{id}/messages
+                            DELETE                     district ,
+                           /classifieds/{id}           description ,
+                                                       condition ,
+                                                       seller , images[] ,
+                                                       createdAt
+
+
+
+Envoi de fichiers (CV, photos de posts et d'annonces, vidéos)
+
+ 1. POST /uploads avec purpose ( cv , post , classified , avatar , place ), mime ,
+      sizeBytes → { uploadId, uploadUrl, expiresAt } (URL signée valable 10
+     minutes).
+ 2. L'app envoie le fichier directement au stockage ( PUT uploadUrl ).
+ 3. POST /uploads/{id}/confirm : le serveur vérifie type et taille, retire les coordonnées
+     GPS des photos, produit les tailles d'affichage.
+ 4. L'objet (post, annonce, candidature) référence ensuite l' uploadId .
+
+Limites : images JPEG, HEIC, PNG ou WebP de 10 Mo max ; CV en PDF de 5 Mo max ;
+vidéos MP4 ou MOV de 60 Mo et 60 s max ; 6 photos par annonce.
+
+Règles par module
+
+
+
+
+                                                                                                           Page 17 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     Emploi : la candidature est transmise par e-mail à jobs.apply_email (Postmark ou
+     Resend), CV en pièce jointe, avec accusé de réception au candidat. Les offres expirent
+     à expires_at (60 jours par défaut).
+     Logement : la position renvoyée est arrondie à environ 150 m pour ne pas exposer
+     l'adresse exacte. price = loyer mensuel charges comprises ( Location , Colocation )
+     ou prix de vente ( Achat ).
+     Bons plans : un code unique par utilisateur et par offre ( 409 conflict si déjà obtenu).
+     Un bon plan exclusive demande My Clermont+ ( 403 plus_required ). Le
+     commerçant valide le code sur POST /deals/redemptions/{code}/validate (rôle
+      partner ).
+     Services : rating et ratingCount viennent des avis ( reviews ) ; la demande de
+     contact part par e-mail au prestataire.
+     Communauté : texte de 1 à 2 000 caractères, sondage de 2 à 4 réponses, un vote par
+     compte, commentaire de 500 caractères max. author = { id, displayName, avatar
+     } , jamais l'e-mail.
+     Petites annonces : price en euros entiers (0 = don) ; seul le vendeur modifie ou
+     supprime son annonce ; une annonce passe en archived après 60 jours.
+     Contenu publié par les utilisateurs (avis, posts, commentaires, annonces), exigé par
+     l'App Store (règle 1.2) :
+          filtre automatique à la publication (liste de mots, liens suspects) ;
+           POST /reports ( targetType , targetId , reason ) ;
+
+           POST / DELETE /me/blocks/{userId} pour bloquer un auteur ;
+          traitement des signalements sous 24 heures dans le back-office.
+
+
+Compte : favoris, avis, My Clermont+
+Favoris et notes quittent le téléphone pour suivre le compte ; l'abonnement My Clermont+
+(2,99 € par mois, paiement désactivé dans l'app actuelle) est acheté avec StoreKit et
+vérifié par le serveur.
+
+
+  Méthode           Route                                    Corps                Réponse
+
+  GET                /me/favorites                           —                    { items: [{
+                                                                                  targetType,
+                                                                                  targetId,
+                                                                                  createdAt,
+                                                                                  preview: { title,
+                                                                                  subtitle, icon }
+                                                                                  }] }
+
+  PUT                /me/favorites/{targetType}/{targetId}   —                    204 (idempotent)
+
+
+
+
+                                                                                                Page 18 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+  Méthode           Route                                    Corps                    Réponse
+
+  DELETE             /me/favorites/{targetType}/{targetId}   —                        204
+
+  POST               /me/favorites/import                    keys[] (clés locales     { imported,
+                                                             actuelles)               skipped }
+
+  GET                /places/{id}/reviews                    cursor?                  { items: [{ id,
+                                                                                      rating, text,
+                                                                                      author, createdAt
+                                                                                      }], average,
+                                                                                      count, nextCursor
+                                                                                      }
+
+  PUT                /places/{id}/reviews/me                 rating (1 à 5), text?    Review (création
+                                                                                      ou mise à jour)
+
+  DELETE             /places/{id}/reviews/me                 —                        204
+
+  POST               /me/reviews/import                      ratings (clé locale →    { imported,
+                                                             note)                    skipped }
+
+  GET                /me/subscription                        —                        { active,
+                                                                                      productId,
+                                                                                      expiresAt,
+                                                                                      autoRenew,
+                                                                                      environment }
+
+  POST               /subscriptions/apple/verify             signedTransaction        { active,
+                                                             (JWS StoreKit 2)         productId,
+                                                                                      expiresAt,
+                                                                                      autoRenew }
+
+  POST               /webhooks/apple/app-store               signedPayload            200
+                                                             (notifications serveur
+                                                             v2)
+
+
+Favoris
+
+      targetType : place , event , deal , job , housing , service , classified .
+
+      preview évite à l'app de recharger chaque objet pour afficher la liste « Mes favoris ».
+     Les badges (Curieux, Explorateur, Ambassadeur…) restent calculés par l'app à partir
+     du nombre de favoris.
+
+Avis
+
+     Un avis par compte et par lieu. La note seule est publiée tout de suite ; un texte passe
+     par le filtre automatique, puis apparaît.
+      author = { id, displayName, avatar } .
+     La moyenne ( average , 1 décimale) et le nombre ( count ) sont recalculés à chaque
+     écriture et copiés dans PlaceDetail.rating .
+
+
+
+                                                                                                    Page 19 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+My Clermont+ (StoreKit 2)
+
+ 1. Produit à créer dans App Store Connect : com.myclermont.app.plus.monthly ,
+     abonnement auto-renouvelable d'un mois.
+ 2. L'app achète avec appAccountToken = user.id : la transaction est liée au compte.
+ 3. Après l'achat ou une restauration, l'app envoie la transaction signée à
+      /subscriptions/apple/verify .
+ 4. Le serveur vérifie la signature avec la bibliothèque officielle @apple/app-store-
+     server-library , ainsi que bundleId , productId et appAccountToken . Il met ensuite
+     à jour subscriptions et users.plus_expires_at .
+ 5. Le webhook Apple reçoit renouvellements, échecs de paiement, expirations et
+     remboursements :
+           SUBSCRIBED , DID_RENEW : abonnement actif, nouvelle date de fin ;
+           DID_FAIL_TO_RENEW , GRACE_PERIOD_EXPIRED , EXPIRED : abonnement interrompu ;
+
+           REFUND , REVOKE : accès retiré tout de suite.
+ 6. Toute route réservée (questions IA au-delà du quota, bons plans exclusifs) contrôle
+     plus_expires_at > maintenant côté serveur, jamais sur la seule parole de l'app.
+ 7. Android (Google Play Billing et notifications RTDN) suit en lot 3, avec la même table
+      subscriptions .
+
+
+
+Notifications push et Live Activity
+Le serveur envoie lui-même les notifications via APNs (et FCM pour Android). La Live
+Activity du GPS n'a besoin d'aucune route : l'app la met à jour seule pendant le trajet.
+
+
+  Méthode              Route                      Corps                      Réponse
+
+  POST                  /devices                  platform , pushToken ,     { deviceId } (mise à
+                                                  appVersion , locale ,      jour si le jeton existe
+                                                  topics[]                   déjà)
+
+  PATCH                 /devices/{id}             pushToken? , topics?       Device
+
+  DELETE                /devices/{id}             —                          204
+
+  POST                  /live-activities          pushToken (ActivityKit),   { id }
+                       (lot 3)                    kind , eventId
+
+
+      /devices fonctionne sans compte. Avec un jeton d'accès, l'appareil est rattaché au
+     compte ; notificationsEnabled = false dans le profil coupe tout.
+
+
+
+
+                                                                                                  Page 20 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     APNs en HTTP/2 avec clé .p8 : variables APNS_KEY_ID , APNS_TEAM_ID ( MQJ3CCT2BL ),
+      APNS_KEY , sujet com.myclermont.app . Un jeton refusé par Apple ( 410
+     Unregistered ) est supprimé.
+     Contenu : aps.alert ( title , body ), thread-id par thème, et deeplink
+     ( myclermont://event/<id> , myclermont://place/<id> ,
+      myclermont://community/post/<id> ). L'app doit encore gérer ce schéma d'URL.
+
+
+  Thème ( topics )                                Déclencheur                             Fréquence max        Lot
+
+   events.weekly                                  Vendredi 17 h : 3 sorties du week-end   1 par semaine        2
+
+   events.favorites                               2 h avant un événement mis en favori    1 par événement      2
+
+   deals.new                                      Nouveau bon plan publié dans la         1 par jour           2
+                                                  catégorie suivie
+
+   community.replies                              Réponse à mon post ou à mon             Regroupé par 15      2
+                                                  commentaire                             min
+
+   classifieds.messages                           Nouveau message sur une annonce         Immédiat             3
+
+   jobs.applications                              Accusé de réception de candidature      Immédiat             2
+
+
+     Aucune notification de type annonce entre 22 h et 8 h (heure de Paris) ; les réponses et
+     messages, eux, partent tout de suite.
+     Live Activity d'événement (lot 3, facultatif) : « ça commence dans 30 min », mise à jour
+     par push apns-push-type: liveactivity , sujet com.myclermont.app.push-
+     type.liveactivity . Le GPS, lui, reste mis à jour par l'app.
+
+
+
+Back-office, sécurité, RGPD et quotas
+L'équipe doit pouvoir publier des lieux, photos, sorties et offres sans développeur, et
+traiter les signalements sous 24 heures ; tout passe par les mêmes routes, sous
+ /api/v1/admin , réservées aux rôles moderator et admin .
+
+Back-office
+
+     Lot 1 : saisie des lieux, photos et événements dans l'éditeur de tables de l'hébergeur
+     (Supabase Studio ou Drizzle Studio). Pas d'écran à coder.
+     Lot 2 : pages /admin dans le site Next.js, protégées par la même connexion :
+          file de modération (signalements, avis et posts filtrés, propositions d'événements) ;
+          gestion des comptes (bannir, donner le rôle partner ) ;
+          envoi d'une notification à un thème.
+
+
+
+                                                                                                            Page 21 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     Espace partenaire (lot 3) : un compte partner modifie la fiche de son lieu, ses photos,
+     ses événements et ses bons plans, et valide les codes de réduction en caisse.
+     Routes d'administration : CRUD complet sur places , place_photos , events , deals ,
+      jobs , housing_listings , services . S'y ajoutent GET /admin/reports , POST
+     /admin/reports/{id}/resolve , POST /admin/users/{id}/ban , PATCH
+     /admin/users/{id}/role et POST /admin/push .
+
+Sécurité
+
+     HTTPS seulement (HSTS) ; secrets uniquement dans les variables d'environnement du
+     serveur, jamais dans l'app : DATABASE_URL , JWT_SIGNING_KEY , APPLE_* ,
+      GOOGLE_CLIENT_ID , TOMTOM_API_KEY , ANTHROPIC_API_KEY , APNS_* , S3_* ,
+      UPSTASH_* , MAIL_API_KEY .
+     Chaque route qui modifie un objet vérifie l'auteur ou le rôle dans une fonction
+     commune ( assertCanEdit ), testée une fois pour toutes.
+     Les schémas Zod de sortie retirent tout champ non prévu (e-mails, jetons,
+      apple_sub ).
+     Journaux en JSON avec un X-Request-Id , sans jeton, e-mail ni position. Erreurs
+     suivies dans Sentry.
+      GET /health renvoie { status, db, redis, version } pour la surveillance de
+     disponibilité.
+     Sauvegardes quotidiennes de la base, restauration à la minute près sur 7 jours.
+
+
+  Limite de débit                                 Valeur
+
+  Lectures publiques, par adresse IP              120 requêtes / min
+
+  Routes /auth/* , par adresse IP                 10 / min
+
+  Clermont IA                                     10 / min, puis quotas de la section Clermont
+                                                  IA
+
+  Publications (posts, annonces, avis), par       10 / heure
+  compte
+
+  Envois de fichiers, par compte                  30 / heure
+
+  Signalements, par compte                        20 / jour
+
+
+RGPD
+
+     Données hébergées dans l'UE. Un accord de traitement est signé avec chaque sous-
+     traitant : hébergeur, Anthropic, TomTom, service d'e-mail, Upstash.
+
+
+
+
+                                                                                        Page 22 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     La position de l'utilisateur n'est jamais enregistrée : elle sert au calcul de la réponse
+     puis disparaît.
+     Durées de conservation :
+          questions IA : 30 jours ;
+          candidatures et demandes de contact : 6 mois ;
+          journaux : 30 jours ;
+          comptes supprimés : effacés sous 30 jours.
+     Droits : accès et portabilité ( /me/export ), rectification ( PATCH /me ), effacement
+     ( DELETE /me ).
+     À mettre à jour avant le lot 2 : politique de confidentialité du site et étiquettes de
+     confidentialité de l'App Store. Données liées à l'utilisateur : coordonnées, contenu
+     publié, identifiants, achats.
+
+
+Plan de livraison et décisions à valider
+Trois lots, chacun utilisable seul : l'app actuelle continue de fonctionner pendant toute la
+construction grâce aux routes de compatibilité ( /evenements.json ,
+ /photos/manifest.json , /api/trafic ).
+
+
+
+
+feuille de route · 3 lots, 2 feux verts
+
+Le lot 1 suffit pour que l'app lise lieux et sorties depuis l'API et synchronise les comptes ;
+les lots 2 et 3 ajoutent les contenus publiés par les utilisateurs, puis l'argent.
+
+Critères d'acceptation, pour chaque route
+
+     Schémas Zod d'entrée et de sortie, exportés dans openapi.json
+     Tests Vitest : succès, 400 , 401 ou 403 , 404 , 429
+
+
+
+
+                                                                                          Page 23 of 24
+MyClermont — Spécification de l'API back-end v1
+
+
+
+
+     Un exemple de réponse réelle enregistré dans fixtures/<route>.json , décodé sans
+     erreur par un test unitaire Swift côté app (dates sans millisecondes, champs
+     optionnels à null )
+     Temps de réponse p95 sous 300 ms en cache et sous 800 ms sans cache, mesuré sur
+     100 appels
+     Aucun champ privé dans la réponse (e-mail, jeton, identifiant Apple ou Google)
+     Section correspondante de ce document mise à jour si le contrat a changé
+
+Décisions à valider avant le lot 1
+
+
+  Décision                                Proposition de ce document        Autre option
+
+  Serveur                                 Routes Next.js du site existant   Service séparé (Fastify ou
+                                                                            NestJS) hébergé en France
+
+  Base                                    Supabase, région UE (base,        Neon + Cloudflare R2
+                                          stockage et éditeur de tables
+                                          réunis)
+
+  Connexion                               Apple, Google, code par e-mail    Apple et Google seulement
+
+  Quota IA sans                           1 question découverte, comme le   3 questions par jour
+  abonnement                              Chat
+
+  Modèle Claude                           Modèle intermédiaire (bon         Modèle le plus léger pour
+                                          rapport qualité-coût)             réduire le coût
+
+  Publication                             Immédiate, filtre automatique +   Validation par un modérateur
+  communauté                              signalements                      avant publication
+
+  Contact sur les                         Messagerie dans l'app (lot 3)     E-mail relayé par le serveur dès
+  annonces                                                                  le lot 2
+
+
+
+
+                                                                                                        Page 24 of 24
+

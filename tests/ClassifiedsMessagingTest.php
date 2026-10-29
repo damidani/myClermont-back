@@ -53,7 +53,7 @@ return [
     },
 
     'messagerie : dates à la milliseconde, message système' => function () {
-        assert_same('2026-10-28T00:21:05.123Z', MessagingPresenter::date('2026-10-28 00:21:05.123'));
+        assert_same('2026-10-28T00:21:05Z', MessagingPresenter::date('2026-10-28 00:21:05.123'));
         $m = MessagingPresenter::message(['id' => 5, 'uid' => 'u', 'client_id' => null, 'sender_id' => null, 'body' => 'Annonce vendue', 'has_link' => 0, 'created_at' => '2026-10-28 00:21:05.000'], 1);
         assert_same(['system', false, null], [$m['type'], $m['is_mine'], $m['sender_id']]);
     },
@@ -62,8 +62,8 @@ return [
         seed_device();
         foreach (['GET /v1/conversations', 'GET /v1/conversations/unread-count', 'POST /v1/classifieds', 'POST /v1/classifieds/1b2c3d4e-aaaa-4bbb-8ccc-ddddeeeeffff/contact'] as $route) {
             [$m, $p] = explode(' ', $route);
-            assert_same('unauthenticated', app()->handle(signed_request($m, $p, '{}'))->payload['error']['code'] ?? null, $route);
+            assert_same('unauthenticated', err(app()->handle(signed_request($m, $p, '{}'))), $route);
         }
-        assert_same('classified_not_found', app()->handle(signed_request('GET', '/v1/classifieds/pas-un-id'))->payload['error']['code']);
+        assert_same('classified_not_found', err(app()->handle(signed_request('GET', '/v1/classifieds/pas-un-id'))));
     },
 ];

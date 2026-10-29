@@ -68,18 +68,18 @@ return [
     'participation : connexion obligatoire' => function () {
         seed_device();
         $res = app()->handle(signed_request('PUT', '/v1/events/0e8b3c4a-1111-4222-8333-444455556666/participation'));
-        assert_same('unauthenticated', $res->payload['error']['code']);
+        assert_same('unauthenticated', err($res));
     },
 
     'auth:optional refuse un jeton invalide' => function () {
         seed_device();
         $res = app()->handle(signed_request('GET', '/v1/events/' . str_repeat('a', 130), '', ['headers' => ['authorization' => 'Bearer faux']]));
-        assert_same('invalid_token', $res->payload['error']['code']);
+        assert_same('invalid_token', err($res));
     },
 
     'identifiant malformé => 404 sans requête SQL' => function () {
         seed_device();
         $res = app()->handle(signed_request('GET', '/v1/events/' . str_repeat('a', 130)));
-        assert_same('event_not_found', $res->payload['error']['code']);
+        assert_same('event_not_found', err($res));
     },
 ];

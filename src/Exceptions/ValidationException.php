@@ -11,6 +11,7 @@ final class ValidationException extends HttpException
      */
     public function __construct(array $errors)
     {
-        parent::__construct(422, 'validation_failed', 'Les données envoyées sont invalides.', $errors);
+        // Le premier message est affichable tel quel dans l'app (spec : « Le titre doit faire au moins 3 caractères. »)
+        parent::__construct(400, 'validation_failed', (string) (reset($errors) ?: 'Les données envoyées sont invalides.'), $errors);
     }
 }

@@ -64,7 +64,7 @@ return [
         foreach (['GET /v1/badges', 'GET /v1/users/me/points', 'GET /v1/users/me/favorites', 'GET /v1/users/me/premium'] as $route) {
             [$method, $path] = explode(' ', $route);
             $res = app()->handle(signed_request($method, $path));
-            assert_same('unauthenticated', $res->payload['error']['code'] ?? null, $route);
+            assert_same('unauthenticated', err($res) ?? null, $route);
         }
     },
 
@@ -75,8 +75,8 @@ return [
         });
         $jwt = Jwt::encode(['iss' => 'test', 'sub' => '1', 'did' => DEVICE_UID, 'typ' => 'access', 'exp' => time() + 60]);
         $res = app()->handle(signed_request('PUT', '/v1/users/me/favorites/unicorn/42', '', ['headers' => ['authorization' => 'Bearer ' . $jwt]]));
-        assert_same(422, $res->status);
-        assert_true(str_contains($res->payload['error']['details']['type'], 'place'));
+        assert_same(400, $res->status);
+        assert_true(str_contains($res->payload['error']['details']['fields']['type'], 'place'));
         FavoriteTypes::reset();
     },
 ];
