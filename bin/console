@@ -205,6 +205,17 @@ switch ($command) {
         $out("Notifications mises en file — week-end : {$r['weekly']}, rappels : {$r['favorites']}, bons plans : {$r['deals']}");
         break;
 
+    case 'rgpd:purge':
+        // Spec v1 › RGPD : questions IA 30 jours, candidatures et demandes de contact 6 mois
+        $n = Database::execute('DELETE FROM ai_questions WHERE created_at < :d', ['d' => gmdate('Y-m-d H:i:s', time() - 30 * 86400)]);
+        $old = gmdate('Y-m-d H:i:s', time() - 182 * 86400);
+        foreach (['job_applications', 'housing_contact_requests', 'service_quote_requests'] as $t) {
+            $n += Database::execute("DELETE FROM {$t} WHERE created_at < :d", ['d' => $old]);
+        }
+        Database::execute('DELETE FROM push_sent_keys WHERE created_at < :d', ['d' => gmdate('Y-m-d H:i:s', time() - 30 * 86400)]);
+        $out("Données effacées (durées de conservation) : {$n}");
+        break;
+
     case 'uploads:purge':
         $out('Envois non confirmés supprimés : ' . \App\Content\Uploads\UploadController::purge());
         break;

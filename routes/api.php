@@ -39,6 +39,9 @@ return static function (Router $router, array $modules): void {
         // --- Enregistrement d'appareil (clé application) -----------------
         $r->post('/devices/register', [DeviceController::class, 'register'], ['throttle:register,ip', 'app.signature']);
 
+        // --- Notifications serveur de l'App Store (appelées par Apple : vérifiées par leur signature JWS) ---
+        $r->post('/webhooks/apple/app-store', [App\Modules\Subscriptions\SubscriptionsModule::class, 'webhook'], ['throttle:public,ip']);
+
         // --- Envoi direct d'un fichier sur l'URL signée (jeton dans l'URL, valable 10 min) ---
         $r->put('/uploads/{id}/blob', [App\Content\Uploads\UploadController::class, 'receive'], ['throttle:upload,ip']);
 

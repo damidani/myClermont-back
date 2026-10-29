@@ -1,0 +1,114 @@
+{
+    "items": [
+        {
+            "id": "d045a91b-fa20-44fd-a11c-c09199c2f7ff",
+            "author": {
+                "id": "b278efc6-943a-4c36-a827-d09e71f2f75a",
+                "displayName": "Orga",
+                "avatar": {
+                    "kind": "symbol",
+                    "value": "person.crop.circle.fill"
+                }
+            },
+            "neighborhood": null,
+            "createdAt": "2026-10-29T20:18:29Z",
+            "kind": "text",
+            "text": "bande de connards",
+            "media": [],
+            "poll": null,
+            "likes": 0,
+            "liked": false,
+            "commentsCount": 0,
+            "mediaItems": [],
+            "isMine": false,
+            "shareUrl": "https://myclermont.fr/communaute/d045a91b-fa20-44fd-a11c-c09199c2f7ff"
+        },
+        {
+            "id": "9a791505-d9ee-4bcd-bb8b-a79a22a89cc8",
+            "author": {
+                "id": "90670b46-a638-4a77-84e7-4c25896fe432",
+                "displayName": "Thomas",
+                "avatar": {
+                    "kind": "symbol",
+                    "value": "person.crop.circle.fill"
+                }
+            },
+            "neighborhood": "Montferrand",
+            "createdAt": "2026-10-28T09:31:09Z",
+            "kind": "poll",
+            "text": "Quel type de sortie préférez-vous ce week-end ?",
+            "media": [],
+            "poll": {
+                "options": [
+                    "Concert",
+                    "Randonnée",
+                    "Restaurant"
+                ],
+                "votes": [
+                    0,
+                    0,
+                    0
+                ],
+                "myVote": null,
+                "optionIds": [
+                    1,
+                    2,
+                    3
+                ]
+            },
+            "likes": 0,
+            "liked": false,
+            "commentsCount": 0,
+            "mediaItems": [],
+            "isMine": false,
+            "shareUrl": "https://myclermont.fr/communaute/9a791505-d9ee-4bcd-bb8b-a79a22a89cc8"
+        },
+        {
+            "id": "3d6966e8-c33c-414d-a951-1c5130362250",
+            "author": {
+                "id": "92604b6b-2a97-4590-a106-8a96d96a3f89",
+                "displayName": "Camille",
+                "avatar": {
+                    "kind": "symbol",
+                    "value": "person.crop.circle.fill"
+                }
+            },
+            "neighborhood": "Centre-ville / Jaude",
+            "createdAt": "2026-10-28T09:31:09Z",
+            "kind": "text",
+            "text": "Bienvenue dans la communauté My Clermont ! Partagez vos découvertes, vos questions et vos bons plans.",
+            "media": [],
+            "poll": null,
+            "likes": 0,
+            "liked": false,
+            "commentsCount": 0,
+            "mediaItems": [],
+            "isMine": false,
+            "shareUrl": "https://myclermont.fr/communaute/3d6966e8-c33c-414d-a951-1c5130362250"
+        }
+    ],
+    "nextCursor": "1",
+    "filters": [
+        {
+            "code": "discussions",
+            "label": "Discussions",
+            "count": 2
+        },
+        {
+            "code": "polls",
+            "label": "Sondages",
+            "count": 1
+        },
+        {
+            "code": "photos",
+            "label": "Photos",
+            "count": 0
+        },
+        {
+            "code": "videos",
+            "label": "Vidéos",
+            "count": 0
+        }
+    ],
+    "allCount": 3
+}

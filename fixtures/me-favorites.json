@@ -1,0 +1,15 @@
+{
+    "items": [
+        {
+            "targetType": "deal",
+            "targetId": "c78e01b5-aa03-4a75-84ca-752453b1586d",
+            "createdAt": "2026-10-29T20:19:12Z",
+            "preview": {
+                "title": "Café offert pour un croissant acheté",
+                "subtitle": "Café de Jaude",
+                "icon": "tag.fill"
+            }
+        }
+    ],
+    "nextCursor": null
+}

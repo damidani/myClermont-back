@@ -16,7 +16,7 @@ use App\Core\Config;
  */
 final class Geocoder
 {
-    public function __construct(private readonly HttpClient $http = new HttpClient(timeout: 10, retries: 1, delayMs: 120))
+    public function __construct(private readonly HttpClient $http = new HttpClient(timeout: 6, retries: 1, delayMs: 120))
     {
     }
 

@@ -176,7 +176,7 @@ final class MapController
         return (new PlaceRepository())->pinSet()['version'];
     }
 
-    private static function columns(): string
+    public static function columns(): string
     {
         return 'p.id, p.uid, p.slug, p.name, p.demo_name, p.subtitle, p.tagline, p.latitude, p.longitude, p.phone, p.website_url, '
              . self::APP_CATEGORY . ' AS app_category_value, ' . self::PARTNER . ' AS is_partner_active, '

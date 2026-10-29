@@ -24,4 +24,7 @@ return [
     App\Modules\Deals\DealsModule::class,
     App\Modules\Notifications\NotificationsModule::class,
     App\Modules\AdminApi\AdminApiModule::class,
+    App\Modules\Fuel\FuelModule::class,
+    App\Modules\Assistant\AssistantModule::class,
+    App\Modules\Subscriptions\SubscriptionsModule::class,
 ];

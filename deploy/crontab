@@ -21,3 +21,4 @@
 50 3 * * * php /var/www/myclermont/bin/console events:maintenance > /dev/null 2>&1
 45 * * * * php /var/www/myclermont/bin/console uploads:purge > /dev/null 2>&1
 */5 * * * * php /var/www/myclermont/bin/console push:topics > /dev/null 2>&1
+10 4 * * * php /var/www/myclermont/bin/console rgpd:purge > /dev/null 2>&1

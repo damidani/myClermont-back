@@ -7,6 +7,7 @@ namespace App\Modules\Account;
 use App\Core\Module;
 use App\Core\Router;
 use App\Modules\Account\Controllers\AuthController;
+use App\Modules\Account\Controllers\ExportController;
 use App\Modules\Account\Controllers\IdentityController;
 use App\Modules\Account\Controllers\ProfileController;
 
@@ -42,6 +43,7 @@ final class AccountModule implements Module
             $r->get('/me', [IdentityController::class, 'me']);
             $r->patch('/me', [IdentityController::class, 'update']);
             $r->delete('/me', [IdentityController::class, 'delete']);
+            $r->get('/me/export', [ExportController::class, 'export'], ['throttle:contact']);
             $r->get('/users/me', [ProfileController::class, 'me']);
             $r->patch('/users/me', [ProfileController::class, 'update']);
             $r->put('/users/me/password', [ProfileController::class, 'changePassword'], ['throttle:login,ip']);

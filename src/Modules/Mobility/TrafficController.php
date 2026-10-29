@@ -86,7 +86,7 @@ final class TrafficController
 
         try {
             $fields = '{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to,length,delay,roadNumbers}}}';
-            $r = (new HttpClient(timeout: 8, retries: 1))->getJson(self::URL . '?' . http_build_query([
+            $r = (new HttpClient(timeout: 8, retries: 0))->getJson(self::URL . '?' . http_build_query([
                 'key' => $key, 'bbox' => self::BBOX, 'fields' => $fields, 'language' => 'fr-FR', 'timeValidityFilter' => 'present',
             ]));
             $data = ['fetched' => time(), 'updated_at' => gmdate('Y-m-d\TH:i:s\Z'), 'incidents' => array_values(array_filter(array_map([self::class, 'map'], (array) ($r['incidents'] ?? []))))];

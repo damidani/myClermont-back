@@ -1,0 +1,19 @@
+{
+    "id": "demo-2-concert-au-coeur-de-clermont",
+    "title": "Concert au cœur de Clermont",
+    "kind": "concert",
+    "venue": "Centre-ville",
+    "address": "Place de Jaude",
+    "latitude": 45.7772,
+    "longitude": 3.082,
+    "start": "2026-10-30T20:00:00+01:00",
+    "end": "2026-10-30T22:30:00+01:00",
+    "schedule": null,
+    "price": "À partir de 15 € · démo",
+    "ageLimit": null,
+    "url": null,
+    "allDay": false,
+    "summary": "Concert en plein air place de Jaude.",
+    "imageUrl": null,
+    "placeId": null
+}

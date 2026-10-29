@@ -127,4 +127,33 @@ return [
         $mvhd = 'mvhd' . "\0\0\0\0" . pack('N', 0) . pack('N', 0) . pack('N', 1000) . pack('N', 75000) . str_repeat("\0", 20);
         assert_same(75.0, App\Content\Uploads\ImageProcessor::videoDuration('....moov....' . $mvhd));
     },
+
+    'Clermont IA : cartes seulement pour des résultats réellement renvoyés par les outils' => function () {
+        $seen = ['event:concert-2026-11-07' => ['type' => 'event', 'slug' => 'concert-2026-11-07', 'title' => 'Concert', 'kind' => 'concert',
+                 'venue_name' => 'La Coopé', 'starts_at' => gmdate('Y-m-d H:i:s', time() + 3 * 86400)]];
+        $cards = App\Modules\Assistant\CardBuilder::cards(['event:concert-2026-11-07', 'place:inventé', 42], $seen);
+        assert_same(1, count($cards), 'référence inventée ignorée');
+        assert_same(['type' => 'event', 'event_id' => 'concert-2026-11-07'], $cards[0]['link']);
+        assert_same('concert', $cards[0]['tone']);
+    },
+
+    'Clermont IA : accroche « CE SOIR · 19 H 30 », « DEMAIN · 20 H »' => function () {
+        $tz = new DateTimeZone('Europe/Paris');
+        $now = new DateTimeImmutable('2026-10-31 10:00', $tz);
+        $utc = static fn (string $local) => (new DateTimeImmutable($local, $tz))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        assert_same('CE SOIR · 19 H 30', App\Modules\Assistant\CardBuilder::when($utc('2026-10-31 19:30'), $now));
+        assert_same('DEMAIN · 20 H', App\Modules\Assistant\CardBuilder::when($utc('2026-11-01 20:00'), $now));
+        assert_same('MER. 4 NOV. · 18 H', App\Modules\Assistant\CardBuilder::when($utc('2026-11-04 18:00'), $now));
+    },
+
+    'App Store : transaction mal signée refusée' => function () {
+        $b64 = static fn (string $s) => rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
+        $fake = $b64(json_encode(['alg' => 'ES256', 'x5c' => ['QQ==', 'QQ==', 'QQ==']])) . '.' . $b64('{"productId":"x"}') . '.' . $b64(str_repeat('a', 64));
+        try {
+            App\Modules\Subscriptions\AppleJws::verify($fake);
+            throw new LogicException('aurait dû être refusée');
+        } catch (App\Exceptions\HttpException $e) {
+            assert_same(400, $e->getCode());
+        }
+    },
 ];
