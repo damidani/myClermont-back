@@ -121,7 +121,24 @@ final class Request
             throw new HttpException(400, 'invalid_json', 'Le corps JSON doit être un objet.');
         }
 
-        return $this->json = $data;
+        return $this->json = self::snake($data);
+    }
+
+    /**
+     * Champs camelCase de l'app (spec v1 : refreshToken, maxPrice…) → snake_case attendu par les validateurs.
+     * Seules les clés de forme identifiant sont converties : une clé de données (« place-Jardin Lecoq ») reste intacte.
+     */
+    public static function snake(array $data): array
+    {
+        $out = [];
+        foreach ($data as $k => $v) {
+            if (is_string($k) && preg_match('/^[a-z][a-z0-9]*[A-Z][A-Za-z0-9]*$/', $k)) {
+                $k = strtolower((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $k));
+            }
+            $out[$k] = is_array($v) ? self::snake($v) : $v;
+        }
+
+        return $out;
     }
 
     public function input(string $key, mixed $default = null): mixed
@@ -133,7 +150,7 @@ final class Request
     public function query(): array
     {
         parse_str($this->queryString, $query);
-        return $query;
+        return self::snake($query);
     }
 
     public function param(string $name): ?string

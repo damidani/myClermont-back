@@ -49,6 +49,7 @@ final class AuthMiddleware implements Middleware
         }
 
         $request->attributes['user_id'] = (int) $claims['sub'];
+        $request->attributes['role'] = (string) ($claims['role'] ?? 'user');
 
         return $next($request);
     }

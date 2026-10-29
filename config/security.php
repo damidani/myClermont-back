@@ -24,7 +24,7 @@ foreach (array_filter(array_map('trim', explode(',', (string) Env::get('APP_SIGN
 
 [$deviceMax, $deviceWindow]     = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_DEVICE', '120,60')));
 [$registerMax, $registerWindow] = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_REGISTER', '10,3600')));
-[$loginMax, $loginWindow]       = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_LOGIN', '10,300')));
+[$loginMax, $loginWindow]       = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_LOGIN', '10,60')));
 [$contactMax, $contactWindow]   = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_CONTACT', '10,3600')));
 [$uploadMax, $uploadWindow]     = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_UPLOAD', '20,3600')));
 [$postMax, $postWindow]         = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_POST', '10,3600')));
@@ -47,7 +47,7 @@ return [
         'secret'      => (string) Env::get('JWT_SECRET', ''),
         'issuer'      => Env::get('JWT_ISSUER', 'api.myclermont.fr'),
         'access_ttl'  => (int) Env::get('JWT_ACCESS_TTL', 900),
-        'refresh_ttl' => (int) Env::get('JWT_REFRESH_TTL', 2592000),
+        'refresh_ttl' => (int) Env::get('JWT_REFRESH_TTL', 5184000),
     ],
 
     'rate_limits' => [

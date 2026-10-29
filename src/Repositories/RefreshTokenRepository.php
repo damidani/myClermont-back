@@ -8,13 +8,13 @@ use App\Core\Database;
 
 final class RefreshTokenRepository
 {
-    public function create(int $userId, int $deviceId, string $tokenHash, int $expiresAt): int
+    public function create(int $userId, int $deviceId, string $tokenHash, int $expiresAt, ?string $family = null): int
     {
         return Database::insert(
-            'INSERT INTO refresh_tokens (user_id, device_id, token_hash, expires_at, created_at)
-             VALUES (:user, :device, :hash, :expires, :created)',
+            'INSERT INTO refresh_tokens (user_id, device_id, family_id, token_hash, expires_at, created_at)
+             VALUES (:user, :device, :family, :hash, :expires, :created)',
             [
-                'user' => $userId, 'device' => $deviceId, 'hash' => $tokenHash,
+                'user' => $userId, 'device' => $deviceId, 'family' => $family, 'hash' => $tokenHash,
                 'expires' => gmdate('Y-m-d H:i:s', $expiresAt), 'created' => gmdate('Y-m-d H:i:s'),
             ],
         );
@@ -23,7 +23,7 @@ final class RefreshTokenRepository
     public function findByHash(string $tokenHash): ?array
     {
         return Database::fetch(
-            'SELECT id, user_id, device_id, expires_at, revoked_at FROM refresh_tokens WHERE token_hash = :h',
+            'SELECT id, user_id, device_id, family_id, expires_at, revoked_at FROM refresh_tokens WHERE token_hash = :h',
             ['h' => $tokenHash],
         );
     }
@@ -35,6 +35,14 @@ final class RefreshTokenRepository
             'UPDATE refresh_tokens SET revoked_at = :now, replaced_by = :rep WHERE id = :id AND revoked_at IS NULL',
             ['now' => gmdate('Y-m-d H:i:s'), 'rep' => $replacedBy, 'id' => $id],
         ) > 0;
+    }
+
+    public function revokeFamily(string $family): int
+    {
+        return Database::execute(
+            'UPDATE refresh_tokens SET revoked_at = :now WHERE family_id = :f AND revoked_at IS NULL',
+            ['now' => gmdate('Y-m-d H:i:s'), 'f' => $family],
+        );
     }
 
     public function revokeForDevice(int $userId, int $deviceId): int

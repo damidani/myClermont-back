@@ -150,6 +150,91 @@ switch ($command) {
         $out('Cache de configuration supprimé.');
         break;
 
+    case 'api:call':
+        // Outil de développement : appelle l'API comme l'app (appareil enregistré, requêtes signées).
+        //   php bin/console api:call GET /v1/me [corps JSON] [--base=http://127.0.0.1] [--token=<accessToken>]
+        $method = strtoupper($positional[0] ?? $fail('Usage : php bin/console api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]'));
+        $path = (string) ($positional[1] ?? $fail('Chemin manquant'));
+        $body = (string) ($positional[2] ?? '');
+        $base = rtrim((string) ($options['base'] ?? 'http://127.0.0.1'), '/');
+        $stateFile = dirname(__DIR__) . '/storage/dev-device.json';
+        $sign = static function (string $m, string $p, string $b, string $secret, string $uid) {
+            [$path, $query] = array_pad(explode('?', $p, 2), 2, '');
+            $ts = (string) time();
+            $nonce = bin2hex(random_bytes(16));
+            return [$ts, $nonce, \App\Security\Signature::sign($secret, \App\Security\Signature::stringToSign($m, $path, $query, $ts, $nonce, $uid, $b))];
+        };
+        $http = static function (string $m, string $url, array $headers, string $b) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $m, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers,
+                                    CURLOPT_POSTFIELDS => $b === '' ? null : $b, CURLOPT_HEADER => false]);
+            $res = (string) curl_exec($ch);
+            return [(int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE), $res];
+        };
+        $state = is_file($stateFile) ? json_decode((string) file_get_contents($stateFile), true) : null;
+        if (!is_array($state) || ($state['base'] ?? null) !== $base) {
+            $keys = (array) Config::get('security.app_keys');
+            $keyId = (string) array_key_first($keys) ?: $fail('Aucune clé application (APP_SIGNING_KEYS).');
+            $uid = \App\Security\Crypto::uuid4();
+            $reg = json_encode(['platform' => $keys[$keyId]['platform'], 'model' => 'console', 'app_version' => 'dev']);
+            [$ts, $nonce, $sig] = $sign('POST', '/v1/devices/register', $reg, $keys[$keyId]['secret'], $uid);
+            [$code, $res] = $http('POST', $base . '/v1/devices/register', ['Content-Type: application/json', "X-Key-Id: {$keyId}", "X-Device-Id: {$uid}",
+                                   "X-Timestamp: {$ts}", "X-Nonce: {$nonce}", "X-Signature: {$sig}"], $reg);
+            $d = json_decode($res, true);
+            if ($code >= 300 || empty($d['deviceSecret'])) {
+                $fail("Enregistrement de l'appareil refusé ({$code}) : {$res}");
+            }
+            $state = ['base' => $base, 'uid' => $uid, 'token' => $d['deviceToken'], 'secret' => $d['deviceSecret']];
+            file_put_contents($stateFile, json_encode($state));
+            chmod($stateFile, 0600);
+        }
+        [$ts, $nonce, $sig] = $sign($method, $path, $body, $state['secret'], $state['uid']);
+        $headers = ['Content-Type: application/json', 'X-Platform: ios', "X-Device-Id: {$state['uid']}", "X-Device-Token: {$state['token']}",
+                    "X-Timestamp: {$ts}", "X-Nonce: {$nonce}", "X-Signature: {$sig}"];
+        if (isset($options['token'])) {
+            $headers[] = 'Authorization: Bearer ' . $options['token'];
+        }
+        [$code, $res] = $http($method, $base . $path, $headers, $body);
+        $out("HTTP {$code}");
+        $decoded = json_decode($res, true);
+        $out($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $res);
+        exit($code >= 400 ? 1 : 0);
+
+    case 'account:purge':
+        // Spec v1 › DELETE /me : effacement 30 jours après la demande. Le compte est anonymisé (et non supprimé)
+        // pour que ses posts et commentaires restent visibles sous « Compte supprimé ».
+        $days = (int) Config::get('auth.deletion_days', 30);
+        $rows = Database::fetchAll(
+            "SELECT id, apple_refresh_encrypted FROM users WHERE status = 'deleted' AND deleted_at < :d AND (email IS NOT NULL OR apple_sub IS NOT NULL OR google_sub IS NOT NULL OR display_name IS NOT NULL)",
+            ['d' => gmdate('Y-m-d H:i:s', time() - $days * 86400)],
+        );
+        foreach ($rows as $u) {
+            if ($u['apple_refresh_encrypted']) {
+                try {
+                    (new \App\Security\AppleClient())->revoke(\App\Security\Crypto::decrypt($u['apple_refresh_encrypted']));
+                } catch (Throwable) {
+                }
+            }
+            Database::transaction(static function () use ($u): void {
+                $id = (int) $u['id'];
+                foreach (['favorites', 'documents', 'classifieds', 'point_transactions', 'user_badges', 'user_events', 'user_stats', 'push_outbox', 'refresh_tokens', 'event_participants'] as $table) {
+                    try {
+                        Database::execute("DELETE FROM {$table} WHERE user_id = :u", ['u' => $id]);
+                    } catch (PDOException) {
+                        // table absente selon les modules activés
+                    }
+                }
+                Database::execute(
+                    "UPDATE users SET email = NULL, password_hash = NULL, display_name = NULL, bio = NULL, neighborhood_id = NULL,
+                            avatar_kind = 'symbol', avatar_value = 'person.crop.circle.fill', apple_sub = NULL, google_sub = NULL,
+                            apple_refresh_encrypted = NULL, premium_until = NULL, referral_code = NULL, points = 0, updated_at = :d WHERE id = :id",
+                    ['d' => gmdate('Y-m-d H:i:s'), 'id' => $id],
+                );
+            });
+        }
+        $out('Comptes effacés : ' . count($rows));
+        break;
+
     case 'cache:prune':
         $out('Entrées de cache expirées supprimées : ' . MysqlStore::prune());
         $out('Refresh tokens expirés supprimés : ' . RefreshTokenRepository::prune());
@@ -730,6 +815,8 @@ switch ($command) {
           places:seed-demo                 Crée des lieux de démo (fiche Place de Jaude + repères)
           source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
           import:run <slug> | import:all [--force]   Lance un import (import:all : seulement les sources dues)
+          api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]   Appel signé de l'API (outil de développement)
+          account:purge                    Efface les comptes supprimés depuis plus de 30 jours (cron quotidien)
           import:status                    État des sources importées (dernier passage, résultat)
           import:preview <slug> [n]        Affiche les n premiers éléments récupérés, sans rien enregistrer
           sign <METHOD> <path> [body] …    Génère une commande curl signée (tests)

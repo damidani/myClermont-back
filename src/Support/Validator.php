@@ -77,8 +77,8 @@ final class Validator
             'email'   => is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL) ? null : 'Adresse e-mail invalide.',
             'username' => is_string($value) && preg_match('/^(?!\.)[A-Za-z0-9_.]{3,30}(?<!\.)$/', $value) ? null : '3 à 30 caractères : lettres, chiffres, « _ » et « . ».',
             'uuid'    => is_string($value) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value) ? null : 'UUID invalide.',
-            'min'     => self::size($value) >= (int) $arg ? null : "Minimum {$arg}.",
-            'max'     => self::size($value) <= (int) $arg ? null : "Maximum {$arg}.",
+            'min'     => self::size($value) >= (int) $arg ? null : (is_string($value) ? "Au moins {$arg} caractères." : (is_array($value) ? "Au moins {$arg} éléments." : "Minimum {$arg}.")),
+            'max'     => self::size($value) <= (int) $arg ? null : (is_string($value) ? "{$arg} caractères maximum." : (is_array($value) ? "{$arg} éléments maximum." : "Maximum {$arg}.")),
             'in'      => in_array($value, explode(',', (string) $arg), true) ? null : 'Valeur non autorisée.',
             default   => throw new \LogicException("Règle de validation inconnue : {$rule}"),
         };

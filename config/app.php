@@ -28,5 +28,6 @@ return [
         'auth'          => App\Http\Middleware\AuthMiddleware::class,
         'throttle'      => App\Http\Middleware\RateLimitMiddleware::class,
         'premium'       => App\Modules\Premium\PremiumMiddleware::class,
+        'role'          => App\Http\Middleware\RoleMiddleware::class,
     ],
 ];

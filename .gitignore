@@ -12,3 +12,4 @@
 .vscode/
 .DS_Store
 .env.docker
+storage/dev-device.json
