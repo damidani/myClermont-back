@@ -14,35 +14,41 @@ use App\Core\Config;
  */
 final class JobPresenter
 {
+    /**
+     * Job de la spec v1 : id, title, company, location, salary, contract, workMode, icon, summary, description, publishedAt, expiresAt.
+     * Champs en plus (ignorés par un décodeur qui ne les connaît pas) : lien d'origine et mode de candidature, source, logo, catégorie.
+     */
     public static function card(array $j, ?bool $isFavorite = null): array
     {
         $contracts = (array) Config::get('jobs.contracts');
         $modes = (array) Config::get('jobs.work_modes');
         $publishedAt = $j['published_at'] === null ? null : strtotime($j['published_at'] . ' UTC');
+        $salary = self::salary($j);
+        $apply = self::apply($j);
 
         return [
-            'id'       => $j['uid'],
-            'title'    => $j['title'],
-            'company'  => ['name' => $j['company_name'], 'logo_url' => $j['company_logo_url']],
-            'category' => ['slug' => $j['category_slug'], 'name' => $j['category_name'], 'icon' => $j['category_icon']],
-            'contract' => [
-                'code'  => $j['contract'],
-                'label' => $contracts[$j['contract']][0] ?? $j['contract'],
-                'color' => $contracts[$j['contract']][1] ?? null,
-            ],
-            'work_mode' => [
-                'code'  => $j['work_mode'],
-                'label' => $modes[$j['work_mode']][0] ?? $j['work_mode'],
-                'icon'  => $modes[$j['work_mode']][1] ?? null,
-            ],
-            'summary'  => $j['summary'],
-            'city'     => $j['city'],
-            'salary'   => self::salary($j),
-            'badge'    => $j['badge_label'],
-            'is_new'   => $publishedAt !== null && $publishedAt > time() - (int) Config::get('jobs.new_days', 7) * 86400,
-            'source'   => ContentSources::present($j),
-            'is_favorite'  => $isFavorite,
-            'published_at' => $publishedAt === null ? null : gmdate('Y-m-d\TH:i:s\Z', $publishedAt),
+            'id'               => $j['uid'],
+            'title'            => $j['title'],
+            'company'          => $j['company_name'],
+            'location'         => $j['city'],
+            'salary'           => $salary['label'] ?? null,
+            'contract'         => $contracts[$j['contract']][0] ?? $j['contract'],     // « CDI », « Alternance »…
+            'work_mode'        => $modes[$j['work_mode']][0] ?? $j['work_mode'],       // « Sur site », « Hybride », « Télétravail »
+            'icon'             => $j['category_icon'],
+            'summary'          => $j['summary'],
+            'description'      => $j['description'],
+            'published_at'     => $publishedAt === null ? null : gmdate('Y-m-d\TH:i:s\Z', $publishedAt),
+            'expires_at'       => $j['expires_at'] === null ? null : gmdate('Y-m-d\TH:i:s\Z', strtotime($j['expires_at'] . ' UTC')),
+            // En plus de la spec
+            'category'         => $j['category_slug'],
+            'company_logo_url' => $j['company_logo_url'],
+            'salary_range'     => $salary === null ? null : ['min_cents' => $salary['min_cents'], 'max_cents' => $salary['max_cents'], 'period' => $salary['period']],
+            'is_new'           => $publishedAt !== null && $publishedAt > time() - (int) Config::get('jobs.new_days', 7) * 86400,
+            'badge'            => $j['badge_label'],
+            'apply_mode'       => $apply['mode'],          // form (formulaire My Clermont) | external (ouvrir applyUrl) | none
+            'apply_url'        => $apply['url'],           // offre d'origine (France Travail, Adzuna, site du recruteur…)
+            'source'           => ContentSources::present($j),
+            'is_favorite'      => $isFavorite,
         ];
     }
 
@@ -53,16 +59,14 @@ final class JobPresenter
         return self::card($j, $isFavorite) + [
             'images'         => $images,
             'image_caption'  => $j['image_caption'],
-            'description'    => $j['description'],
             'missions'       => array_values(array_filter($missions, 'is_string')),
             'profile'        => $j['profile'],
             'start_date'     => $j['start_date'],
             'duration'       => $j['duration_label'],
-            'coordinates'    => $j['latitude'] === null ? null : ['latitude' => (float) $j['latitude'], 'longitude' => (float) $j['longitude']],
+            'latitude'       => $j['latitude'] === null ? null : (float) $j['latitude'],
+            'longitude'      => $j['longitude'] === null ? null : (float) $j['longitude'],
             'notice'         => $j['notice'],
-            'is_active'      => $j['status'] === 'published',
-            'apply'          => self::apply($j),
-            // Déjà postulé depuis cet appareil / ce compte ?
+            'cover_letter'   => $j['cover_letter_mode'],
             'my_application' => $application,
             'share_url'      => str_replace('{id}', $j['uid'], (string) Config::get('jobs.share_url')),
         ];

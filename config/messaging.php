@@ -12,5 +12,8 @@ return [
      * Envoi des notifications push. Pilote "log" : écrit dans storage/logs (développement).
      * Pour la production, implémenter App\Modules\Messaging\Push\PushSender (APNs / FCM) et l'indiquer ici.
      */
-    'push_sender' => App\Modules\Messaging\Push\LogPushSender::class,
+    // Envoi réel APNs / FCM dès que les clés sont configurées (config/push.php), sinon simple trace dans les logs
+    'push_sender' => App\Core\Env::get('APNS_KEY', '') !== '' || App\Core\Env::get('FCM_SERVICE_ACCOUNT', '') !== ''
+        ? App\Modules\Messaging\Push\NativePushSender::class
+        : App\Modules\Messaging\Push\LogPushSender::class,
 ];

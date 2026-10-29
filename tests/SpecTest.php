@@ -104,4 +104,27 @@ return [
         }
         assert_same(401, app()->handle(signed_request('GET', '/v1/me'))->status);
     },
+
+    'filtre automatique : insultes (accords), liens suspects, texte normal accepté' => function () {
+        assert_same('words', App\Modules\Moderation\ContentFilter::check('bande de connards'));
+        assert_same('words', App\Modules\Moderation\ContentFilter::check('Espèce de C0NNARD'));
+        assert_same('links', App\Modules\Moderation\ContentFilter::check('Très sympa, allez-y via bit.ly/xyz'));
+        assert_same('links', App\Modules\Moderation\ContentFilter::check('Voir http://192.168.1.4/promo'));
+        assert_same(null, App\Modules\Moderation\ContentFilter::check('Super concert à la Coopé, infos sur https://www.lacoope.org'));
+        assert_same(null, App\Modules\Moderation\ContentFilter::check('Il y a une connexion wifi ? Je passe à Pascal'));
+    },
+
+    'notifications : pas d\'annonce entre 22 h et 8 h' => function () {
+        $paris = new DateTimeZone('Europe/Paris');
+        $at = static fn (string $d) => (new DateTimeImmutable($d, $paris))->getTimestamp();
+        assert_same($at('2026-11-07 08:00'), App\Modules\Messaging\Push\Push::afterQuietHours($at('2026-11-06 23:15')));
+        assert_same($at('2026-11-07 08:00'), App\Modules\Messaging\Push\Push::afterQuietHours($at('2026-11-07 06:30')));
+        assert_same($at('2026-11-07 17:00'), App\Modules\Messaging\Push\Push::afterQuietHours($at('2026-11-07 17:00')));
+    },
+
+    'vidéo : durée lue dans l\'en-tête MP4' => function () {
+        // atome mvhd version 0 : timescale 1000, durée 75 000 → 75 s
+        $mvhd = 'mvhd' . "\0\0\0\0" . pack('N', 0) . pack('N', 0) . pack('N', 1000) . pack('N', 75000) . str_repeat("\0", 20);
+        assert_same(75.0, App\Content\Uploads\ImageProcessor::videoDuration('....moov....' . $mvhd));
+    },
 ];

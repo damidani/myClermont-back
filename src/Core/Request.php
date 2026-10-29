@@ -49,7 +49,8 @@ final class Request
         // Les envois de fichiers (PDF) ont leur propre limite, plus haute
         $maxBody = match (true) {
             str_starts_with($path, '/v1/documents') => (int) Config::get('app.max_upload_size', 5242880),
-            str_starts_with($path, '/v1/media')     => (int) Config::get('app.max_media_size', 52428800),
+            str_starts_with($path, '/v1/media')     => (int) Config::get('app.max_media_size', 62914560),
+            (bool) preg_match('#^(/api)?/v1/uploads/[^/]+/blob$#', $path) => (int) Config::get('app.max_media_size', 62914560),
             default                                 => (int) Config::get('app.max_body_size', 1048576),
         };
         if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBody) {

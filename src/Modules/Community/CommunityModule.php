@@ -36,6 +36,9 @@ final class CommunityModule implements Module
             $r->put('/community/posts/{id}/like', [CommunityController::class, 'like']);
             $r->delete('/community/posts/{id}/like', [CommunityController::class, 'unlike']);
             $r->put('/community/posts/{id}/vote', [CommunityController::class, 'vote']);
+            // Spec v1 : POST pour aimer et voter
+            $r->post('/community/posts/{id}/like', [CommunityController::class, 'like']);
+            $r->post('/community/posts/{id}/vote', [CommunityController::class, 'vote']);
             $r->post('/community/posts/{id}/comments', [CommunityController::class, 'addComment'], ['throttle:comment,device']);
             $r->delete('/community/comments/{id}', [CommunityController::class, 'deleteComment']);
             $r->post('/community/posts/{id}/report', [CommunityController::class, 'report']);

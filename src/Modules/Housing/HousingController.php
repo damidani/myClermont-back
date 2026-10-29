@@ -171,6 +171,10 @@ final class HousingController
     private function filters(array $q): array
     {
         $errors = [];
+        // Spec v1 : type = « Location » | « Colocation » | « Achat »
+        if (isset($q['type']) && is_string($q['type']) && !isset($q['transaction'])) {
+            $q['transaction'] = array_search(mb_strtolower($q['type']), array_map('mb_strtolower', (array) Config::get('housing.transactions')), true) ?: $q['type'];
+        }
         $tx = isset($q['transaction']) && $q['transaction'] !== '' ? (string) $q['transaction'] : null;
         if ($tx !== null && !array_key_exists($tx, (array) Config::get('housing.transactions'))) {
             $errors['transaction'] = 'Valeur inconnue.';
@@ -197,7 +201,9 @@ final class HousingController
             'property_type'   => $type,
             'furnished'       => ($q['furnished'] ?? '') === '1',
             'max_price_cents' => isset($q['max_price']) && (int) $q['max_price'] > 0 ? (int) $q['max_price'] * 100 : null,
-            'min_rooms'       => isset($q['min_rooms']) && (int) $q['min_rooms'] > 0 ? (int) $q['min_rooms'] : null,
+            'min_rooms'       => (int) ($q['min_rooms'] ?? $q['rooms'] ?? 0) > 0 ? (int) ($q['min_rooms'] ?? $q['rooms']) : null,
+            'min_surface'     => isset($q['min_surface']) && (float) $q['min_surface'] > 0 ? (float) $q['min_surface'] : null,
+            'district'        => isset($q['district']) && $q['district'] !== '' ? mb_substr((string) $q['district'], 0, 100) : null,
             'neighborhood_id' => isset($q['neighborhood_id']) ? (int) $q['neighborhood_id'] : null,
             'q'               => isset($q['q']) ? mb_substr(trim((string) $q['q']), 0, 100) : null,
             'bbox'            => $bbox,

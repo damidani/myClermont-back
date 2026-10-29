@@ -9,9 +9,10 @@ return [
     'debug'         => (bool) Env::get('APP_DEBUG', false),
     'timezone'      => Env::get('APP_TIMEZONE', 'UTC'),
     'key'           => Env::get('APP_KEY', ''),
+    'url'           => rtrim((string) Env::get('APP_URL', 'https://api.myclermont.fr'), '/'),   // adresse publique de l'API (URL d'envoi des fichiers)
     'max_body_size' => (int) Env::get('MAX_BODY_SIZE', 1048576),
     'max_upload_size' => (int) Env::get('MAX_UPLOAD_SIZE', 5242880),
-    'max_media_size'  => (int) Env::get('MAX_MEDIA_SIZE', 52428800),
+    'max_media_size'  => (int) Env::get('MAX_MEDIA_SIZE', 62914560),   // vidéos : 60 Mo (spec v1)
     // URL publique des médias (photos / vidéos de la communauté), servis directement par Nginx
     'media_base_url'  => rtrim((string) Env::get('MEDIA_BASE_URL', 'https://api.myclermont.fr/media'), '/'),
     'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('TRUSTED_PROXIES', ''))))),

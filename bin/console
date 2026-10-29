@@ -200,6 +200,15 @@ switch ($command) {
         $out($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $res);
         exit($code >= 400 ? 1 : 0);
 
+    case 'push:topics':
+        $r = (new \App\Modules\Notifications\TopicScheduler())->run();
+        $out("Notifications mises en file — week-end : {$r['weekly']}, rappels : {$r['favorites']}, bons plans : {$r['deals']}");
+        break;
+
+    case 'uploads:purge':
+        $out('Envois non confirmés supprimés : ' . \App\Content\Uploads\UploadController::purge());
+        break;
+
     case 'events:maintenance':
         // Spec v1 : les événements terminés depuis plus de 90 jours passent en archived
         $n = Database::execute(

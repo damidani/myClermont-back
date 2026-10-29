@@ -19,3 +19,5 @@
 # Comptes supprimés depuis 30 jours : effacement (spec v1 › DELETE /me)
 20 4 * * * php /var/www/myclermont/bin/console account:purge > /dev/null 2>&1
 50 3 * * * php /var/www/myclermont/bin/console events:maintenance > /dev/null 2>&1
+45 * * * * php /var/www/myclermont/bin/console uploads:purge > /dev/null 2>&1
+*/5 * * * * php /var/www/myclermont/bin/console push:topics > /dev/null 2>&1

@@ -24,6 +24,7 @@ final class MediaStore
     private const TYPES = [
         'image/jpeg'      => ['image', 'jpg'],
         'image/png'       => ['image', 'png'],
+        'image/webp'      => ['image', 'webp'],
         'video/mp4'       => ['video', 'mp4'],
         'video/quicktime' => ['video', 'mov'],
     ];
@@ -38,10 +39,10 @@ final class MediaStore
         return Config::get('app.media_base_url') . '/' . $path;
     }
 
-    public function store(string $bytes, array $device, ?int $userId): array
+    public function store(string $bytes, array $device, ?int $userId, ?string $uid = null): array
     {
         $mime = self::detect($bytes)
-            ?? throw new HttpException(415, 'unsupported_media', 'Formats acceptés : JPEG, PNG, MP4, MOV.');
+            ?? throw new HttpException(415, 'unsupported_media', 'Formats acceptés : JPEG, PNG, WebP, MP4, MOV.');
         [$kind, $ext] = self::TYPES[$mime];
 
         $maxImage = (int) Config::get('community.media.max_image_bytes', 10485760);
@@ -51,7 +52,11 @@ final class MediaStore
 
         $width = $height = null;
         if ($kind === 'image') {
-            $bytes = $mime === 'image/jpeg' ? self::stripJpegMetadata($bytes) : self::stripPngMetadata($bytes);
+            $bytes = match ($mime) {
+                'image/jpeg' => self::stripJpegMetadata($bytes),
+                'image/webp' => \App\Content\Uploads\ImageProcessor::stripWebpMetadata($bytes),
+                default      => self::stripPngMetadata($bytes),
+            };
             $info = @getimagesizefromstring($bytes);
             if ($info === false) {
                 throw new HttpException(415, 'unsupported_media', 'Image illisible.');
@@ -59,7 +64,7 @@ final class MediaStore
             [$width, $height] = $info;
         }
 
-        $uid = Crypto::uuid4();
+        $uid ??= Crypto::uuid4();
         $relative = gmdate('Y/m') . '/' . $uid . '.' . $ext;
         $absolute = self::root() . '/' . $relative;
         if (!is_dir(dirname($absolute)) && !mkdir(dirname($absolute), 0755, true) && !is_dir(dirname($absolute))) {
@@ -130,6 +135,7 @@ final class MediaStore
         return match (true) {
             str_starts_with($bytes, "\xFF\xD8\xFF")                                   => 'image/jpeg',
             str_starts_with($bytes, "\x89PNG\r\n\x1A\n")                              => 'image/png',
+            substr($bytes, 0, 4) === 'RIFF' && substr($bytes, 8, 4) === 'WEBP'        => 'image/webp',
             substr($bytes, 4, 4) === 'ftyp' && substr($bytes, 8, 2) === 'qt'          => 'video/quicktime',
             substr($bytes, 4, 4) === 'ftyp' && in_array(substr($bytes, 8, 4), ['isom', 'iso2', 'mp41', 'mp42', 'avc1', 'M4V '], true) => 'video/mp4',
             default => null,

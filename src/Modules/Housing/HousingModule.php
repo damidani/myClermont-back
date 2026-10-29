@@ -27,6 +27,7 @@ final class HousingModule implements Module
             $r->get('/housing/{id}', [HousingController::class, 'show']);
             // Sans compte possible (le formulaire demande nom + e-mail), mais limité par appareil
             $r->post('/housing/{id}/contact', [HousingController::class, 'contact'], ['throttle:contact,device']);
+            $r->post('/housing/{id}/contacts', [HousingController::class, 'contact'], ['throttle:contact,device']);   // spec v1
         });
     }
 

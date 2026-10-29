@@ -160,6 +160,15 @@ final class HousingRepository
             $where .= ' AND h.rooms >= :rooms';
             $params['rooms'] = $f['min_rooms'];
         }
+        if (!empty($f['min_surface'])) {
+            $where .= ' AND h.surface_m2 >= :minsurf';
+            $params['minsurf'] = $f['min_surface'];
+        }
+        if (!empty($f['district'])) {
+            $where .= ' AND (h.district_label = :district OR n.name = :district2)';
+            $params['district'] = $f['district'];
+            $params['district2'] = $f['district'];
+        }
         if (!empty($f['neighborhood_id'])) {
             $where .= ' AND h.neighborhood_id = :hood';
             $params['hood'] = $f['neighborhood_id'];

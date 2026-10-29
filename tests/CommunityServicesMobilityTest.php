@@ -47,13 +47,10 @@ return [
         assert_true(str_contains($clean, 'IEND'));
     },
 
-    'sondage : résultats cachés avant le vote, visibles après' => function () {
+    'sondage (spec v1) : options, votes, myVote = index de mon choix' => function () {
         $options = [['id' => 1, 'label' => 'Concert', 'votes_count' => 3], ['id' => 2, 'label' => 'Randonnée', 'votes_count' => 1]];
-        $before = PostPresenter::poll($options, null, false);
-        assert_same([null, null, false], [$before['options'][0]['votes'], $before['total_votes'], $before['results_visible']]);
-        $after = PostPresenter::poll($options, 2, false);
-        assert_same([75, 25, 4, 2], [$after['options'][0]['percent'], $after['options'][1]['percent'], $after['total_votes'], $after['voted_option_id']]);
-        assert_true(PostPresenter::poll($options, null, true)['results_visible'], 'l\'auteur voit les résultats');
+        assert_same(['options' => ['Concert', 'Randonnée'], 'votes' => [3, 1], 'my_vote' => null, 'option_ids' => [1, 2]], PostPresenter::poll($options, null, false));
+        assert_same(1, PostPresenter::poll($options, 2, false)['my_vote']);
     },
 
     'avatar : initiales et couleur stables' => function () {

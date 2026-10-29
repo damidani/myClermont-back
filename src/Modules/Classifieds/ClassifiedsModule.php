@@ -34,6 +34,7 @@ final class ClassifiedsModule implements Module
             $r->patch('/classifieds/{id}/status', [ClassifiedController::class, 'status']);
             $r->delete('/classifieds/{id}', [ClassifiedController::class, 'delete']);
             $r->post('/classifieds/{id}/contact', [ClassifiedController::class, 'contact'], ['throttle:contact,device']);
+            $r->post('/classifieds/{id}/messages', [ClassifiedController::class, 'contact'], ['throttle:contact,device']);   // spec v1 (lot 3)
             $r->post('/classifieds/{id}/report', [ClassifiedController::class, 'report']);
             $r->get('/users/me/classifieds', [ClassifiedController::class, 'mine']);
         });

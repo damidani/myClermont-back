@@ -16,30 +16,43 @@ use App\Modules\Community\PostPresenter;
  */
 final class ClassifiedPresenter
 {
-    public static function card(array $a, ?bool $isFavorite = null, ?int $viewerId = null): array
+    /** États de la spec v1 (libellés de l'app) ↔ codes internes */
+    public const CONDITION_LABELS = ['new' => 'Comme neuf', 'very_good' => 'Très bon état', 'good' => 'Bon état', 'fair' => 'État correct', 'for_parts' => 'État correct'];
+    public const CONDITION_CODES = ['Comme neuf' => 'new', 'Très bon état' => 'very_good', 'Bon état' => 'good', 'État correct' => 'fair'];
+
+    /**
+     * Ad de la spec v1 : id, title, category, price (euros entiers, 0 = don), priceLabel (« Gratuit »), district, description,
+     * condition, seller { id, displayName, avatar }, images[], createdAt.
+     */
+    public static function card(array $a, ?bool $isFavorite = null, ?int $viewerId = null, ?array $images = null): array
     {
-        $conditions = (array) Config::get('classifieds.conditions');
         $cover = $a['cover'] === null ? null : (str_starts_with($a['cover'], 'http') ? $a['cover'] : MediaStore::url($a['cover']));
+        $cents = (int) $a['price_cents'];
 
         return [
-            'id'       => $a['uid'],
-            'title'    => $a['title'],
-            'category' => ['slug' => $a['category_slug'], 'name' => $a['category_name'], 'icon' => $a['category_icon'], 'color' => $a['category_color']],
-            'price'    => [
-                'cents'   => (int) $a['price_cents'],
-                'is_free' => (bool) $a['is_free'],
-                'label'   => $a['is_free'] ? 'Gratuit' : self::priceLabel((int) $a['price_cents']),
-            ],
-            'condition' => ['code' => $a['item_condition'], 'label' => $conditions[$a['item_condition']] ?? $a['item_condition']],
-            'location'  => $a['location_label'],
-            // Pas de photo : l'app affiche l'icône de catégorie sur fond de sa couleur (comme sur les maquettes)
-            'cover_url' => $cover,
-            'status'    => $a['status'],          // active | reserved | sold | expired
-            'badge'     => $a['badge_label'],
-            'source'    => ContentSources::present($a),
-            'is_mine'   => $viewerId !== null && $a['user_id'] !== null && (int) $a['user_id'] === $viewerId,
-            'is_favorite'  => $isFavorite,
-            'published_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($a['published_at'] . ' UTC')),
+            'id'          => $a['uid'],
+            'title'       => $a['title'],
+            'category'    => $a['category_slug'],
+            'price'       => $a['is_free'] ? 0 : intdiv($cents, 100),
+            'price_label' => $a['is_free'] || $cents === 0 ? 'Gratuit' : self::priceLabel($cents),
+            'district'    => $a['location_label'],
+            'description' => $a['description'],
+            'condition'   => self::CONDITION_LABELS[$a['item_condition']] ?? $a['item_condition'],
+            'seller'      => $a['seller_uid'] === null ? null : \App\Modules\Account\Repositories\UserRepository::presentAuthor([
+                'uid' => $a['seller_uid'], 'display_name' => $a['seller_display_name'] ?? null, 'username' => $a['seller_username'],
+                'avatar_kind' => $a['seller_avatar_kind'] ?? 'symbol', 'avatar_value' => $a['seller_avatar_value'] ?? null, 'status' => $a['seller_status'] ?? 'active',
+            ]),
+            'images'      => $images ?? array_values(array_filter([$cover])),
+            'created_at'  => gmdate('Y-m-d\TH:i:s\Z', strtotime(($a['created_at'] ?? $a['published_at']) . ' UTC')),
+            // En plus de la spec
+            'category_name' => $a['category_name'],
+            'category_icon' => $a['category_icon'],
+            'category_color' => $a['category_color'],
+            'status'      => $a['status'],          // active | reserved | sold | expired
+            'badge'       => $a['badge_label'],
+            'source'      => ContentSources::present($a),
+            'is_mine'     => $viewerId !== null && $a['user_id'] !== null && (int) $a['user_id'] === $viewerId,
+            'is_favorite' => $isFavorite,
         ];
     }
 
@@ -57,14 +70,17 @@ final class ClassifiedPresenter
             default                                      => ['mode' => 'message', 'url' => null, 'label' => 'Contacter'],
         };
 
-        return self::card($a, $isFavorite, $viewerId) + [
-            'photos'      => $photos,
-            'description' => $a['description'],
-            'seller'      => $a['seller_uid'] === null ? null : PostPresenter::author($a['seller_uid'], $a['seller_username'], null, $isMine) + [
+        $card = self::card($a, $isFavorite, $viewerId, array_values(array_filter(array_map(static fn ($p) => is_array($p) ? ($p['url'] ?? null) : $p, $photos))));
+        if ($card['seller'] !== null) {
+            $card['seller'] += [
                 'member_since'    => gmdate('Y-m-d', strtotime($a['seller_since'] . ' UTC')),
                 'active_listings' => $sellerStats['active'] ?? 0,
                 'sold_listings'   => $sellerStats['sold'] ?? 0,
-            ],
+            ];
+        }
+
+        return $card + [
+            'photos'      => $photos,
             'safety_tips' => Config::get('classifieds.safety_tips'),
             'notice'      => $a['notice'],
             // Bouton « Contacter » : message = messagerie myClermont ; external = site d'origine ; none = indisponible

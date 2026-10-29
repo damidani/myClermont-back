@@ -26,7 +26,7 @@ foreach (array_filter(array_map('trim', explode(',', (string) Env::get('APP_SIGN
 [$registerMax, $registerWindow] = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_REGISTER', '10,3600')));
 [$loginMax, $loginWindow]       = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_LOGIN', '10,60')));
 [$contactMax, $contactWindow]   = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_CONTACT', '10,3600')));
-[$uploadMax, $uploadWindow]     = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_UPLOAD', '20,3600')));
+[$uploadMax, $uploadWindow]     = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_UPLOAD', '30,3600')));
 [$postMax, $postWindow]         = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_POST', '10,3600')));
 [$commentMax, $commentWindow]   = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_COMMENT', '30,3600')));
 [$mobilityMax, $mobilityWindow] = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_MOBILITY', '60,3600')));

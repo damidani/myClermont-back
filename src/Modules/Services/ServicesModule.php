@@ -26,6 +26,7 @@ final class ServicesModule implements Module
             $r->get('/services/categories', [ServiceController::class, 'categories']);
             $r->get('/services/{id}', [ServiceController::class, 'show']);
             $r->post('/services/{id}/quote', [ServiceController::class, 'requestQuote'], ['throttle:contact,device']);
+            $r->post('/services/{id}/requests', [ServiceController::class, 'requestQuote'], ['throttle:contact,device']);   // spec v1
         });
         $r->put('/services/{id}/review', [ServiceController::class, 'review'], ['auth']);
     }

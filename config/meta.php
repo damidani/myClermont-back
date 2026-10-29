@@ -24,5 +24,5 @@ return [
     ],
 
     // Libellés des états d'une petite annonce (spec : « Comme neuf », « Très bon état »…)
-    'classified_conditions' => ['very_good' => 'Comme neuf', 'good' => 'Très bon état', 'fair' => 'Bon état', 'for_parts' => 'État correct'],
+    'classified_conditions' => ['Comme neuf', 'Très bon état', 'Bon état', 'État correct'],
 ];

@@ -55,6 +55,7 @@ final class ClassifiedController
             'free'               => ($q['free'] ?? '') === '1',
             'max_price_cents'    => isset($q['max_price']) && (int) $q['max_price'] > 0 ? (int) $q['max_price'] * 100 : null,
             'neighborhood_id'    => isset($q['neighborhood_id']) ? (int) $q['neighborhood_id'] : null,
+            'district'           => isset($q['district']) && $q['district'] !== '' ? mb_substr((string) $q['district'], 0, 100) : null,
             'favorites_of'       => $favorites ? $userId : null,
             'exclude_blocked_by' => $userId,
         ];
@@ -251,6 +252,24 @@ final class ClassifiedController
     private function validateListing(array $json, int $userId, bool $isUpdate, ?int $classifiedId = null): array
     {
         $limits = (array) Config::get('classifieds.limits');
+        // Spec v1 : price en euros entiers (0 = don), condition en libellé, district, images = uploadIds
+        if (array_key_exists('price', $json) && !array_key_exists('price_cents', $json) && is_int($json['price'])) {
+            $json['price_cents'] = $json['price'] * 100;
+            $json['is_free'] = $json['price'] === 0;
+        }
+        if (isset($json['condition']) && is_string($json['condition'])) {
+            $json['condition'] = ClassifiedPresenter::CONDITION_CODES[$json['condition']] ?? $json['condition'];
+        }
+        $json['location_label'] ??= $json['district'] ?? null;
+        if (isset($json['images']) && !isset($json['media_ids'])) {
+            $json['media_ids'] = $json['images'];
+        }
+        unset($json['price'], $json['district'], $json['images']);
+        foreach (['title', 'description'] as $f) {
+            if (isset($json[$f]) && is_string($json[$f]) && \App\Modules\Moderation\ContentFilter::check($json[$f]) !== null) {
+                throw new ValidationException([$f => 'Ce texte ne respecte pas les règles de publication.']);
+            }
+        }
         $data = Validator::validate($json, [
             'title'           => "required|string|min:{$limits['title_min']}|max:{$limits['title_max']}",
             'category'        => 'required|string|max:40',

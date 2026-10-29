@@ -103,7 +103,12 @@ final class JobController
             'optional' => 'nullable|uuid',
             default    => 'nullable|uuid',
         };
-        $data = Validator::validate($request->json(), [
+        // Spec v1 : fullName, cvUploadId (uploadId d'un PDF envoyé par POST /uploads, purpose « cv »)
+        $input = $request->json();
+        $input['name'] ??= $input['full_name'] ?? null;
+        $input['cv_document_id'] ??= $input['cv_upload_id'] ?? null;
+        $input['cover_letter_document_id'] ??= $input['cover_letter_upload_id'] ?? null;
+        $data = Validator::validate(array_diff_key($input, array_flip(['full_name', 'cv_upload_id', 'cover_letter_upload_id'])), [
             'name'                     => 'required|string|min:2|max:120',
             'email'                    => 'required|email|max:191',
             'phone'                    => 'nullable|string|max:30',
@@ -210,6 +215,16 @@ final class JobController
 
     private function filters(array $q): array
     {
+        // Spec v1 : l'app envoie les libellés (« CDI », « Hybride ») ; les codes internes restent acceptés
+        foreach (['contract' => 'jobs.contracts', 'work_mode' => 'jobs.work_modes'] as $key => $config) {
+            if (isset($q[$key]) && is_string($q[$key])) {
+                foreach ((array) Config::get($config) as $code => $def) {
+                    if (mb_strtolower($def[0]) === mb_strtolower($q[$key])) {
+                        $q[$key] = $code;
+                    }
+                }
+            }
+        }
         $errors = [];
         foreach (['contract' => 'jobs.contracts', 'work_mode' => 'jobs.work_modes'] as $key => $config) {
             if (isset($q[$key]) && $q[$key] !== '' && !array_key_exists((string) $q[$key], (array) Config::get($config))) {

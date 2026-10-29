@@ -25,8 +25,9 @@ function demo_classified(array $override = []): array
 return [
     'annonce : gratuit, prix, état, visuel par défaut' => function () {
         $c = ClassifiedPresenter::card(demo_classified());
-        assert_same(['Gratuit', true, 'Bon état', null, 'gift'], [$c['price']['label'], $c['price']['is_free'], $c['condition']['label'], $c['cover_url'], $c['category']['icon']]);
-        assert_same("90\u{00A0}€", ClassifiedPresenter::card(demo_classified(['is_free' => 0, 'price_cents' => 9000]))['price']['label']);
+        assert_same(['Gratuit', 0, 'Bon état', [], 'gift'], [$c['price_label'], $c['price'], $c['condition'], $c['images'], $c['category_icon']]);
+        $paid = ClassifiedPresenter::card(demo_classified(['is_free' => 0, 'price_cents' => 9000]));
+        assert_same(["90\u{00A0}€", 90], [$paid['price_label'], $paid['price']]);
         assert_same("12,50\u{00A0}€", ClassifiedPresenter::priceLabel(1250));
     },
 
@@ -41,7 +42,8 @@ return [
 
     'annonce : vendeur et conseils de sécurité' => function () {
         $d = ClassifiedPresenter::detail(demo_classified(), [], null, 99, ['active' => 3, 'sold' => 2], 'conv-uid');
-        assert_same(['H1', 3, 2, 'conv-uid'], [$d['seller']['initials'], $d['seller']['active_listings'], $d['seller']['sold_listings'], $d['conversation_id']]);
+        assert_same([3, 2, 'conv-uid'], [$d['seller']['active_listings'], $d['seller']['sold_listings'], $d['conversation_id']]);
+        assert_true(isset($d['seller']['display_name'], $d['seller']['avatar']), 'vendeur : { id, displayName, avatar }');
         assert_same(4, count($d['safety_tips']));
     },
 

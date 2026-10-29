@@ -20,4 +20,8 @@ return [
     App\Modules\Classifieds\ClassifiedsModule::class,
     App\Modules\Explore\ExploreModule::class,
     App\Modules\Places\PlacesModule::class,
+    App\Modules\Moderation\ModerationModule::class,
+    App\Modules\Deals\DealsModule::class,
+    App\Modules\Notifications\NotificationsModule::class,
+    App\Modules\AdminApi\AdminApiModule::class,
 ];

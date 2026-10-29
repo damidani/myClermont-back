@@ -74,6 +74,7 @@ final class Validator
             'string'  => is_string($value) ? null : 'Doit être une chaîne de caractères.',
             'integer' => is_int($value) ? null : 'Doit être un entier.',
             'boolean' => is_bool($value) ? null : 'Doit être un booléen.',
+            'array'   => is_array($value) && array_is_list($value) ? null : 'Doit être une liste.',
             'email'   => is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL) ? null : 'Adresse e-mail invalide.',
             'username' => is_string($value) && preg_match('/^(?!\.)[A-Za-z0-9_.]{3,30}(?<!\.)$/', $value) ? null : '3 à 30 caractères : lettres, chiffres, « _ » et « . ».',
             'uuid'    => is_string($value) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value) ? null : 'UUID invalide.',

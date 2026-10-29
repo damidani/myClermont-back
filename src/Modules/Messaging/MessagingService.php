@@ -261,10 +261,10 @@ final class MessagingService
      */
     private function queuePush(int $conversationId, int $senderId, array $recipientIds, string $body): void
     {
-        $sender = Database::fetch('SELECT username FROM users WHERE id = :u', ['u' => $senderId]);
+        $sender = Database::fetch('SELECT username, display_name FROM users WHERE id = :u', ['u' => $senderId]);
         $conversation = Database::fetch('SELECT uid FROM conversations WHERE id = :c', ['c' => $conversationId]);
         $preview = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '…' : $body;
-        $data = json_encode(['type' => 'message', 'conversation_id' => $conversation['uid']]);
+        $data = json_encode(['type' => 'message', 'conversation_id' => $conversation['uid'], 'deeplink' => 'myclermont://conversation/' . $conversation['uid']]);
 
         foreach ($recipientIds as $userId) {
             $key = 'conv:' . $conversation['uid'];
@@ -274,8 +274,8 @@ final class MessagingService
             );
             if ($updated === 0) {
                 Database::execute(
-                    'INSERT INTO push_outbox (user_id, title, body, data, collapse_key, created_at) VALUES (:u, :t, :b, :data, :k, :d)',
-                    ['u' => $userId, 't' => (string) ($sender['username'] ?? 'Nouveau message'), 'b' => $preview, 'data' => $data, 'k' => $key, 'd' => gmdate('Y-m-d H:i:s')],
+                    "INSERT INTO push_outbox (user_id, topic, title, body, data, collapse_key, thread_id, created_at) VALUES (:u, 'classifieds.messages', :t, :b, :data, :k, :k2, :d)",
+                    ['u' => $userId, 't' => (string) ($sender['display_name'] ?? $sender['username'] ?? 'Nouveau message'), 'b' => $preview, 'data' => $data, 'k' => $key, 'k2' => $key, 'd' => gmdate('Y-m-d H:i:s')],
                 );
             }
         }

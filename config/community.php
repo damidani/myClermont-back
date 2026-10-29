@@ -27,7 +27,7 @@ return [
         'poll_options_min' => 2,
         'poll_options_max' => 6,
         'photos_max'       => 10,
-        'comment_max'      => 1000,
+        'comment_max'      => 500,    // spec v1
     ],
 
     'media' => [

@@ -34,6 +34,14 @@ final class PlacesModule implements Module
             $r->get('/places/{id}/sheet', [PlaceController::class, 'show']);
         });
         $r->put('/places/{id}/review', [PlaceController::class, 'review'], ['auth']);
+
+        // Avis (spec v1)
+        $r->get('/places/{id}/reviews', [ReviewController::class, 'index']);
+        $r->group(['middleware' => ['auth']], static function (Router $r): void {
+            $r->put('/places/{id}/reviews/me', [ReviewController::class, 'put'], ['throttle:post']);
+            $r->delete('/places/{id}/reviews/me', [ReviewController::class, 'delete']);
+            $r->post('/me/reviews/import', [ReviewController::class, 'import']);
+        });
     }
 
     public function listeners(): array

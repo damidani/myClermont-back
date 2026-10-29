@@ -54,9 +54,14 @@ final class ServiceController
             'neighborhood_id' => isset($q['neighborhood_id']) ? (int) $q['neighborhood_id'] : null,
         ];
         $limit = max(1, min(50, (int) ($q['limit'] ?? 20)));
-        $page = max(1, (int) ($q['page'] ?? 1));
+        $page = max(1, (int) ($q['cursor'] ?? $q['page'] ?? 1));   // spec v1 : cursor = numéro de page suivante
 
         $rows = $this->services->search($filters, $sort, $limit, ($page - 1) * $limit);
+        // Spec v1 : lat / lon → les plus proches d'abord (zone d'intervention)
+        if (isset($q['lat'], $q['lon']) && is_numeric($q['lat']) && is_numeric($q['lon'])) {
+            $d = static fn (array $s) => $s['latitude'] === null ? INF : (($s['latitude'] - $q['lat']) ** 2 + (($s['longitude'] - $q['lon']) * 0.7) ** 2);
+            usort($rows, static fn ($a, $b) => $d($a) <=> $d($b));
+        }
         $favorites = $userId === null ? null : (new FavoriteRepository())->filterFavorited($userId, 'service', array_column($rows, 'uid'));
         $total = $this->services->count($filters);
 
@@ -69,6 +74,7 @@ final class ServiceController
                 'total'      => $total,                                            // « 10 professionnel(s) »
                 'page'       => $page,
                 'next_page'  => $page * $limit < $total ? $page + 1 : null,
+                'next_cursor' => $page * $limit < $total ? (string) ($page + 1) : null,
             ],
         );
     }

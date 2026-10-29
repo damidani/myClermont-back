@@ -20,6 +20,12 @@ final class FavoritesModule implements Module
     public function routes(Router $r): void
     {
         $r->group(['middleware' => ['auth']], static function (Router $r): void {
+            // Spec v1
+            $r->get('/me/favorites', [SpecFavoriteController::class, 'index']);
+            $r->post('/me/favorites/import', [SpecFavoriteController::class, 'import']);
+            $r->put('/me/favorites/{targetType:[a-z]+}/{targetId:[A-Za-z0-9_-]+}', [SpecFavoriteController::class, 'put']);
+            $r->delete('/me/favorites/{targetType:[a-z]+}/{targetId:[A-Za-z0-9_-]+}', [SpecFavoriteController::class, 'delete']);
+
             $r->get('/users/me/favorites', [FavoriteController::class, 'index']);
             $r->put('/users/me/favorites/{type:[a-z_]+}/{id:[A-Za-z0-9_-]+}', [FavoriteController::class, 'add']);
             $r->delete('/users/me/favorites/{type:[a-z_]+}/{id:[A-Za-z0-9_-]+}', [FavoriteController::class, 'remove']);

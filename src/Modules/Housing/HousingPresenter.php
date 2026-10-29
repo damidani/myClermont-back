@@ -15,37 +15,41 @@ use App\Core\Config;
  */
 final class HousingPresenter
 {
-    public static function card(array $h, ?bool $isFavorite = null): array
+    /**
+     * Housing de la spec v1 : id, title, district, price, priceLabel, surface, rooms, bedrooms, type, furnished,
+     * images[], features[], description, latitude, longitude (position arrondie à ~150 m : jamais l'adresse exacte).
+     * price = loyer mensuel charges comprises (Location, Colocation) ou prix de vente (Achat), en euros.
+     */
+    public static function card(array $h, ?bool $isFavorite = null, array $images = []): array
     {
         $transactions = (array) Config::get('housing.transactions');
-        $types = (array) Config::get('housing.property_types');
+        $isRent = $h['transaction'] !== 'sale';
+        $priceCents = (int) $h['price_cents'] + ($isRent && $h['charges_cents'] !== null && !$h['charges_included'] ? (int) $h['charges_cents'] : 0);
 
         return [
             'id'            => $h['uid'],
-            'transaction'   => ['code' => $h['transaction'], 'label' => $transactions[$h['transaction']] ?? $h['transaction']],
-            'property_type' => ['code' => $h['property_type'], 'label' => $types[$h['property_type']] ?? $h['property_type']],
             'title'         => $h['title'],
-            'price'         => [
-                'cents'  => (int) $h['price_cents'],
-                'period' => $h['transaction'] === 'sale' ? null : 'month',
-                'label'  => self::priceLabel((int) $h['price_cents'], $h['transaction'] !== 'sale'),
-            ],
-            'location' => [
-                'district'     => $h['district_label'] ?? $h['neighborhood_name'],
-                'city'         => $h['city'],
-                'label'        => implode(' · ', array_filter([$h['district_label'] ?? $h['neighborhood_name'], $h['city']])),
-                'neighborhood' => $h['neighborhood_id'] === null ? null : ['id' => (int) $h['neighborhood_id'], 'name' => $h['neighborhood_name']],
-            ],
-            'surface_m2'  => $h['surface_m2'] === null ? null : (float) $h['surface_m2'],
-            'rooms'       => $h['rooms'] === null ? null : (int) $h['rooms'],
-            'bedrooms'    => $h['bedrooms'] === null ? null : (int) $h['bedrooms'],
-            'furnished'   => (bool) $h['furnished'],
-            'features'    => self::features($h['features']),
-            'cover_url'   => $h['cover_url'],
-            'image_count' => (int) $h['image_count'],
-            'source'      => ContentSources::present($h),
-            'is_favorite' => $isFavorite,
-            'published_at' => $h['published_at'] === null ? null : gmdate('Y-m-d\TH:i:s\Z', strtotime($h['published_at'] . ' UTC')),
+            'district'      => $h['district_label'] ?? $h['neighborhood_name'],
+            'price'         => $priceCents % 100 === 0 ? intdiv($priceCents, 100) : round($priceCents / 100, 2),
+            'price_label'   => self::priceLabel($priceCents, $isRent),
+            'surface'       => $h['surface_m2'] === null ? null : (float) $h['surface_m2'],
+            'rooms'         => $h['rooms'] === null ? null : (int) $h['rooms'],
+            'bedrooms'      => $h['bedrooms'] === null ? null : (int) $h['bedrooms'],
+            'type'          => $transactions[$h['transaction']] ?? $h['transaction'],   // « Location », « Colocation », « Achat »
+            'furnished'     => (bool) $h['furnished'],
+            'images'        => $images !== [] ? $images : array_values(array_filter([$h['cover_url']])),
+            'features'      => array_column(self::features($h['features']), 'label'),
+            'description'   => $h['description'] ?? null,
+            'latitude'      => $h['latitude'] === null ? null : round(round((float) $h['latitude'] / 0.0015) * 0.0015, 4),
+            'longitude'     => $h['longitude'] === null ? null : round(round((float) $h['longitude'] / 0.002) * 0.002, 4),
+            // En plus de la spec
+            'city'          => $h['city'],
+            'property_type' => $h['property_type'],
+            'image_count'   => (int) ($h['image_count'] ?? count($images)),
+            'contact'       => $h['status'] === 'published' ? ContentSources::contact($h) : ['mode' => 'none', 'url' => null, 'label' => 'Annonce expirée'],
+            'source'        => ContentSources::present($h),
+            'is_favorite'   => $isFavorite,
+            'published_at'  => $h['published_at'] === null ? null : gmdate('Y-m-d\TH:i:s\Z', strtotime($h['published_at'] . ' UTC')),
         ];
     }
 
@@ -54,10 +58,8 @@ final class HousingPresenter
         $isRent = $h['transaction'] !== 'sale';
         $ratio = (int) Config::get('housing.income_ratio', 3);
 
-        return self::card($h, $isFavorite) + [
-            'images'         => $images,
+        return self::card($h, $isFavorite, $images) + [
             'image_caption'  => $h['image_caption'],
-            'description'    => $h['description'],
             'charges'        => $h['charges_cents'] === null ? null : [
                 'cents'    => (int) $h['charges_cents'],
                 'included' => $h['charges_included'] === null ? null : (bool) $h['charges_included'],
@@ -65,18 +67,12 @@ final class HousingPresenter
             'floor'          => $h['floor'] === null ? null : (int) $h['floor'],
             'energy_class'   => $h['energy_class'],
             'available_from' => $h['available_from'],
-            'coordinates'    => $h['latitude'] === null ? null : ['latitude' => (float) $h['latitude'], 'longitude' => (float) $h['longitude'], 'approximate' => true],
-            // Encart « Revenus souvent demandés » (absent pour une vente)
             'income_hint'    => $isRent ? [
-                'ratio'         => $ratio,
-                'monthly_cents' => (int) $h['price_cents'] * $ratio,
-                'label'         => '≈ ' . self::priceLabel((int) $h['price_cents'] * $ratio, true),
-                'text'          => Config::get('housing.income_text'),
+                'ratio' => $ratio,
+                'label' => '≈ ' . self::priceLabel((int) $h['price_cents'] * $ratio, true),
+                'text'  => Config::get('housing.income_text'),
             ] : null,
             'notice'         => $h['notice'],
-            'is_active'      => $h['status'] === 'published',
-            // Bouton « Contacter » : formulaire myClermont ou lien vers l'annonce d'origine
-            'contact'        => $h['status'] === 'published' ? ContentSources::contact($h) : ['mode' => 'none', 'url' => null, 'label' => 'Annonce expirée'],
             'share_url'      => str_replace('{id}', $h['uid'], (string) Config::get('housing.share_url')),
         ];
     }

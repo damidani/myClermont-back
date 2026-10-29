@@ -25,6 +25,7 @@ final class JobsModule implements Module
             $r->get('/jobs/filters', [JobController::class, 'filtersCatalog']);
             $r->get('/jobs/{id}', [JobController::class, 'show']);
             $r->post('/jobs/{id}/apply', [JobController::class, 'apply'], ['throttle:contact,device']);
+            $r->post('/jobs/{id}/applications', [JobController::class, 'apply'], ['throttle:contact,device']);   // spec v1
 
             // Documents (CV, lettres) : envoi en corps brut application/pdf, 5 Mo max
             $r->post('/documents', [DocumentController::class, 'upload'], ['throttle:upload,device']);

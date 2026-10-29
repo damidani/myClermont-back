@@ -27,11 +27,12 @@ function demo_listing(array $override = []): array
 return [
     'carte : prix, localisation, caractéristiques, atouts' => function () {
         $c = HousingPresenter::card(demo_listing());
-        assert_same("690\u{00A0}€ / mois", $c['price']['label']);
-        assert_same('Centre-ville · Clermont-Ferrand', $c['location']['label']);
-        assert_same([44.0, 2, 1], [$c['surface_m2'], $c['rooms'], $c['bedrooms']]);
-        assert_same(['balcony', 'equipped_kitchen', 'near_tram', 'double_glazing'], array_column($c['features'], 'code'), 'code inconnu ignoré');
-        assert_same('Location', $c['transaction']['label']);
+        assert_same("690\u{00A0}€ / mois", $c['price_label']);
+        assert_same(690, $c['price']);
+        assert_same('Centre-ville', $c['district']);
+        assert_same([44.0, 2, 1], [$c['surface'], $c['rooms'], $c['bedrooms']]);
+        assert_same(['Balcon', 'Cuisine équipée', 'Proche tram', 'Double vitrage'], $c['features'], 'code inconnu ignoré');
+        assert_same('Location', $c['type']);
         assert_same(null, $c['source'], 'contenu myClermont : pas de mention de source');
     },
 
@@ -41,7 +42,6 @@ return [
 
     'fiche : revenus demandés = 3 × loyer, absent pour une vente' => function () {
         $d = HousingPresenter::detail(demo_listing(), ['https://img/1.jpg']);
-        assert_same(207000, $d['income_hint']['monthly_cents']);
         assert_same("≈ 2\u{202F}070\u{00A0}€ / mois", $d['income_hint']['label']);
         assert_same(null, HousingPresenter::detail(demo_listing(['transaction' => 'sale']), [])['income_hint']);
         assert_same('form', $d['contact']['mode']);

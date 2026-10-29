@@ -41,8 +41,8 @@ function signed_raw(string $method, string $path, string $query, string $body, s
 return [
     'carte : contrat, rythme, salaire, NOUVEAU, catégorie' => function () {
         $c = JobPresenter::card(demo_job());
-        assert_same("38\u{202F}000–45\u{202F}000\u{00A0}€ / an", $c['salary']['label']);
-        assert_same(['CDI', 'Hybride', 'phone', 'DÉMO'], [$c['contract']['label'], $c['work_mode']['label'], $c['category']['icon'], $c['badge']]);
+        assert_same("38\u{202F}000–45\u{202F}000\u{00A0}€ / an", $c['salary']);
+        assert_same(['CDI', 'Hybride', 'phone', 'DÉMO'], [$c['contract'], $c['work_mode'], $c['icon'], $c['badge']]);
         assert_true($c['is_new'], 'publiée il y a 1 h');
         assert_true(!JobPresenter::card(demo_job(['published_at' => '2020-01-01 00:00:00']))['is_new']);
     },
@@ -57,7 +57,7 @@ return [
     'fiche : missions, galerie, bouton Postuler (formulaire)' => function () {
         $d = JobPresenter::detail(demo_job(), ['https://img/1.jpg']);
         assert_same(["Participer aux projets de l'équipe", 'Collaborer'], $d['missions']);
-        assert_same(['form', 'required', 'optional'], [$d['apply']['mode'], $d['apply']['cv'], $d['apply']['cover_letter']]);
+        assert_same(['form', null, 'optional'], [$d['apply_mode'], $d['apply_url'], $d['cover_letter']]);
         assert_true(!array_key_exists('contact_email', $d), 'e-mail recruteur jamais exposé');
     },
 

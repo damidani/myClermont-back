@@ -42,9 +42,13 @@ final class CommunityController
         }
 
         $limit = max(1, min(50, (int) ($q['limit'] ?? Config::get('community.per_page', 20))));
+        $hood = isset($q['neighborhood_id']) ? (int) $q['neighborhood_id'] : null;
+        if ($hood === null && isset($q['neighborhood']) && $q['neighborhood'] !== '') {
+            $hood = (int) (Database::fetch('SELECT id FROM neighborhoods WHERE name = :n OR slug = :s', ['n' => $q['neighborhood'], 's' => $q['neighborhood']])['id'] ?? -1);
+        }
         $rows = $this->posts->feed(
             $filter !== null ? $filters[$filter][1] : null,
-            isset($q['neighborhood_id']) ? (int) $q['neighborhood_id'] : null,
+            $hood,
             $authorId,
             $limit,
             isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : null,
@@ -88,6 +92,20 @@ final class CommunityController
     {
         $limits = (array) Config::get('community.limits');
         $json = $request->json();
+        // Spec v1 : { kind, text, media: [uploadId], pollOptions: [] }
+        $kinds = ['text' => 'text', 'poll' => 'poll', 'photos' => 'photos', 'photoCaption' => 'photo', 'photo_caption' => 'photo', 'video' => 'video'];
+        if (isset($json['kind']) && !isset($json['type'])) {
+            $json['type'] = $kinds[$json['kind']] ?? $json['kind'];
+        }
+        $json['body'] ??= $json['text'] ?? null;
+        if (isset($json['media']) && !isset($json['media_ids'])) {
+            $json['media_ids'] = $json['media'];
+        }
+        unset($json['kind'], $json['text'], $json['media']);
+        // Filtre automatique : un texte refusé n'est pas publié
+        if (\App\Modules\Moderation\ContentFilter::check(is_string($json['body']) ? $json['body'] : null) !== null) {
+            throw new ValidationException(['text' => 'Ce message ne respecte pas les règles de la communauté.']);
+        }
         $data = Validator::validate($json, [
             'type' => 'required|in:' . implode(',', array_keys((array) Config::get('community.types'))),
             'body' => 'nullable|string|max:' . $limits['body_max'],
@@ -189,7 +207,14 @@ final class CommunityController
         if ($post['type'] !== 'poll') {
             throw new HttpException(409, 'not_a_poll', 'Cette publication n\'est pas un sondage.');
         }
-        $data = Validator::validate($request->json(), ['option_id' => 'required|integer']);
+        $json = $request->json();
+        // Spec v1 : { optionIndex } (position de la réponse) ; option_id reste accepté
+        if (isset($json['option_index']) && is_int($json['option_index'])) {
+            $json['option_id'] = (int) (Database::fetch(
+                'SELECT id FROM community_poll_options WHERE post_id = :p ORDER BY position LIMIT 1 OFFSET ' . max(0, $json['option_index']), ['p' => $post['id']],
+            )['id'] ?? 0);
+        }
+        $data = Validator::validate($json, ['option_id' => 'required|integer']);
         $option = Database::fetch('SELECT id FROM community_poll_options WHERE id = :o AND post_id = :p', ['o' => $data['option_id'], 'p' => $post['id']]);
         if ($option === null) {
             throw new ValidationException(['option_id' => 'Réponse inconnue pour ce sondage.']);
@@ -227,7 +252,12 @@ final class CommunityController
     public function addComment(Request $request): Response
     {
         $post = $this->findOrFail((string) $request->param('id'));
-        $data = Validator::validate($request->json(), ['body' => 'required|string|max:' . Config::get('community.limits.comment_max', 1000)]);
+        $json = $request->json();
+        $json['body'] ??= $json['text'] ?? $json['message'] ?? null;   // spec v1 : « message »
+        $data = Validator::validate(['body' => $json['body']], ['body' => 'required|string|min:1|max:' . Config::get('community.limits.comment_max', 500)]);
+        if (\App\Modules\Moderation\ContentFilter::check($data['body']) !== null) {
+            throw new ValidationException(['text' => 'Ce commentaire ne respecte pas les règles de la communauté.']);
+        }
         $userId = $request->attributes['user_id'];
 
         $comment = $this->posts->addComment((int) $post['id'], $userId, $data['body']);

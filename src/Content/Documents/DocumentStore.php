@@ -27,7 +27,7 @@ final class DocumentStore
         return dirname(__DIR__, 3) . '/storage/private';
     }
 
-    public function store(string $bytes, string $kind, array $device, ?int $userId, ?string $filename): array
+    public function store(string $bytes, string $kind, array $device, ?int $userId, ?string $filename, ?string $uid = null): array
     {
         if (!in_array($kind, self::KINDS, true)) {
             throw new ValidationException(['kind' => 'Type de document inconnu (cv, cover_letter).']);
@@ -39,7 +39,7 @@ final class DocumentStore
             throw new HttpException(415, 'unsupported_document', 'Seuls les fichiers PDF sont acceptés.');
         }
 
-        $uid = Crypto::uuid4();
+        $uid ??= Crypto::uuid4();
         $relative = gmdate('Y/m') . '/' . $uid . '.pdf';
         $absolute = self::root() . '/' . $relative;
         if (!is_dir(dirname($absolute)) && !mkdir(dirname($absolute), 0750, true) && !is_dir(dirname($absolute))) {

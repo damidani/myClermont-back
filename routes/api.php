@@ -39,9 +39,16 @@ return static function (Router $router, array $modules): void {
         // --- Enregistrement d'appareil (clé application) -----------------
         $r->post('/devices/register', [DeviceController::class, 'register'], ['throttle:register,ip', 'app.signature']);
 
+        // --- Envoi direct d'un fichier sur l'URL signée (jeton dans l'URL, valable 10 min) ---
+        $r->put('/uploads/{id}/blob', [App\Content\Uploads\UploadController::class, 'receive'], ['throttle:upload,ip']);
+
         // --- Toutes les routes suivantes exigent un appareil signé ---------
         $r->group(['middleware' => ['device', 'throttle:device']], static function (Router $r) use ($modules): void {
             $r->get('/meta', [App\Http\Controllers\MetaController::class, 'index']);
+            $r->group(['middleware' => ['auth']], static function (Router $r): void {
+                $r->post('/uploads', [App\Content\Uploads\UploadController::class, 'create'], ['throttle:upload']);
+                $r->post('/uploads/{id}/confirm', [App\Content\Uploads\UploadController::class, 'confirm']);
+            });
             $r->get('/devices/me', [DeviceController::class, 'show']);
             $r->patch('/devices/me', [DeviceController::class, 'update']);
 

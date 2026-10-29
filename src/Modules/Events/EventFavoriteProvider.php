@@ -15,12 +15,23 @@ final class EventFavoriteProvider implements FavoriteProvider
 {
     public function find(array $ids): array
     {
+        // Spec v1 : l'identifiant d'un événement est son slug (« halloween-warhol-2026-10-31 ») ; les anciens favoris gardent l'uid
+        $slugToUid = [];
+        $slugs = array_values(array_filter($ids, static fn ($id) => !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-/', (string) $id)));
+        if ($slugs !== []) {
+            $in = implode(', ', array_map(static fn ($i) => ':s' . $i, array_keys($slugs)));
+            foreach (\App\Core\Database::fetchAll("SELECT uid, slug FROM events WHERE slug IN ({$in})", array_combine(array_map(static fn ($i) => 's' . $i, array_keys($slugs)), $slugs)) as $r) {
+                $slugToUid[$r['uid']] = $r['slug'];
+            }
+        }
+        $uids = array_merge(array_diff($ids, $slugs), array_keys($slugToUid));
+
         $result = [];
-        foreach ((new EventRepository())->findManyByUid($ids) as $uid => $event) {
+        foreach ((new EventRepository())->findManyByUid($uids) as $uid => $event) {
             $tags = array_filter(array_map('trim', explode(',', (string) $event['tags'])));
             $tags[] = $event['category_slug'];
 
-            $result[$uid] = [
+            $result[$slugToUid[$uid] ?? $uid] = [
                 'tags'    => array_values(array_unique($tags)),
                 'summary' => EventPresenter::card($event),
             ];
