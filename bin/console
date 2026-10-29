@@ -200,6 +200,15 @@ switch ($command) {
         $out($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $res);
         exit($code >= 400 ? 1 : 0);
 
+    case 'events:maintenance':
+        // Spec v1 : les événements terminés depuis plus de 90 jours passent en archived
+        $n = Database::execute(
+            "UPDATE events SET status = 'archived', updated_at = :now WHERE status = 'published' AND ends_at < :limit",
+            ['now' => gmdate('Y-m-d H:i:s'), 'limit' => gmdate('Y-m-d H:i:s', time() - 90 * 86400)],
+        );
+        $out("Événements archivés : {$n}");
+        break;
+
     case 'account:purge':
         // Spec v1 › DELETE /me : effacement 30 jours après la demande. Le compte est anonymisé (et non supprimé)
         // pour que ses posts et commentaires restent visibles sous « Compte supprimé ».
@@ -816,6 +825,7 @@ switch ($command) {
           source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
           import:run <slug> | import:all [--force]   Lance un import (import:all : seulement les sources dues)
           api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]   Appel signé de l'API (outil de développement)
+          events:maintenance               Archive les événements terminés depuis 90 jours
           account:purge                    Efface les comptes supprimés depuis plus de 30 jours (cron quotidien)
           import:status                    État des sources importées (dernier passage, résultat)
           import:preview <slug> [n]        Affiche les n premiers éléments récupérés, sans rien enregistrer

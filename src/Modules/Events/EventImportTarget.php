@@ -36,7 +36,7 @@ final class EventImportTarget implements ImportTarget
             if ($existing === null) {
                 $data += [
                     'uid' => Crypto::uuid4(), 'source' => $sourceId, 'external_id' => $externalId,
-                    'slug' => substr(self::slugify($data['title']), 0, 80) . '-' . substr(sha1($sourceId . ':' . $externalId), 0, 8),
+                    'slug' => SpecEventController::slug($data['title'], strtotime($data['starts_at'] . ' UTC')),   // « titre-date » (spec v1)
                     'status' => $autoPublish ? 'published' : 'draft',
                 ];
                 $id = Database::insert(

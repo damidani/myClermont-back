@@ -5,6 +5,10 @@ declare(strict_types=1);
 use App\Core\Env;
 
 return [
+    // Incidents routiers (spec v1 › Trafic) : TomTom Incident Details v5, un appel pour toute la métropole
+    'tomtom_key'            => Env::get('TOMTOM_API_KEY', ''),
+    'traffic_cache_seconds' => (int) Env::get('TRAFFIC_CACHE_SECONDS', 300),
+
     /*
      * Transports en commun : API Navitia (https://navitia.io, compte gratuit avec quota).
      * La clé n'est jamais envoyée aux applications : le serveur fait l'appel et met en cache.

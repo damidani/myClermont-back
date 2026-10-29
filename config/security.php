@@ -32,6 +32,9 @@ foreach (array_filter(array_map('trim', explode(',', (string) Env::get('APP_SIGN
 [$mobilityMax, $mobilityWindow] = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_MOBILITY', '60,3600')));
 [$messageMax, $messageWindow]   = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_MESSAGE', '120,3600')));
 [$listingMax, $listingWindow]   = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_LISTING', '10,86400')));
+[$publicMax, $publicWindow]     = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_PUBLIC', '120,60')));
+[$aiMax, $aiWindow]             = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_AI', '10,60')));
+[$reportMax, $reportWindow]     = array_map('intval', explode(',', (string) Env::get('RATE_LIMIT_REPORT', '20,86400')));
 
 return [
     'app_keys'         => $appKeys,
@@ -61,5 +64,8 @@ return [
         'mobility' => [$mobilityMax, $mobilityWindow],
         'message'  => [$messageMax, $messageWindow],
         'listing'  => [$listingMax, $listingWindow],
+        'public'   => [$publicMax, $publicWindow],     // routes publiques non signées (compatibilité build 16)
+        'ai'       => [$aiMax, $aiWindow],             // Clermont IA
+        'report'   => [$reportMax, $reportWindow],     // signalements
     ],
 ];

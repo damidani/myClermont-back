@@ -22,7 +22,16 @@ use App\Http\Controllers\HealthController;
 
 /** @param list<Module> $modules */
 return static function (Router $router, array $modules): void {
-    $router->group(['prefix' => '/v1'], static function (Router $r) use ($modules): void {
+    // Compatibilité avec l'app déjà livrée (build 16) : routes historiques du site, publiques et non signées
+    $router->group(['middleware' => ['throttle:public,ip']], static function (Router $r): void {
+        $r->get('/evenements.json', [App\Modules\Events\SpecEventController::class, 'legacyFeed']);
+        $r->get('/photos/manifest.json', [App\Modules\Places\MapController::class, 'manifest']);
+        $r->get('/api/trafic', [App\Modules\Mobility\TrafficController::class, 'legacy']);
+    });
+
+    // L'API répond sous /v1 et sous /api/v1 (adresse de la spec : https://myclermont.app/api/v1)
+    foreach (['/v1', '/api/v1'] as $prefix) {
+    $router->group(['prefix' => $prefix], static function (Router $r) use ($modules): void {
 
         // --- Public --------------------------------------------------------
         $r->get('/health', [HealthController::class, 'index']);
@@ -32,6 +41,7 @@ return static function (Router $router, array $modules): void {
 
         // --- Toutes les routes suivantes exigent un appareil signé ---------
         $r->group(['middleware' => ['device', 'throttle:device']], static function (Router $r) use ($modules): void {
+            $r->get('/meta', [App\Http\Controllers\MetaController::class, 'index']);
             $r->get('/devices/me', [DeviceController::class, 'show']);
             $r->patch('/devices/me', [DeviceController::class, 'update']);
 
@@ -40,4 +50,5 @@ return static function (Router $router, array $modules): void {
             }
         });
     });
+    }
 };

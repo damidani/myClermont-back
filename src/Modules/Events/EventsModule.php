@@ -23,13 +23,20 @@ final class EventsModule implements Module
     {
         // Consultation possible sans compte ; connecté => is_favorite / is_participating renseignés
         $r->group(['middleware' => ['auth:optional']], static function (Router $r): void {
-            $r->get('/events', [EventController::class, 'index']);
+            // Spec v1 : Event (identifiant = slug)
+            $r->get('/events', [SpecEventController::class, 'index']);
             $r->get('/events/categories', [EventController::class, 'categories']);
-            $r->get('/events/{id}', [EventController::class, 'show']);
+            $r->get('/events/agenda', [EventController::class, 'index']);          // liste enrichie historique (participants, favoris)
+            $r->get('/events/{id}', [SpecEventController::class, 'show']);
+            $r->get('/events/{id}/sheet', [EventController::class, 'show']);
             $r->get('/events/{id}/calendar.ics', [EventController::class, 'calendar']);
         });
 
         $r->group(['middleware' => ['auth']], static function (Router $r): void {
+            $r->post('/events/submissions', [SpecEventController::class, 'submit'], ['throttle:post']);
+            $r->post('/events', [SpecEventController::class, 'store'], ['role:partner,admin']);
+            $r->patch('/events/{id}', [SpecEventController::class, 'update']);
+            $r->delete('/events/{id}', [SpecEventController::class, 'destroy']);
             $r->put('/events/{id}/participation', [EventController::class, 'participate']);
             $r->delete('/events/{id}/participation', [EventController::class, 'cancelParticipation']);
             $r->get('/users/me/events', [EventController::class, 'mine']);

@@ -17,6 +17,7 @@ final class MobilityModule implements Module
     {
         $r->get('/mobility/destinations', [MobilityController::class, 'destinations']);
         $r->get('/mobility/traffic', [MobilityController::class, 'traffic']);
+        $r->get('/traffic/incidents', [TrafficController::class, 'incidents']);
         // Appels à un service externe (quota) : limités par appareil
         $r->get('/mobility/journeys', [MobilityController::class, 'journeys'], ['throttle:mobility,device']);
         $r->get('/mobility/places', [MobilityController::class, 'places'], ['throttle:mobility,device']);

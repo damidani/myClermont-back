@@ -25,7 +25,13 @@ final class PlacesModule implements Module
             $r->get('/places/pins/stream', [PlaceController::class, 'stream']);
             $r->get('/places/nearby', [PlaceController::class, 'nearby']);
             $r->get('/places/search', [PlaceController::class, 'search']);
-            $r->get('/places/{id}', [PlaceController::class, 'show']);
+            // Spec v1 : MapSpot / PlaceDetail
+            $r->get('/places', [MapController::class, 'index']);
+            $r->get('/partners', [MapController::class, 'partners']);
+            $r->get('/places/{id}', [MapController::class, 'show']);
+            $r->get('/places/{id}/photos', [MapController::class, 'photosOf']);
+            // Fiche enrichie historique (ouvert maintenant, infos pratiques, avis…)
+            $r->get('/places/{id}/sheet', [PlaceController::class, 'show']);
         });
         $r->put('/places/{id}/review', [PlaceController::class, 'review'], ['auth']);
     }
