@@ -17,8 +17,8 @@ Il sert à brancher l'app sur le back-end PHP/MySQL, qui implémente la « Spéc
 
 ## Serveur
 
-- **Test** : `http://5.9.250.39:8088`. HTTP sans TLS : il faut une exception ATS sur iOS (`NSExceptionDomains`) et `usesCleartextTraffic` sur Android, **en debug seulement**.
-- **Production** : `https://myclermont.app/api/v1` (adresse de la spec).
+- **Adresse de l'API** : `https://api.myclermont.app/api/v1` (production comme tests).
+- **Accès direct** (secours, debug) : `http://5.9.250.39:8088/api/v1`. HTTP sans TLS : exception ATS sur iOS (`NSExceptionDomains`) et `usesCleartextTraffic` sur Android, **en debug seulement**.
 - **Préfixe** : `/api/v1/…` ou `/v1/…`, les deux répondent. Utiliser `/api/v1` comme dans la spec.
 - **Chemin signé** : la signature porte sur le chemin réellement envoyé, préfixe compris.
 

@@ -80,3 +80,9 @@ docker compose exec web php bin/console import:run france-travail
 ```
 
 Un fichier Poliris déposé par une agence se place dans le volume `storage`, sous `storage/imports/<source>/`. Détails dans [IMPORTS.md](IMPORTS.md).
+
+## Domaine public
+
+En production, `api.myclermont.app` est un proxy HTTPS vers le conteneur : `proxy_pass http://127.0.0.1:8088;`. Ajouter `client_max_body_size 62m;` pour les vidéos, et transmettre `Host`, `X-Forwarded-For` et `X-Forwarded-Proto`.
+
+Mettre `APP_URL=https://api.myclermont.app` dans `.env.docker`. Les URL d'envoi de fichiers sont construites avec cette valeur.

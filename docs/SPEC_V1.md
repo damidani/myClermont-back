@@ -11,7 +11,7 @@ Les trois lots sont en place, avec PHP 8.3 et MySQL / MariaDB à la place de Nex
 | Sujet | Spec | Décision |
 |---|---|---|
 | Serveur, base | Next.js, PostgreSQL, Redis, S3 | PHP 8.3, MySQL 8 / MariaDB 11, cache APCu, fichiers sur le serveur (`public/media`) |
-| Adresse | `https://myclermont.app/api/v1` | L'API répond sous `/api/v1/…` et sous `/v1/…` |
+| Adresse | `https://myclermont.app/api/v1` | `https://api.myclermont.app/api/v1` (proxy vers le conteneur, port 8088). L'API répond aussi sous `/v1/…` |
 | Signature des requêtes | non prévue | **Conservée** sur toutes les routes, en plus du `Bearer` ([SECURITE.md](SECURITE.md)) |
 | Contrat JSON | camelCase, sans enveloppe, `{ items, nextCursor }`, erreurs `{ error: { code, message, details } }` | **Appliqué à toute l'API** (`src/Core/Contract.php`) |
 | Dates | ISO 8601 sans millisecondes | Partout : `…Z` (UTC) ; événements en heure de Paris (`+01:00`) |
