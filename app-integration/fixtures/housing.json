@@ -1,0 +1,128 @@
+{
+    "items": [
+        {
+            "id": "6b043657-2615-4ee5-9336-550a44a2a9ba",
+            "title": "T2 lumineux proche Jaude",
+            "district": "Centre-ville",
+            "price": 690,
+            "priceLabel": "690 € / mois",
+            "surface": 44,
+            "rooms": 2,
+            "bedrooms": 1,
+            "type": "Location",
+            "furnished": false,
+            "images": [
+                "https://picsum.photos/seed/myclermont-0-1/1200/800"
+            ],
+            "features": [
+                "Balcon",
+                "Cuisine équipée",
+                "Proche tram",
+                "Double vitrage"
+            ],
+            "description": "Appartement lumineux dans un immeuble de caractère, à proximité des commerces et des transports. Photos illustratives.",
+            "latitude": 45.777,
+            "longitude": 3.082,
+            "city": "Clermont-Ferrand",
+            "propertyType": "apartment",
+            "imageCount": 3,
+            "contact": {
+                "mode": "form",
+                "url": null,
+                "label": "Contacter"
+            },
+            "source": null,
+            "isFavorite": null,
+            "publishedAt": "2026-10-28T09:31:09Z"
+        },
+        {
+            "id": "2ebb2583-999c-4595-9384-cba9c87705aa",
+            "title": "Studio meublé étudiant aux Cézeaux",
+            "district": "Les Cézeaux",
+            "price": 475,
+            "priceLabel": "475 € / mois",
+            "surface": 22,
+            "rooms": 1,
+            "bedrooms": 0,
+            "type": "Location",
+            "furnished": true,
+            "images": [
+                "https://picsum.photos/seed/myclermont-1-1/1200/800"
+            ],
+            "features": [
+                "Cuisine équipée",
+                "Proche tram",
+                "Fibre",
+                "Idéal étudiant"
+            ],
+            "description": "Studio meublé idéal pour étudiant, à deux pas du campus.",
+            "latitude": 45.759,
+            "longitude": 3.112,
+            "city": "Clermont-Ferrand",
+            "propertyType": "studio",
+            "imageCount": 3,
+            "contact": {
+                "mode": "form",
+                "url": null,
+                "label": "Contacter"
+            },
+            "source": null,
+            "isFavorite": null,
+            "publishedAt": "2026-10-28T08:31:09Z"
+        },
+        {
+            "id": "4d14cec7-9826-4c09-bd09-2078755eac32",
+            "title": "T3 rénové à Montferrand",
+            "district": "Montferrand",
+            "price": 189000,
+            "priceLabel": "189 000 €",
+            "surface": 68,
+            "rooms": 3,
+            "bedrooms": 2,
+            "type": "Achat",
+            "furnished": false,
+            "images": [
+                "https://picsum.photos/seed/myclermont-2-1/1200/800"
+            ],
+            "features": [
+                "Ascenseur",
+                "Cave",
+                "Double vitrage"
+            ],
+            "description": "Appartement entièrement rénové dans le quartier historique de Montferrand.",
+            "latitude": 45.7935,
+            "longitude": 3.114,
+            "city": "Clermont-Ferrand",
+            "propertyType": "apartment",
+            "imageCount": 3,
+            "contact": {
+                "mode": "form",
+                "url": null,
+                "label": "Contacter"
+            },
+            "source": null,
+            "isFavorite": null,
+            "publishedAt": "2026-10-28T07:31:09Z"
+        }
+    ],
+    "nextCursor": "cmVjZW50fDIwMjYtMTAtMjggMDc6MzE6MDl8Mw",
+    "transactions": [
+        {
+            "code": "rent",
+            "label": "Location",
+            "count": 2
+        },
+        {
+            "code": "sale",
+            "label": "Achat",
+            "count": 2
+        },
+        {
+            "code": "colocation",
+            "label": "Colocation",
+            "count": 1
+        }
+    ],
+    "allCount": 5,
+    "total": 5
+}

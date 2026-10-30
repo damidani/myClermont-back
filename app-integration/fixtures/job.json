@@ -1,0 +1,47 @@
+{
+    "id": "091602b3-5da6-48c9-92d1-b5f92cabb570",
+    "title": "Développeur·se iOS SwiftUI",
+    "company": "Studio Volcan · Démo",
+    "location": "Clermont-Ferrand",
+    "salary": "38 000–45 000 € / an",
+    "contract": "CDI",
+    "workMode": "Hybride",
+    "icon": "phone",
+    "summary": "Conception d'interfaces iOS, SwiftUI, tests et collaboration produit.",
+    "description": "Conception d'interfaces iOS, SwiftUI, tests et collaboration produit. Tu rejoindras une équipe locale et participeras à des projets variés. Cette description est fictive et sert uniquement à tester le parcours de candidature.",
+    "publishedAt": "2026-10-28T09:31:09Z",
+    "expiresAt": null,
+    "category": "tech",
+    "companyLogoUrl": null,
+    "salaryRange": {
+        "minCents": 3800000,
+        "maxCents": 4500000,
+        "period": "year"
+    },
+    "isNew": true,
+    "badge": "DÉMO",
+    "applyMode": "form",
+    "applyUrl": null,
+    "source": null,
+    "isFavorite": null,
+    "images": [
+        "https://picsum.photos/seed/myclermont-job-0-1/1200/800",
+        "https://picsum.photos/seed/myclermont-job-0-2/1200/800",
+        "https://picsum.photos/seed/myclermont-job-0-3/1200/800"
+    ],
+    "imageCaption": "Découvre l'entreprise",
+    "missions": [
+        "Participer aux projets de l'équipe",
+        "Collaborer avec les différents interlocuteurs",
+        "Contribuer à l'amélioration continue"
+    ],
+    "profile": "Autonomie, esprit d'équipe, curiosité et motivation. Les critères exacts seront précisés dans les annonces réelles.",
+    "startDate": null,
+    "duration": null,
+    "latitude": null,
+    "longitude": null,
+    "notice": "Annonce fictive : aucune entreprise ne recevra de candidature.",
+    "coverLetter": "optional",
+    "myApplication": null,
+    "shareUrl": "https://myclermont.fr/emploi/091602b3-5da6-48c9-92d1-b5f92cabb570"
+}

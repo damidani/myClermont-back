@@ -1,0 +1,21 @@
+{
+    "items": [
+        {
+            "id": "c78e01b5-aa03-4a75-84ca-752453b1586d",
+            "title": "Café offert pour un croissant acheté",
+            "merchant": "Café de Jaude",
+            "placeId": null,
+            "area": "Jaude",
+            "category": "cafe",
+            "original": 3.5,
+            "reduced": 1.8,
+            "discount": "-49 %",
+            "exclusive": false,
+            "imageUrl": null,
+            "description": null,
+            "conditions": null,
+            "expiresAt": null
+        }
+    ],
+    "nextCursor": null
+}

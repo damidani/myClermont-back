@@ -1,0 +1,132 @@
+{
+    "items": [
+        {
+            "id": "091602b3-5da6-48c9-92d1-b5f92cabb570",
+            "title": "Développeur·se iOS SwiftUI",
+            "company": "Studio Volcan · Démo",
+            "location": "Clermont-Ferrand",
+            "salary": "38 000–45 000 € / an",
+            "contract": "CDI",
+            "workMode": "Hybride",
+            "icon": "phone",
+            "summary": "Conception d'interfaces iOS, SwiftUI, tests et collaboration produit.",
+            "description": "Conception d'interfaces iOS, SwiftUI, tests et collaboration produit. Tu rejoindras une équipe locale et participeras à des projets variés. Cette description est fictive et sert uniquement à tester le parcours de candidature.",
+            "publishedAt": "2026-10-28T09:31:09Z",
+            "expiresAt": null,
+            "category": "tech",
+            "companyLogoUrl": null,
+            "salaryRange": {
+                "minCents": 3800000,
+                "maxCents": 4500000,
+                "period": "year"
+            },
+            "isNew": true,
+            "badge": "DÉMO",
+            "applyMode": "form",
+            "applyUrl": null,
+            "source": null,
+            "isFavorite": null
+        },
+        {
+            "id": "6f724375-c960-4fa0-9bbd-05ef86fc8411",
+            "title": "Chargé·e de communication",
+            "company": "Maison des Puys · Démo",
+            "location": "Chamalières",
+            "salary": "28 000–32 000 € / an",
+            "contract": "CDD",
+            "workMode": "Sur site",
+            "icon": "megaphone",
+            "summary": "Réseaux sociaux, communication événementielle et création de contenus.",
+            "description": "Poste fictif de démonstration.",
+            "publishedAt": "2026-10-28T07:31:09Z",
+            "expiresAt": null,
+            "category": "communication",
+            "companyLogoUrl": null,
+            "salaryRange": {
+                "minCents": 2800000,
+                "maxCents": 3200000,
+                "period": "year"
+            },
+            "isNew": true,
+            "badge": "DÉMO",
+            "applyMode": "form",
+            "applyUrl": null,
+            "source": null,
+            "isFavorite": null
+        },
+        {
+            "id": "5ecd8711-7935-4851-97ca-0348ee378f01",
+            "title": "Alternance marketing digital",
+            "company": "Auvergne Campus · Démo",
+            "location": "Clermont-Ferrand",
+            "salary": "Selon grille alternance",
+            "contract": "Alternance",
+            "workMode": "Hybride",
+            "icon": "school",
+            "summary": "Campagnes numériques, analyse de trafic et gestion de projets.",
+            "description": "Alternance fictive de démonstration.",
+            "publishedAt": "2026-10-28T05:31:09Z",
+            "expiresAt": null,
+            "category": "education",
+            "companyLogoUrl": null,
+            "salaryRange": {
+                "minCents": null,
+                "maxCents": null,
+                "period": null
+            },
+            "isNew": true,
+            "badge": "DÉMO",
+            "applyMode": "form",
+            "applyUrl": null,
+            "source": null,
+            "isFavorite": null
+        }
+    ],
+    "nextCursor": "MjAyNi0xMC0yOCAwNTozMTowOXwz",
+    "contracts": [
+        {
+            "code": "cdi",
+            "label": "CDI",
+            "color": "#2E9E6E",
+            "count": 2
+        },
+        {
+            "code": "cdd",
+            "label": "CDD",
+            "color": "#E0882E",
+            "count": 1
+        },
+        {
+            "code": "alternance",
+            "label": "Alternance",
+            "color": "#7B4FD6",
+            "count": 1
+        },
+        {
+            "code": "stage",
+            "label": "Stage",
+            "color": "#3A6EA5",
+            "count": 0
+        },
+        {
+            "code": "freelance",
+            "label": "Freelance",
+            "color": "#5B6B7A",
+            "count": 0
+        },
+        {
+            "code": "interim",
+            "label": "Intérim",
+            "color": "#B5542E",
+            "count": 0
+        },
+        {
+            "code": "saisonnier",
+            "label": "Saisonnier",
+            "color": "#C9852B",
+            "count": 0
+        }
+    ],
+    "allCount": 4,
+    "total": 4
+}

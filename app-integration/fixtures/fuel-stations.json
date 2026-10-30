@@ -1,0 +1,98 @@
+{
+    "items": [
+        {
+            "id": "63000019",
+            "address": "2 Avenue Marx Dormoy",
+            "city": "Clermont-Ferrand",
+            "latitude": 45.771719,
+            "longitude": 3.080998,
+            "prices": {
+                "gazole": {
+                    "price": 2.49,
+                    "updatedAt": "2026-10-29T21:00:00Z"
+                },
+                "e10": {
+                    "price": 2.19,
+                    "updatedAt": "2026-10-29T21:00:00Z"
+                },
+                "sp98": {
+                    "price": 2.29,
+                    "updatedAt": "2026-10-29T21:00:00Z"
+                }
+            },
+            "distance": 749
+        },
+        {
+            "id": "63000001",
+            "address": "60 Boulevard Lafayette",
+            "city": "Clermont-Ferrand",
+            "latitude": 45.773,
+            "longitude": 3.096,
+            "prices": {
+                "gazole": {
+                    "price": 2.25,
+                    "updatedAt": "2026-10-29T10:14:51Z"
+                },
+                "e10": {
+                    "price": 1.99,
+                    "updatedAt": "2026-10-29T10:14:51Z"
+                },
+                "sp98": {
+                    "price": 1.99,
+                    "updatedAt": "2026-10-29T10:14:51Z"
+                },
+                "e85": {
+                    "price": 0.951,
+                    "updatedAt": "2026-10-29T10:14:51Z"
+                }
+            },
+            "distance": 828
+        },
+        {
+            "id": "63000014",
+            "address": "98 Rue Fontgiève",
+            "city": "Clermont-Ferrand",
+            "latitude": 45.781,
+            "longitude": 3.077,
+            "prices": {
+                "gazole": {
+                    "price": 2.399,
+                    "updatedAt": "2026-10-27T07:41:57Z"
+                },
+                "e10": {
+                    "price": 2.119,
+                    "updatedAt": "2026-10-27T07:41:57Z"
+                },
+                "sp98": {
+                    "price": 2.249,
+                    "updatedAt": "2026-10-27T07:41:57Z"
+                }
+            },
+            "distance": 894
+        },
+        {
+            "id": "63000007",
+            "address": "21 Boulevard Pochet Lagaye",
+            "city": "Clermont-Ferrand",
+            "latitude": 45.766,
+            "longitude": 3.105,
+            "prices": {
+                "gazole": {
+                    "price": 2.379,
+                    "updatedAt": "2026-10-27T11:20:00Z"
+                },
+                "e10": {
+                    "price": 2.099,
+                    "updatedAt": "2026-10-27T11:20:00Z"
+                },
+                "sp98": {
+                    "price": 2.199,
+                    "updatedAt": "2026-10-27T11:20:00Z"
+                }
+            },
+            "distance": 1856
+        }
+    ],
+    "nextCursor": null,
+    "updatedAt": "2026-10-29T20:27:50Z"
+}

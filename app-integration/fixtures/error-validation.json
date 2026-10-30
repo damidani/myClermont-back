@@ -1,0 +1,12 @@
+{
+    "error": {
+        "code": "validation_failed",
+        "message": "Catégorie inconnue.",
+        "details": {
+            "field": "category",
+            "fields": {
+                "category": "Catégorie inconnue."
+            }
+        }
+    }
+}

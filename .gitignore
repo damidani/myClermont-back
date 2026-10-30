@@ -13,3 +13,4 @@
 .DS_Store
 .env.docker
 storage/dev-device.json
+app-integration/*.local.md

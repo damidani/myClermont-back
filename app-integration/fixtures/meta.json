@@ -1,0 +1,225 @@
+{
+    "version": 1,
+    "minAppVersion": {
+        "ios": "0.9.1",
+        "android": "0.9.1"
+    },
+    "features": {
+        "assistant": true,
+        "plus": false,
+        "classifiedsChat": true,
+        "fuel": true,
+        "traffic": false
+    },
+    "enums": {
+        "placeCategories": [
+            "incontournable",
+            "evenement",
+            "spot",
+            "restaurant",
+            "fastFood",
+            "cafe",
+            "boulangerie",
+            "culture",
+            "nature",
+            "sport",
+            "carburant",
+            "lieu"
+        ],
+        "natureKinds": [
+            "balade",
+            "panorama",
+            "peche",
+            "baignade",
+            "piqueNique",
+            "champignons",
+            "muguet"
+        ],
+        "eventKinds": [
+            "soiree",
+            "concert",
+            "spectacle",
+            "expo",
+            "famille",
+            "sport",
+            "marche",
+            "festival"
+        ],
+        "jobContracts": [
+            "CDI",
+            "CDD",
+            "Alternance",
+            "Stage",
+            "Freelance"
+        ],
+        "jobWorkModes": [
+            "Sur site",
+            "Hybride",
+            "Télétravail"
+        ],
+        "housingTypes": [
+            "Location",
+            "Colocation",
+            "Achat"
+        ],
+        "postKinds": [
+            "text",
+            "poll",
+            "photos",
+            "photoCaption",
+            "video"
+        ],
+        "adConditions": [
+            "Comme neuf",
+            "Très bon état",
+            "Bon état",
+            "État correct"
+        ],
+        "favoriteTypes": [
+            "place",
+            "event",
+            "deal",
+            "job",
+            "housing",
+            "service",
+            "classified"
+        ],
+        "reportReasons": [
+            "spam",
+            "scam",
+            "offensive",
+            "harassment",
+            "inappropriate",
+            "other"
+        ]
+    },
+    "serviceCategories": [
+        {
+            "key": "maison-travaux",
+            "name": "Maison & travaux",
+            "icon": "hammer"
+        },
+        {
+            "key": "services-domicile",
+            "name": "Services à domicile",
+            "icon": "house"
+        },
+        {
+            "key": "informatique",
+            "name": "Informatique",
+            "icon": "desktop"
+        },
+        {
+            "key": "sport-bien-etre",
+            "name": "Sport & bien-être",
+            "icon": "running"
+        },
+        {
+            "key": "beaute-sante",
+            "name": "Beauté & santé",
+            "icon": "heart"
+        },
+        {
+            "key": "cours-formation",
+            "name": "Cours & formation",
+            "icon": "school"
+        },
+        {
+            "key": "animaux",
+            "name": "Animaux",
+            "icon": "paw"
+        },
+        {
+            "key": "evenementiel",
+            "name": "Événementiel",
+            "icon": "camera"
+        },
+        {
+            "key": "auto-mobilite",
+            "name": "Auto & mobilité",
+            "icon": "car"
+        }
+    ],
+    "classifiedCategories": [
+        {
+            "key": "maison-deco",
+            "name": "Maison & déco",
+            "icon": "sofa"
+        },
+        {
+            "key": "high-tech",
+            "name": "High-tech",
+            "icon": "laptop"
+        },
+        {
+            "key": "mode",
+            "name": "Mode",
+            "icon": "tshirt"
+        },
+        {
+            "key": "sport-loisirs",
+            "name": "Sport & loisirs",
+            "icon": "hiking"
+        },
+        {
+            "key": "bricolage",
+            "name": "Bricolage & jardin",
+            "icon": "hammer"
+        },
+        {
+            "key": "enfants",
+            "name": "Enfants",
+            "icon": "teddy"
+        },
+        {
+            "key": "livres-media",
+            "name": "Livres & médias",
+            "icon": "book"
+        },
+        {
+            "key": "vehicules",
+            "name": "Vélos & mobilité",
+            "icon": "bike"
+        },
+        {
+            "key": "dons",
+            "name": "Dons & gratuit",
+            "icon": "gift"
+        },
+        {
+            "key": "autre",
+            "name": "Autre",
+            "icon": "tag"
+        }
+    ],
+    "neighborhoods": [
+        "Centre-ville / Jaude",
+        "Montferrand",
+        "La Gare",
+        "Saint-Alyre",
+        "Fontgiève",
+        "Les Salins",
+        "Saint-Jacques",
+        "Les Carmes",
+        "Delille",
+        "Chanturgue",
+        "Les Vergnes",
+        "Croix-de-Neyrat",
+        "Champratel",
+        "La Glacière",
+        "Les Cézeaux",
+        "La Pradelle",
+        "Oradou",
+        "Saint-Jean",
+        "Beaulieu",
+        "La Plaine",
+        "Hors Clermont-Ferrand"
+    ],
+    "zone": [
+        2.74,
+        45.52,
+        3.44,
+        46.08
+    ],
+    "serverTime": "2026-10-29T20:27:25Z"
+}

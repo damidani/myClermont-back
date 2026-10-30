@@ -107,7 +107,7 @@ myClermont/
 | [docs/openapi.yaml](docs/openapi.yaml) | Spécification OpenAPI 3.1 (Swagger UI, Postman, génération de clients) |
 | [docs/MODULES.md](docs/MODULES.md) | Système de modules, événements, règles de gamification, brancher un type de favori |
 | [docs/ADMIN.md](docs/ADMIN.md) | Back-office web : gestion de tous les contenus, rôles, sécurité, ajouter un écran |
-| [docs/SPEC_V1.md](docs/SPEC_V1.md) | Spécification v1 de l'équipe app : routes livrées, écarts, questions, variables à fournir |
+| [docs/SPEC_V1.md) · [app-integration/](app-integration/CLAUDE.md) (dossier à donner au Claude de l’app](docs/SPEC_V1.md) | Spécification v1 de l'équipe app : routes livrées, écarts, questions, variables à fournir |
 | [docs/IMPORTS.md](docs/IMPORTS.md) | Imports automatiques (France Travail, agences Poliris, sites partenaires schema.org), format des flux, bouton Contacter externe |
 | [docs/SECURITE.md](docs/SECURITE.md) | Protocole de signature, modèle de menace, limites et recommandations |
 | [docs/INTEGRATION_MOBILE.md](docs/INTEGRATION_MOBILE.md) | Code de signature prêt à l'emploi en Swift et Kotlin |

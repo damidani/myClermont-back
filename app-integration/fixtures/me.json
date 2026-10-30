@@ -1,0 +1,18 @@
+{
+    "id": "b278efc6-943a-4c36-a827-d09e71f2f75a",
+    "displayName": "Orga",
+    "bio": null,
+    "neighborhood": null,
+    "avatar": {
+        "kind": "symbol",
+        "value": "person.crop.circle.fill"
+    },
+    "notificationsEnabled": true,
+    "role": "admin",
+    "plus": {
+        "active": false,
+        "expiresAt": null
+    },
+    "points": 0,
+    "createdAt": "2026-10-29T20:00:11Z"
+}
