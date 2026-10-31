@@ -2,7 +2,7 @@
 
 Généré depuis le routeur. Toutes les routes `/v1/…` existent aussi sous `/api/v1/…`.
 
-Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer facultatif · **compte** = Bearer obligatoire · **rôle X** = compte avec ce rôle · **public** = ni signature ni compte.
+Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer facultatif · **compte** = Bearer obligatoire · **rôle X** = compte avec ce rôle · **public** = ni signature ni compte · **agent** = jeton X-Agent-Token (canal agents).
 
 | Méthode | Chemin | Accès | Limite |
 |---|---|---|---|
@@ -19,6 +19,11 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | DELETE | `/v1/admin/{resource}/{id}` | rôle moderator |  |
 | GET | `/v1/admin/{resource}/{id}` | rôle moderator |  |
 | PATCH | `/v1/admin/{resource}/{id}` | rôle moderator |  |
+| GET | `/v1/agents/messages` | agent | public |
+| POST | `/v1/agents/messages` | agent | public |
+| GET | `/v1/agents/messages/{id}` | agent | public |
+| PATCH | `/v1/agents/messages/{id}` | agent | public |
+| GET | `/v1/agents/status` | agent | public |
 | POST | `/v1/assistant/answer` | compte optionnel | ai |
 | POST | `/v1/auth/apple` | signé | login |
 | POST | `/v1/auth/email/start` | signé | login |
@@ -26,6 +31,7 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | POST | `/v1/auth/google` | signé | login |
 | POST | `/v1/auth/login` | signé | login |
 | POST | `/v1/auth/logout` | compte optionnel |  |
+| POST | `/v1/auth/password/forgot` | signé | login |
 | POST | `/v1/auth/refresh` | signé | login |
 | POST | `/v1/auth/register` | signé | login |
 | GET | `/v1/badges` | compte |  |
@@ -73,8 +79,9 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | POST | `/v1/documents` | compte optionnel | upload |
 | DELETE | `/v1/documents/{id}` | compte optionnel |  |
 | GET | `/v1/events` | compte optionnel |  |
-| POST | `/v1/events` | rôle partner/admin |  |
+| POST | `/v1/events` | rôle partner |  |
 | GET | `/v1/events/agenda` | compte optionnel |  |
+| GET | `/v1/events/agenda/full` | compte optionnel |  |
 | GET | `/v1/events/categories` | compte optionnel |  |
 | POST | `/v1/events/submissions` | compte | post |
 | DELETE | `/v1/events/{id}` | compte |  |
@@ -115,6 +122,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | GET | `/v1/me/export` | compte | contact |
 | GET | `/v1/me/favorites` | compte |  |
 | POST | `/v1/me/favorites/import` | compte |  |
+| DELETE | `/v1/me/favorites/{key}` | compte |  |
+| PUT | `/v1/me/favorites/{key}` | compte |  |
 | DELETE | `/v1/me/favorites/{targetType}/{targetId}` | compte |  |
 | PUT | `/v1/me/favorites/{targetType}/{targetId}` | compte |  |
 | POST | `/v1/me/reviews/import` | compte |  |
