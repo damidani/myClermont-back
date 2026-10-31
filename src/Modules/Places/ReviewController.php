@@ -52,7 +52,8 @@ final class ReviewController
         $place = $this->place((string) $request->param('id'));
         $data = Validator::validate($request->json(), ['rating' => 'required|integer|min:1|max:5', 'text' => 'nullable|string|max:1000']);
         $text = isset($data['text']) && trim($data['text']) !== '' ? trim($data['text']) : null;
-        $status = ContentFilter::check($text) === null ? 'visible' : 'pending';
+        // Brief §5 : un avis contenant un lien ou un nom de domaine attend un modérateur ; la note compte tout de suite
+        $status = ContentFilter::check($text) === null && !ContentFilter::hasLink($text) ? 'visible' : 'pending';
         $userId = (int) $request->attributes['user_id'];
 
         $isNew = self::save((int) $place['id'], $userId, $data['rating'], $text, $status);

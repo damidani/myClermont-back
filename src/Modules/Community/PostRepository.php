@@ -46,9 +46,11 @@ final class PostRepository
         return Database::fetchAll('SELECT ' . self::COLUMNS . ' FROM ' . self::FROM . " WHERE {$where} ORDER BY p.id DESC LIMIT :limit", $params);
     }
 
-    public function find(string $uid): ?array
+    public function find(string $uid, bool $includePending = false): ?array
     {
-        return Database::fetch('SELECT ' . self::COLUMNS . ' FROM ' . self::FROM . " WHERE p.uid = :u AND p.status = 'visible'", ['u' => strtolower($uid)]);
+        $status = $includePending ? "p.status IN ('visible','pending')" : "p.status = 'visible'";
+
+        return Database::fetch('SELECT ' . self::COLUMNS . ' FROM ' . self::FROM . " WHERE p.uid = :u AND {$status}", ['u' => strtolower($uid)]);
     }
 
     /** Compteurs des filtres (« Tout 3 · Discussions 1 · Sondages 1 »), cache court. */
@@ -121,15 +123,15 @@ final class PostRepository
         return $related;
     }
 
-    public function create(int $userId, string $type, ?string $body, ?int $neighborhoodId, array $pollOptions, array $mediaIds): int
+    public function create(int $userId, string $type, ?string $body, ?int $neighborhoodId, array $pollOptions, array $mediaIds, string $status = 'visible'): int
     {
         $now = gmdate('Y-m-d H:i:s');
 
-        return Database::transaction(function () use ($userId, $type, $body, $neighborhoodId, $pollOptions, $mediaIds, $now): int {
+        return Database::transaction(function () use ($userId, $type, $body, $neighborhoodId, $pollOptions, $mediaIds, $now, $status): int {
             $id = Database::insert(
-                'INSERT INTO community_posts (uid, user_id, type, body, neighborhood_id, created_at, updated_at)
-                 VALUES (:uid, :u, :type, :body, :hood, :c, :up)',
-                ['uid' => \App\Security\Crypto::uuid4(), 'u' => $userId, 'type' => $type, 'body' => $body, 'hood' => $neighborhoodId, 'c' => $now, 'up' => $now],
+                'INSERT INTO community_posts (uid, user_id, type, body, neighborhood_id, status, created_at, updated_at)
+                 VALUES (:uid, :u, :type, :body, :hood, :st, :c, :up)',
+                ['uid' => \App\Security\Crypto::uuid4(), 'u' => $userId, 'type' => $type, 'body' => $body, 'hood' => $neighborhoodId, 'st' => $status, 'c' => $now, 'up' => $now],
             );
             foreach (array_values($pollOptions) as $pos => $label) {
                 Database::execute('INSERT INTO community_poll_options (post_id, label, position) VALUES (:p, :l, :pos)', ['p' => $id, 'l' => $label, 'pos' => $pos]);
@@ -199,15 +201,17 @@ final class PostRepository
         );
     }
 
-    public function addComment(int $postId, int $userId, string $body): array
+    public function addComment(int $postId, int $userId, string $body, string $status = 'visible'): array
     {
-        return Database::transaction(function () use ($postId, $userId, $body): array {
+        return Database::transaction(function () use ($postId, $userId, $body, $status): array {
             $uid = \App\Security\Crypto::uuid4();
             Database::execute(
-                'INSERT INTO community_comments (uid, post_id, user_id, body, created_at) VALUES (:uid, :p, :u, :b, :d)',
-                ['uid' => $uid, 'p' => $postId, 'u' => $userId, 'b' => $body, 'd' => gmdate('Y-m-d H:i:s')],
+                'INSERT INTO community_comments (uid, post_id, user_id, body, status, created_at) VALUES (:uid, :p, :u, :b, :st, :d)',
+                ['uid' => $uid, 'p' => $postId, 'u' => $userId, 'b' => $body, 'st' => $status, 'd' => gmdate('Y-m-d H:i:s')],
             );
-            Database::execute('UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = :p', ['p' => $postId]);
+            if ($status === 'visible') {
+                Database::execute('UPDATE community_posts SET comments_count = comments_count + 1 WHERE id = :p', ['p' => $postId]);
+            }
 
             return Database::fetch(
                 'SELECT c.id, c.uid, c.user_id, c.body, c.created_at, u.uid AS author_uid, u.username AS author_username, u.display_name AS author_display_name,

@@ -20,8 +20,10 @@ final class ContentFilter
         }
         $normalized = ' ' . self::normalize($text) . ' ';
         foreach ((array) Config::get('moderation.blocked_words', []) as $word) {
-            // Mot entier, accords compris (« connard », « connards », « connasses »)
-            if (preg_match('/(?<![a-z0-9])' . preg_quote(self::normalize($word), '/') . '(?:e?s|x)?(?![a-z0-9])/u', $normalized)) {
+            // Mot entier, accords compris (« connard », « connards », « connasses ») ; « encul* » = toute la famille de mots
+            $prefix = str_ends_with($word, '*');
+            $w = preg_quote(self::normalize(rtrim($word, '*')), '/');
+            if (preg_match('/(?<![a-z0-9])' . $w . ($prefix ? '[a-z]*' : '(?:e?s|x)?') . '(?![a-z0-9])/u', $normalized)) {
                 return 'words';
             }
         }
@@ -50,11 +52,28 @@ final class ContentFilter
         return null;
     }
 
+    /** Lien, nom de domaine ou raccourcisseur, même sans « https:// » (« bit.ly/xyz », « monsite.com »). */
+    public static function hasLink(?string $text): bool
+    {
+        if ($text === null || trim($text) === '') {
+            return false;
+        }
+
+        return preg_match('#(?:https?://|www\.)\S+|(?<![\w@.-])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|fr|net|org|io|co|me|ly|gl|gd|be|eu|info|biz|app|xyz|site|online|shop|store|link|club|top|ru|cn|tk|ml|ga|cf|gq|to|cc|tv|us|uk|de|ch|ca|es|it|pt|nl)(?:/\S*)?(?![\w.-])#iu', $text, $m) === 1
+            && !preg_match('/^\d+([.,]\d+)*$/', $m[0]);
+    }
+
+    /**
+     * Minuscules, sans accents, chiffres et symboles lus comme des lettres (« c0nn@rd »), lettres répétées réduites
+     * (« connnnard » → « conard »), séparateurs entre lettres retirés (« c.o.n.n.a.r.d »).
+     */
     private static function normalize(string $s): string
     {
         $s = mb_strtolower($s);
-        $s = strtr($s, ['0' => 'o', '1' => 'i', '3' => 'e', '4' => 'a', '@' => 'a', '$' => 's']);
+        $s = strtr($s, ['0' => 'o', '1' => 'i', '3' => 'e', '4' => 'a', '@' => 'a', '$' => 's', '€' => 'e']);
         $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) ?: $s;
+        $ascii = (string) preg_replace_callback('/\b(?:[a-z][.\-_*]){2,}[a-z]\b/', static fn ($m) => preg_replace('/[.\-_*]/', '', $m[0]), $ascii);
+        $ascii = (string) preg_replace('/([a-z])\1+/', '$1', $ascii);
 
         return (string) preg_replace('/\s+/', ' ', $ascii);
     }

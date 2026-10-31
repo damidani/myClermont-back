@@ -172,4 +172,20 @@ return [
         assert_same('2026-03-02T13:16:00Z', $i['start']);
         assert_same('other', App\Modules\Mobility\TrafficController::map(['geometry' => ['type' => 'Point', 'coordinates' => [3.08, 45.77]], 'properties' => ['id' => 'x', 'iconCategory' => 'unknown']])['kind']);
     },
+
+    'brief §5 : variantes d\'insultes, liens dans les avis, pas de faux positifs' => function () {
+        $F = App\Modules\Moderation\ContentFilter::class;
+        foreach (['CONNNNARDS', 'c.o.n.n.a.r.d', 'enkulé', 'espèce de bâtard', 'bande de salopes', 'ferme ta gueule'] as $t) {
+            assert_same('words', $F::check($t), $t);
+        }
+        foreach (['dispute entre voisins', 'Un connaisseur', 'Le concert était top', 'Super accueil, 4.5 sur 5', 'Un pouf très confortable'] as $t) {
+            assert_same(null, $F::check($t), $t);
+        }
+        foreach (['allez-y via bit.ly/xyz', 'voir monsite.com', 'https://exemple.org/page', 't.co/abc'] as $t) {
+            assert_true($F::hasLink($t), $t);
+        }
+        foreach (['Accueil au top', 'Place St.Pierre', '2,50 € le café', null] as $t) {
+            assert_same(false, $F::hasLink($t), (string) $t);
+        }
+    },
 ];

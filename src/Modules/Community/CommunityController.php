@@ -102,10 +102,8 @@ final class CommunityController
             $json['media_ids'] = $json['media'];
         }
         unset($json['kind'], $json['text'], $json['media']);
-        // Filtre automatique : un texte refusé n'est pas publié
-        if (\App\Modules\Moderation\ContentFilter::check(is_string($json['body']) ? $json['body'] : null) !== null) {
-            throw new ValidationException(['text' => 'Ce message ne respecte pas les règles de la communauté.']);
-        }
+        // Filtre automatique (brief §5) : l'auteur reçoit un succès, mais le post attend un modérateur, hors des listes publiques
+        $status = \App\Modules\Moderation\ContentFilter::check(is_string($json['body']) ? $json['body'] : null) === null ? 'visible' : 'pending';
         $data = Validator::validate($json, [
             'type' => 'required|in:' . implode(',', array_keys((array) Config::get('community.types'))),
             'body' => 'nullable|string|max:' . $limits['body_max'],
@@ -160,12 +158,14 @@ final class CommunityController
         }
 
         $neighborhoodId = Database::fetch('SELECT neighborhood_id FROM users WHERE id = :u', ['u' => $userId])['neighborhood_id'] ?? null;
-        $postId = $this->posts->create($userId, $type, $body, $neighborhoodId === null ? null : (int) $neighborhoodId, $options, $mediaIds);
+        $postId = $this->posts->create($userId, $type, $body, $neighborhoodId === null ? null : (int) $neighborhoodId, $options, $mediaIds, $status);
         $post = Database::fetch('SELECT uid FROM community_posts WHERE id = :id', ['id' => $postId]);
 
-        Events::dispatch('community.post_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'type' => $type]);
+        if ($status === 'visible') {
+            Events::dispatch('community.post_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'type' => $type]);
+        }
 
-        $created = $this->posts->find($post['uid']);
+        $created = $this->posts->find($post['uid'], true);
 
         return Response::success(PostPresenter::post($created, $this->posts->related([$created], $userId), $userId), 201);
     }
@@ -255,13 +255,13 @@ final class CommunityController
         $json = $request->json();
         $json['body'] ??= $json['text'] ?? $json['message'] ?? null;   // spec v1 : « message »
         $data = Validator::validate(['body' => $json['body']], ['body' => 'required|string|min:1|max:' . Config::get('community.limits.comment_max', 500)]);
-        if (\App\Modules\Moderation\ContentFilter::check($data['body']) !== null) {
-            throw new ValidationException(['text' => 'Ce commentaire ne respecte pas les règles de la communauté.']);
-        }
+        $status = \App\Modules\Moderation\ContentFilter::check($data['body']) === null ? 'visible' : 'pending';
         $userId = $request->attributes['user_id'];
 
-        $comment = $this->posts->addComment((int) $post['id'], $userId, $data['body']);
-        Events::dispatch('community.comment_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'post_author_id' => (int) $post['user_id']]);
+        $comment = $this->posts->addComment((int) $post['id'], $userId, $data['body'], $status);
+        if ($status === 'visible') {
+            Events::dispatch('community.comment_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'post_author_id' => (int) $post['user_id']]);
+        }
 
         return Response::success(PostPresenter::comment($comment, $userId), 201);
     }

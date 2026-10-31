@@ -34,6 +34,7 @@ final class AdminApiController
     public const RESOURCES = [
         'places' => 'places', 'place_photos' => 'place_photos', 'events' => 'events', 'deals' => 'deals',
         'jobs' => 'job_offers', 'housing' => 'housing_listings', 'services' => 'service_providers', 'reviews' => 'place_reviews',
+        'posts' => 'community_posts', 'comments' => 'community_comments',
     ];
 
     public function index(Request $request): Response
@@ -156,6 +157,9 @@ final class AdminApiController
             'reports'          => $iso($reports),
             'pending_events'   => $iso(Database::fetchAll("SELECT slug AS id, title, venue_name AS venue, starts_at, created_at FROM events WHERE status = 'pending' AND deleted_at IS NULL ORDER BY created_at LIMIT 100")),
             'pending_reviews'  => $iso(Database::fetchAll("SELECT uid AS id, rating, comment AS text, created_at FROM place_reviews WHERE status = 'pending' ORDER BY id LIMIT 100")),
+            // Retenus par le filtre automatique (brief §5) : à publier (status visible) ou supprimer
+            'pending_posts'    => $iso(Database::fetchAll("SELECT uid AS id, type, body AS text, created_at FROM community_posts WHERE status = 'pending' ORDER BY id LIMIT 100")),
+            'pending_comments' => $iso(Database::fetchAll("SELECT uid AS id, body AS text, created_at FROM community_comments WHERE status = 'pending' ORDER BY id LIMIT 100")),
         ]);
     }
 
