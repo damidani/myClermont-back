@@ -27,7 +27,7 @@ final class AppSchemas
         'sun.max.fill', 'cloud.sun.fill', 'drop.fill', 'fish.fill', 'basket.fill', 'truck.box.fill', 'shippingbox.fill',
         'chart.bar.fill', 'banknote.fill', 'globe', 'gearshape.fill', 'lightbulb.fill', 'bolt.fill', 'flame.fill',
         'building.columns.fill', 'figure.walk', 'figure.and.child.holdinghands', 'tshirt.fill', 'washer.fill',
-        'sofa.fill', 'figure.hiking', 'books.vertical.fill', 'figure.2.and.child.holdinghands', 'gamecontroller.fill', 'gift.fill',
+        'sofa.fill', 'music.mic', 'figure.hiking', 'books.vertical.fill', 'figure.2.and.child.holdinghands', 'gamecontroller.fill', 'gift.fill',
     ];
 
     public const EVENT_KINDS = 'soiree|concert|spectacle|expo|famille|sport|marche|festival';

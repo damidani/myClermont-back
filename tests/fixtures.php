@@ -59,7 +59,7 @@ function app_fixtures(): array
     ]));
 
     $agenda = $c(App\Modules\Events\SpecEventController::agendaItem([
-        'slug' => 'balade-des-volcans-2026-11-08', 'title' => 'Balade des volcans', 'kind' => 'famille', 'category_slug' => 'nature',
+        'slug' => 'balade-des-volcans-2026-11-08', 'title' => 'Balade des volcans', 'kind' => null, 'category_slug' => 'nature',
         'venue_name' => 'Chaîne des Puys', 'city' => 'secteur Clermont', 'starts_at' => '2026-11-08 08:00:00', 'ends_at' => '2026-11-08 11:00:00',
         'all_day' => 0, 'price_label' => 'Gratuit', 'image_url' => null, 'summary' => 'Sortie guidée à travers les puys.', 'description' => null,
         'latitude' => '45.7726', 'longitude' => '2.9644',

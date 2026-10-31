@@ -1,0 +1,638 @@
+[
+ {
+  "placeId": "demo-Place de Jaude",
+  "name": "Place de Jaude",
+  "tagline": "Le grand salon à ciel ouvert de Clermont",
+  "intro": "Avec ses 35 000 m², Jaude est le point de rendez-vous du centre-ville : on y vient faire du shopping, prendre le tram ou s'asseoir face au Vercingétorix de Bartholdi. Réaménagée de 2003 à 2005 pour accueillir le tramway, la place réunit des monuments du XVIIe au XXe siècle et les grandes enseignes du Centre Jaude.",
+  "facts": [
+   {
+    "value": 35000,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " m²",
+    "label": "de superficie",
+    "icon": "square.dashed"
+   },
+   {
+    "value": 1903,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "le Vercingétorix de Bartholdi",
+    "icon": "figure.equestrian.sports"
+   },
+   {
+    "value": 2006,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "le tram A traverse la place",
+    "icon": "tram.fill"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "figure.equestrian.sports",
+    "title": "Le Vercingétorix",
+    "text": "Statue équestre en bronze érigée en 1903, signée Bartholdi, l'auteur de la statue de la Liberté."
+   },
+   {
+    "icon": "building.columns.fill",
+    "title": "Saint-Pierre-des-Minimes",
+    "text": "Église de style jésuite du XVIIe siècle, coiffée d'un dôme ajouté au XIXe."
+   },
+   {
+    "icon": "theatermasks.fill",
+    "title": "L'Opéra-Théâtre",
+    "text": "L'ancienne halle aux toiles, transformée en théâtre à l'italienne de 1891 à 1894 par Jean-Joseph Teillard."
+   },
+   {
+    "icon": "flag.2.crossed.fill",
+    "title": "Le général Desaix",
+    "text": "Statue de Nanteuil érigée en 1848 en l'honneur du général auvergnat."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "1630",
+    "text": "Construction de l'église Saint-Pierre-des-Minimes."
+   },
+   {
+    "when": "1848",
+    "text": "Érection de la statue du général Desaix."
+   },
+   {
+    "when": "1894",
+    "text": "L'ancienne halle aux toiles devient l'Opéra-Théâtre."
+   },
+   {
+    "when": "1903",
+    "text": "Le Vercingétorix de Bartholdi s'installe sur la place."
+   },
+   {
+    "when": "1980",
+    "text": "Ouverture du Centre Jaude."
+   },
+   {
+    "when": "2006",
+    "text": "Le tramway traverse la place réaménagée."
+   }
+  ],
+  "hours": {
+   "type": "always",
+   "text": "Accès libre · 24 h/24"
+  },
+  "infos": [
+   {
+    "icon": "mappin.and.ellipse",
+    "title": "Adresse",
+    "value": "Place de Jaude, 63000 Clermont-Ferrand"
+   },
+   {
+    "icon": "tram.fill",
+    "title": "Accès",
+    "value": "Tram A, arrêt Jaude · station C.vélo"
+   },
+   {
+    "icon": "parkingsign.circle.fill",
+    "title": "Stationnement",
+    "value": "Parkings souterrains à proximité"
+   },
+   {
+    "icon": "eurosign.circle.fill",
+    "title": "Tarif",
+    "value": "Gratuit"
+   }
+  ],
+  "tip": "Donne rendez-vous « au pied du Vercingétorix » : c'est le repère le plus simple du centre-ville, à deux pas du tram.",
+  "sources": "Sources : office de tourisme Clermont Auvergne Volcans, Wikipédia. Informations indicatives, à vérifier avant ta visite."
+ },
+ {
+  "placeId": "demo-Jardin Lecoq",
+  "name": "Jardin Lecoq",
+  "tagline": "Cinq hectares de verdure en plein centre",
+  "intro": "Jardin à l'anglaise aux allées sinueuses, le jardin Lecoq aligne pelouses, massifs fleuris et un grand bassin peuplé de canards, à quelques minutes de Jaude. Né jardin botanique en 1781, il prend son visage actuel en 1862 et porte depuis 1871 le nom du naturaliste Henri Lecoq, qui l'a dirigé.",
+  "facts": [
+   {
+    "value": 5,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " ha",
+    "label": "de jardin à l'anglaise",
+    "icon": "leaf.fill"
+   },
+   {
+    "value": 300,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": "",
+    "label": "arbres, dont des essences rares",
+    "icon": "tree.fill"
+   },
+   {
+    "value": 25000,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": "",
+    "label": "plantes et bulbes de saison",
+    "icon": "camera.macro"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "water.waves",
+    "title": "Le grand bassin",
+    "text": "Ses canards font le bonheur des enfants : parfait pour une pause au bord de l'eau."
+   },
+   {
+    "icon": "camera.macro",
+    "title": "Roseraie et pergola",
+    "text": "Ajoutées en 1912, elles fleurissent dès la fin du printemps."
+   },
+   {
+    "icon": "square.grid.3x3.fill",
+    "title": "La mosaïculture",
+    "text": "Environ 8 500 plantes dessinent les armoiries de la ville."
+   },
+   {
+    "icon": "figure.and.child.holdinghands",
+    "title": "Pour les enfants",
+    "text": "Un manège traditionnel et deux aires de jeux."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "1781",
+    "text": "Création du jardin botanique."
+   },
+   {
+    "when": "1862",
+    "text": "Nouveau plan dessiné par le paysagiste Paul de Lavenne de Choulot."
+   },
+   {
+    "when": "1871",
+    "text": "Le jardin prend le nom d'Henri Lecoq."
+   },
+   {
+    "when": "1896",
+    "text": "Inauguration du buste d'Henri Lecoq."
+   },
+   {
+    "when": "1912",
+    "text": "Aménagement de la roseraie et de la pergola."
+   }
+  ],
+  "hours": {
+   "type": "seasonal",
+   "seasons": [
+    {
+     "from": "05-01",
+     "to": "09-14",
+     "open": "06:45",
+     "close": "21:00"
+    },
+    {
+     "from": "09-15",
+     "to": "10-31",
+     "open": "06:45",
+     "close": "19:30"
+    },
+    {
+     "from": "11-01",
+     "to": "02-29",
+     "open": "06:45",
+     "close": "18:00"
+    },
+    {
+     "from": "03-01",
+     "to": "04-30",
+     "open": "06:45",
+     "close": "19:30"
+    }
+   ]
+  },
+  "infos": [
+   {
+    "icon": "mappin.and.ellipse",
+    "title": "Adresse",
+    "value": "Angle bd François-Mitterrand, av. Vercingétorix et cours Sablon"
+   },
+   {
+    "icon": "figure.walk",
+    "title": "Accès",
+    "value": "Environ 12 min à pied de la place de Jaude"
+   },
+   {
+    "icon": "building.columns.fill",
+    "title": "Juste à côté",
+    "value": "Musée Bargoin et muséum Henri-Lecoq"
+   },
+   {
+    "icon": "eurosign.circle.fill",
+    "title": "Tarif",
+    "value": "Gratuit"
+   }
+  ],
+  "tip": "Le jardin ouvre dès 6 h 45 : idéal pour un footing au calme avant que la ville ne s'éveille.",
+  "sources": "Sources : office de tourisme Clermont Auvergne Volcans, Wikipédia, guide-tourisme-france.com. Horaires indicatifs, à vérifier avant ta visite."
+ },
+ {
+  "placeId": "demo-Cathédrale",
+  "name": "Cathédrale",
+  "tagline": "La cathédrale noire, taillée dans la pierre de Volvic",
+  "intro": "Notre-Dame-de-l'Assomption domine Clermont du haut de sa butte. Commencée en 1248 par Jean Deschamps, elle n'est achevée qu'en 1884, d'après les plans de Viollet-le-Duc. Sa couleur sombre vient de la pierre de Volvic, une roche volcanique taillée tout près.",
+  "facts": [
+   {
+    "value": 1248,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "début du chantier gothique",
+    "icon": "hammer.fill"
+   },
+   {
+    "value": 96,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " m",
+    "label": "de hauteur pour les flèches",
+    "icon": "arrow.up.to.line"
+   },
+   {
+    "value": 1862,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "classée monument historique",
+    "icon": "checkmark.seal.fill"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "arrow.up.to.line",
+    "title": "Les deux flèches",
+    "text": "Ajoutées au XIXe siècle d'après les plans de Viollet-le-Duc, achevées en 1884."
+   },
+   {
+    "icon": "circle.hexagongrid.fill",
+    "title": "Les roses du XIVe",
+    "text": "La rose nord joue sur les bleus, la rose sud sur les orangés."
+   },
+   {
+    "icon": "sparkles",
+    "title": "Les vitraux du chœur",
+    "text": "Une partie aurait été financée par le roi et viendrait du même atelier que la Sainte-Chapelle."
+   },
+   {
+    "icon": "bell.fill",
+    "title": "La tour de la Bayette",
+    "text": "Nommée d'après le guetteur posté à son sommet ; sa cloche du XVIIe siècle sonne les heures."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "1248",
+    "text": "L'évêque Hugues de la Tour lance la cathédrale gothique."
+   },
+   {
+    "when": "1287",
+    "text": "Jean Deschamps achève son travail sur le chœur."
+   },
+   {
+    "when": "1862",
+    "text": "Classement au titre des monuments historiques."
+   },
+   {
+    "when": "1866",
+    "text": "Reprise du chantier sur les plans de Viollet-le-Duc."
+   },
+   {
+    "when": "1884",
+    "text": "Façade ouest et flèches achevées."
+   }
+  ],
+  "hours": {
+   "type": "info",
+   "text": "Selon les offices · renseignements à l'office de tourisme"
+  },
+  "infos": [
+   {
+    "icon": "mappin.and.ellipse",
+    "title": "Adresse",
+    "value": "Place de la Victoire, 63000 Clermont-Ferrand"
+   },
+   {
+    "icon": "figure.walk",
+    "title": "Accès",
+    "value": "Environ 5 min à pied de la place de Jaude"
+   },
+   {
+    "icon": "info.circle.fill",
+    "title": "Office de tourisme",
+    "value": "Place de la Victoire · 04 73 98 65 00"
+   },
+   {
+    "icon": "eurosign.circle.fill",
+    "title": "Tarif",
+    "value": "Entrée libre"
+   }
+  ],
+  "tip": "L'office de tourisme est sur la même place : demande-lui les visites guidées du centre historique.",
+  "sources": "Sources : office de tourisme Clermont Auvergne Volcans, Wikipédia. Informations indicatives, à vérifier avant ta visite."
+ },
+ {
+  "placeId": "demo-Montferrand",
+  "name": "Montferrand",
+  "tagline": "L'ancienne rivale, cité médiévale au plan en damier",
+  "intro": "Fondée vers 1120 par le comte d'Auvergne Guillaume VI pour concurrencer Clermont, Montferrand fut ville libre puis ville royale, avant d'être unie à sa voisine par l'édit de Troyes en 1630. Son damier de rues abrite des hôtels particuliers des XVe et XVIe siècles en pierre de lave, avec loggias et escaliers à vis cachés dans les cours.",
+  "facts": [
+   {
+    "value": 1120,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "fondation de la ville",
+    "icon": "flag.fill"
+   },
+   {
+    "value": 1630,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "union avec Clermont",
+    "icon": "link"
+   },
+   {
+    "value": 90,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " min",
+    "label": "de parcours patrimonial",
+    "icon": "figure.walk"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "signpost.right.and.left.fill",
+    "title": "Le carrefour des Taules",
+    "text": "Le cœur historique, à la croisée des deux grands axes de la ville."
+   },
+   {
+    "icon": "music.note",
+    "title": "Notre-Dame-de-la-Prospérité",
+    "text": "Église de style gothique méridional, réputée pour ses sculptures et son acoustique."
+   },
+   {
+    "icon": "cross.vial.fill",
+    "title": "La maison de l'Apothicaire",
+    "text": "L'une des demeures phares du parcours, avec l'hôtel d'Albiat, dit maison des Centaures."
+   },
+   {
+    "icon": "paintpalette.fill",
+    "title": "Le MARQ",
+    "text": "Le musée d'art Roger-Quilliot, installé dans un ancien couvent des Ursulines."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "v. 1120",
+    "text": "Fondation par le comte Guillaume VI d'Auvergne."
+   },
+   {
+    "when": "1292",
+    "text": "Montferrand devient ville royale sous Philippe le Bel."
+   },
+   {
+    "when": "1630",
+    "text": "L'édit de Troyes l'unit à Clermont."
+   },
+   {
+    "when": "1731",
+    "text": "Louis XV confirme définitivement l'union."
+   }
+  ],
+  "hours": {
+   "type": "always",
+   "text": "Accès libre · toute l'année"
+  },
+  "infos": [
+   {
+    "icon": "mappin.and.ellipse",
+    "title": "Point de départ",
+    "value": "Place Louis-Deteix, 63000 Clermont-Ferrand"
+   },
+   {
+    "icon": "tram.fill",
+    "title": "Accès",
+    "value": "Tram A, arrêts Montferrand La Fontaine ou Musée d'Art Roger-Quilliot"
+   },
+   {
+    "icon": "basket.fill",
+    "title": "Marché",
+    "value": "Le vendredi matin, place de la Rodade"
+   },
+   {
+    "icon": "eurosign.circle.fill",
+    "title": "Tarif",
+    "value": "Gratuit"
+   }
+  ],
+  "tip": "Suis les bornes du parcours patrimonial (environ 1 h 30) et jette un œil dans les cours ouvertes : les escaliers à vis s'y cachent.",
+  "sources": "Sources : office de tourisme Clermont Auvergne Volcans, Wikipédia. Informations indicatives, à vérifier avant ta visite."
+ },
+ {
+  "placeId": "demo-Royat",
+  "name": "Royat",
+  "tagline": "Station thermale depuis l'Antiquité, au pied des volcans",
+  "intro": "Dans la vallée de la Tiretaine, Royat soigne depuis l'époque romaine. Après la visite de Napoléon III et de l'impératrice Eugénie en 1862, la station se pare d'architectures Belle Époque. On y vient aujourd'hui pour les thermes, réputés pour les maladies cardio-artérielles et la rhumatologie, pour l'espace Royatonic et pour son vieux bourg autour d'une église fortifiée.",
+  "facts": [
+   {
+    "value": 32,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " °C",
+    "label": "à la source Eugénie",
+    "icon": "thermometer.medium"
+   },
+   {
+    "value": 100000,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " L/h",
+    "label": "de débit pour la source",
+    "icon": "drop.fill"
+   },
+   {
+    "value": 1862,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "visite de Napoléon III et d'Eugénie",
+    "icon": "crown.fill"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "drop.fill",
+    "title": "La source Eugénie",
+    "text": "Baptisée en l'honneur de l'impératrice : une eau à 32 °C, la plus utilisée pour les soins."
+   },
+   {
+    "icon": "figure.pool.swim",
+    "title": "Royatonic",
+    "text": "Espace thermoludique sous dôme : bassins chauds, lagune, hammam et espace nordique."
+   },
+   {
+    "icon": "shield.fill",
+    "title": "L'église Saint-Léger",
+    "text": "Église fortifiée du XIIe siècle bâtie sur une crypte du Xe, au cœur du vieux bourg."
+   },
+   {
+    "icon": "water.waves",
+    "title": "La grotte des Laveuses",
+    "text": "Sous l'ancien prieuré, sept sources jaillissent d'une cavité creusée dans une coulée de lave."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "Antiquité",
+    "text": "Les Gallo-Romains exploitent déjà les sources chaudes."
+   },
+   {
+    "when": "Xe siècle",
+    "text": "Crypte de l'église Saint-Léger."
+   },
+   {
+    "when": "1862",
+    "text": "Napoléon III et l'impératrice Eugénie visitent Royat."
+   },
+   {
+    "when": "1946",
+    "text": "Création de l'Institut de recherches cardio-vasculaires."
+   }
+  ],
+  "hours": {
+   "type": "info",
+   "text": "Bourg et grotte des Laveuses en accès libre · thermes et Royatonic selon saison"
+  },
+  "infos": [
+   {
+    "icon": "info.circle.fill",
+    "title": "Office de tourisme",
+    "value": "3 place Allard, 63130 Royat · 04 73 29 74 70"
+   },
+   {
+    "icon": "heart.text.square.fill",
+    "title": "Cures thermales",
+    "value": "Maladies cardio-artérielles et rhumatologie"
+   },
+   {
+    "icon": "eurosign.circle.fill",
+    "title": "Grotte des Laveuses",
+    "value": "Gratuit, tous les jours"
+   }
+  ],
+  "tip": "Du parc thermal, monte au vieux bourg par la grotte des Laveuses : la balade est courte et passe au pied de l'église Saint-Léger.",
+  "sources": "Sources : office de tourisme Clermont Auvergne Volcans, European Historic Thermal Towns, Wikipédia. Informations indicatives, à vérifier avant ta visite."
+ },
+ {
+  "placeId": "demo-Chamalières",
+  "name": "Chamalières",
+  "tagline": "Parcs, villégiature thermale et billets de banque",
+  "intro": "Voisine immédiate de Clermont, Chamalières partage avec Royat la station thermale. On s'y promène au parc Montjoly, autour d'un château du XVIIIe siècle devenu mairie. La Banque de France, installée ici depuis 1923, y imprime aujourd'hui des billets en euros.",
+  "facts": [
+   {
+    "value": 17509,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": "",
+    "label": "habitants en 2023",
+    "icon": "person.3.fill"
+   },
+   {
+    "value": 1923,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "arrivée de l'imprimerie de la Banque de France",
+    "icon": "banknote.fill"
+   },
+   {
+    "value": 1960,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "le parc Montjoly ouvre au public",
+    "icon": "tree.fill"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "tree.fill",
+    "title": "Le parc Montjoly",
+    "text": "Jardins à la française, aires de jeux et jardin éco-botanique autour du château-mairie."
+   },
+   {
+    "icon": "drop.circle.fill",
+    "title": "La source des Roches",
+    "text": "Sanctuaire gallo-romain où des milliers d'ex-voto en bois ont été retrouvés."
+   },
+   {
+    "icon": "building.columns.fill",
+    "title": "Les thermes antiques",
+    "text": "Vestiges gallo-romains d'environ 2 800 m², protégés depuis 1889."
+   },
+   {
+    "icon": "train.side.front.car",
+    "title": "La gare de Royat-Chamalières",
+    "text": "Inaugurée en 1886, inscrite aux monuments historiques en 1994."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "Antiquité",
+    "text": "Sanctuaire de la source des Roches et thermes gallo-romains."
+   },
+   {
+    "when": "v. 1755",
+    "text": "Construction du château de Montjoly."
+   },
+   {
+    "when": "1886",
+    "text": "Inauguration de la gare de Royat-Chamalières."
+   },
+   {
+    "when": "1923",
+    "text": "La Banque de France installe son imprimerie."
+   },
+   {
+    "when": "1960",
+    "text": "Le château devient la mairie et le parc ouvre au public."
+   }
+  ],
+  "hours": {
+   "type": "daily",
+   "open": "07:30",
+   "close": "19:30"
+  },
+  "infos": [
+   {
+    "icon": "mappin.and.ellipse",
+    "title": "Parc Montjoly",
+    "value": "1 place Claude-Wolff, 63400 Chamalières"
+   },
+   {
+    "icon": "pawprint.fill",
+    "title": "Animaux",
+    "value": "Chiens acceptés en laisse"
+   },
+   {
+    "icon": "eurosign.circle.fill",
+    "title": "Tarif",
+    "value": "Gratuit"
+   }
+  ],
+  "tip": "Le parc Montjoly ouvre dès 7 h 30 : une pause au vert idéale avant de filer vers les thermes de Royat.",
+  "sources": "Sources : office de tourisme Clermont Auvergne Volcans, Wikipédia. Horaires indicatifs, à vérifier avant ta visite."
+ }
+]

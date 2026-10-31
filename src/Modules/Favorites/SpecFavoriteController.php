@@ -203,9 +203,9 @@ final class SpecFavoriteController
             // uid / slug sont en ASCII : un nom accentué ne se compare qu'aux noms
             $ascii = preg_match('/^[\x20-\x7E]+$/', $value) === 1;
             $row = Database::fetch(
-                "SELECT uid FROM places WHERE status = 'published' AND deleted_at IS NULL AND ("
-                . ($ascii ? 'uid = :a OR slug = :b OR ' : '') . 'demo_name = :c OR name = :d) LIMIT 1',
-                ($ascii ? ['a' => strtolower($value), 'b' => strtolower($value)] : []) + ['c' => $value, 'd' => $value],
+                "SELECT uid FROM places WHERE status = 'published' AND deleted_at IS NULL AND (app_id = :e OR "
+                . ($ascii ? 'uid = :a OR slug = :b OR ' : '') . 'demo_name = :c OR name = :d) ORDER BY app_id = :e2 DESC LIMIT 1',
+                ($ascii ? ['a' => strtolower($value), 'b' => strtolower($value)] : []) + ['c' => $value, 'd' => $value, 'e' => $value, 'e2' => $value],
             );
             return $row ? ['place', $row['uid']] : null;
         }

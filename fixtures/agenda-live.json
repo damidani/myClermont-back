@@ -1,0 +1,65 @@
+{
+    "items": [
+        {
+            "id": "asm-racing-92-2026-10-31",
+            "title": "ASM – Racing 92",
+            "category": "Sport",
+            "venue": "Stade Marcel-Michelin · Clermont-Ferrand",
+            "date": "2026-10-31T14:30:00+01:00",
+            "duration": "3 h",
+            "price": "",
+            "image": "https://api.myclermont.app/static/defaults/agenda-sport.jpg",
+            "icon": "sportscourt.fill",
+            "description": "8e journée du Top 14 : la Yellow Army pousse l’ASM face au Racing 92 au stade Marcel-Michelin.",
+            "program": [],
+            "latitude": 45.790147,
+            "longitude": 3.106043
+        },
+        {
+            "id": "you-jump-halloween-2026-10-31",
+            "title": "Halloween au trampoline",
+            "category": "Famille",
+            "venue": "Trampoline Park You Jump · Clermont-Ferrand",
+            "date": "2026-10-31T18:00:00+01:00",
+            "duration": "6 h",
+            "price": "Billetterie en ligne",
+            "image": "https://api.myclermont.app/static/defaults/agenda-famille.jpg",
+            "icon": "figure.2.and.child.holdinghands",
+            "description": "Le parc se déguise : trampolines à volonté, maquillage, bonbons et concours de costumes avec des lots. Enfants accompagnés d’un adulte.",
+            "program": [],
+            "latitude": 45.757823,
+            "longitude": 3.148708
+        },
+        {
+            "id": "halloween-warhol-2026-10-31",
+            "title": "Halloween Night au Warhol",
+            "category": "Musique",
+            "venue": "Le Warhol · Aubière",
+            "date": "2026-10-31T18:00:00+01:00",
+            "duration": "11 h",
+            "price": "",
+            "image": "https://api.myclermont.app/static/defaults/agenda-musique.jpg",
+            "icon": "music.mic",
+            "description": "Le bar-club d’Aubière passe en mode Halloween : on boit, on mange, on danse… déguisé, jusqu’à 5 h du matin.",
+            "program": [],
+            "latitude": 45.75481,
+            "longitude": 3.130085
+        },
+        {
+            "id": "bal-de-promo-arboris-2026-10-31",
+            "title": "Mystère au bal de promo",
+            "category": "Musique",
+            "venue": "La Forêt des Arboris · Aydat",
+            "date": "2026-10-31T19:00:00+01:00",
+            "duration": "4 h",
+            "price": "Réservation en ligne",
+            "image": "https://api.myclermont.app/static/defaults/agenda-musique.jpg",
+            "icon": "music.mic",
+            "description": "Cluedo géant en pleine forêt, puis bal de promo 1986 en tenue « creepy prom ». Cocktail et repas compris. À 25 min de Clermont.",
+            "program": [],
+            "latitude": 45.660852,
+            "longitude": 2.983135
+        }
+    ],
+    "nextCursor": null
+}

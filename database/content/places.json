@@ -1,0 +1,968 @@
+[
+ {
+  "id": "demo-Place de Jaude",
+  "name": "Place de Jaude",
+  "category": "incontournable",
+  "latitude": 45.7765,
+  "longitude": 3.0821,
+  "subtitle": "À découvrir · Cœur de Clermont",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": "Place de Jaude",
+  "natureKind": null
+ },
+ {
+  "id": "demo-Jardin Lecoq",
+  "name": "Jardin Lecoq",
+  "category": "incontournable",
+  "latitude": 45.7706,
+  "longitude": 3.0897,
+  "subtitle": "Nature · à 880 m de Jaude",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": "Jardin Lecoq",
+  "natureKind": null
+ },
+ {
+  "id": "demo-Cathédrale",
+  "name": "Cathédrale",
+  "category": "incontournable",
+  "latitude": 45.7785,
+  "longitude": 3.0853,
+  "subtitle": "Culture · à 330 m de Jaude",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": "Cathédrale",
+  "natureKind": null
+ },
+ {
+  "id": "demo-Montferrand",
+  "name": "Montferrand",
+  "category": "incontournable",
+  "latitude": 45.7932,
+  "longitude": 3.115,
+  "subtitle": "Culture · à 3,2 km de Jaude",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": "Montferrand",
+  "natureKind": null
+ },
+ {
+  "id": "demo-Royat",
+  "name": "Royat",
+  "category": "incontournable",
+  "latitude": 45.7655,
+  "longitude": 3.0545,
+  "subtitle": "Activités · à 2,5 km de Jaude",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": "Royat",
+  "natureKind": null
+ },
+ {
+  "id": "demo-Chamalières",
+  "name": "Chamalières",
+  "category": "incontournable",
+  "latitude": 45.7747,
+  "longitude": 3.0655,
+  "subtitle": "Nature · à 1,3 km de Jaude",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": "Chamalières",
+  "natureKind": null
+ },
+ {
+  "id": "nature-puy-de-dome",
+  "name": "Sommet du puy de Dôme",
+  "category": "spot",
+  "latitude": 45.7724,
+  "longitude": 2.9644,
+  "subtitle": "Orcines · 1 465 m",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "panorama",
+  "details": {
+   "kinds": [
+    "panorama",
+    "balade"
+   ],
+   "highlight": "1 465 m",
+   "summary": "Le géant de la Chaîne des Puys : vue à 360° sur les volcans, la Limagne et Clermont.",
+   "facts": [
+    "Montée en train à crémaillère (Panoramique des Dômes, payant) ou à pied par le chemin des Muletiers",
+    "Vestiges du temple de Mercure au sommet",
+    "Chaîne des Puys – faille de Limagne, patrimoine mondial de l’UNESCO"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-muletiers",
+  "name": "Chemin des Muletiers",
+  "category": "spot",
+  "latitude": 45.7647,
+  "longitude": 2.9442,
+  "subtitle": "Départ du col de Ceyssat",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "balade",
+  "details": {
+   "kinds": [
+    "balade"
+   ],
+   "highlight": "≈ 1 h de montée",
+   "summary": "Le sentier historique pour monter au sommet du puy de Dôme à pied.",
+   "facts": [
+    "≈ 1 h de montée pour ≈ 390 m de dénivelé",
+    "Chemin raide mais bien tracé : prévois de bonnes chaussures",
+    "Redescente possible avec le Panoramique des Dômes (payant)"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-pariou",
+  "name": "Puy de Pariou",
+  "category": "spot",
+  "latitude": 45.7955,
+  "longitude": 2.9703,
+  "subtitle": "Orcines",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "balade",
+  "details": {
+   "kinds": [
+    "balade",
+    "panorama"
+   ],
+   "highlight": "Cratère parfait",
+   "summary": "Un cratère circulaire spectaculaire, l’un des plus photographiés de la Chaîne des Puys.",
+   "facts": [
+    "Accès gratuit, montée par des escaliers en bois",
+    "Tour du cratère par le sentier de crête",
+    "Départ conseillé : parking du col des Goules"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-vache-lassolas",
+  "name": "Puys de la Vache et de Lassolas",
+  "category": "spot",
+  "latitude": 45.70528,
+  "longitude": 2.96333,
+  "subtitle": "Saint-Genès-Champanelle",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "balade",
+  "details": {
+   "kinds": [
+    "balade",
+    "panorama"
+   ],
+   "highlight": "Scories rouges",
+   "summary": "Deux volcans jumeaux éventrés, aux scories rouges et noires spectaculaires.",
+   "facts": [
+    "Cratères égueulés, ouverts par les coulées de lave",
+    "Leur coulée a barré la Veyre et donné naissance au lac d’Aydat",
+    "Boucle qui passe par les deux cratères"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-gergovie",
+  "name": "Plateau de Gergovie",
+  "category": "spot",
+  "latitude": 45.7094,
+  "longitude": 3.1233,
+  "subtitle": "La Roche-Blanche · 744 m",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "panorama",
+  "details": {
+   "kinds": [
+    "panorama",
+    "piqueNique",
+    "balade"
+   ],
+   "highlight": "Vue à 360°",
+   "summary": "Le plateau de la victoire de Vercingétorix sur César, avec une vue à 360° sur la Limagne et les volcans.",
+   "facts": [
+    "Site de la bataille de Gergovie (52 av. J.-C.)",
+    "Musée archéologique de la bataille sur le plateau",
+    "Grandes pelouses pour pique-niquer face à la Chaîne des Puys"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-montjuzet",
+  "name": "Parc de Montjuzet",
+  "category": "spot",
+  "latitude": 45.7905,
+  "longitude": 3.0778,
+  "subtitle": "Clermont-Ferrand",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "panorama",
+  "details": {
+   "kinds": [
+    "panorama",
+    "piqueNique",
+    "balade"
+   ],
+   "highlight": "En pleine ville",
+   "summary": "Le balcon de Clermont : un parc sur la colline, avec vue sur la cathédrale et la Chaîne des Puys.",
+   "facts": [
+    "Accès à pied depuis le centre-ville",
+    "Pelouses et coins ombragés pour pique-niquer",
+    "Idéal au coucher du soleil"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-cotes-clermont",
+  "name": "Côtes de Clermont",
+  "category": "spot",
+  "latitude": 45.8125,
+  "longitude": 3.082,
+  "subtitle": "Durtol · Nohanent · Blanzat",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "balade",
+  "details": {
+   "kinds": [
+    "balade",
+    "panorama"
+   ],
+   "highlight": "Près de la ville",
+   "summary": "Un plateau au nord de Clermont, entre bois, vergers et anciennes vignes, avec vue sur toute la ville.",
+   "facts": [
+    "Sentiers au départ de Durtol, Nohanent ou Blanzat",
+    "Vue plongeante sur Clermont et la Limagne",
+    "Parfait pour une sortie courte après le travail"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-montrognon",
+  "name": "Puy de Montrognon",
+  "category": "spot",
+  "latitude": 45.7347,
+  "longitude": 3.0575,
+  "subtitle": "Ceyrat",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "panorama",
+  "details": {
+   "kinds": [
+    "panorama",
+    "balade"
+   ],
+   "highlight": "Ruines médiévales",
+   "summary": "Une butte volcanique coiffée des ruines d’un château médiéval, face à Clermont.",
+   "facts": [
+    "Courte montée jusqu’aux ruines du château",
+    "Vue sur Clermont, Gergovie et la Chaîne des Puys"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-aydat",
+  "name": "Lac d’Aydat",
+  "category": "spot",
+  "latitude": 45.663996,
+  "longitude": 2.984505,
+  "subtitle": "Aydat",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "baignade",
+  "details": {
+   "kinds": [
+    "baignade",
+    "peche",
+    "piqueNique",
+    "balade"
+   ],
+   "highlight": "2 plages l’été",
+   "summary": "Le plus grand lac naturel d’Auvergne, né d’une coulée de lave des puys de la Vache et de Lassolas.",
+   "facts": [
+    "Deux plages surveillées en juillet-août",
+    "Tour du lac à pied et activités nautiques en été",
+    "Pêche du bord avec une carte de pêche"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-chambon",
+  "name": "Lac Chambon",
+  "category": "spot",
+  "latitude": 45.57028,
+  "longitude": 2.92167,
+  "subtitle": "Murol · Chambon-sur-Lac",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "baignade",
+  "details": {
+   "kinds": [
+    "baignade",
+    "peche",
+    "balade"
+   ],
+   "highlight": "Plage l’été",
+   "summary": "Un lac volcanique au pied du château de Murol, formé quand le volcan du Tartaret a barré la vallée.",
+   "facts": [
+    "Plage aménagée, surveillée en saison",
+    "Sentier tout autour du lac"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-cournon",
+  "name": "Plan d’eau de Cournon",
+  "category": "spot",
+  "latitude": 45.739,
+  "longitude": 3.224,
+  "subtitle": "Cournon-d’Auvergne",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "baignade",
+  "details": {
+   "kinds": [
+    "baignade",
+    "piqueNique",
+    "balade"
+   ],
+   "highlight": "Plage l’été",
+   "summary": "Une base de loisirs à deux pas de Clermont, avec plage, pelouses et jeux pour les enfants.",
+   "facts": [
+    "Baignade surveillée en saison",
+    "Pelouses et aires de jeux"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-tazenat",
+  "name": "Gour de Tazenat",
+  "category": "spot",
+  "latitude": 45.9819,
+  "longitude": 2.9911,
+  "subtitle": "Charbonnières-les-Vieilles",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "balade",
+  "details": {
+   "kinds": [
+    "balade",
+    "piqueNique"
+   ],
+   "highlight": "Lac de cratère",
+   "summary": "Un lac rond et profond niché dans un cratère d’explosion (maar), au nord de la Chaîne des Puys.",
+   "facts": [
+    "Boucle de randonnée d’environ 7 km (≈ 2 h), très facile",
+    "Le volcan le plus au nord de la Chaîne des Puys",
+    "Baignade non surveillée : renseigne-toi sur place"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-guery",
+  "name": "Lac de Guéry",
+  "category": "spot",
+  "latitude": 45.6197,
+  "longitude": 2.8167,
+  "subtitle": "Massif du Sancy · 1 244 m",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "peche",
+  "details": {
+   "kinds": [
+    "peche",
+    "balade"
+   ],
+   "highlight": "1 244 m",
+   "summary": "Le plus haut lac naturel d’Auvergne, non loin des roches Tuilière et Sanadoire.",
+   "facts": [
+    "Pêche réputée en eaux d’altitude",
+    "Baignade interdite"
+   ],
+   "propice": false,
+   "warning": "Cueillette interdite dans la forêt autour du lac (ONF) : laisse champignons et fleurs en place.",
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-allier-pont-du-chateau",
+  "name": "L’Allier à Pont-du-Château",
+  "category": "spot",
+  "latitude": 45.7985,
+  "longitude": 3.245,
+  "subtitle": "Pont-du-Château",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "peche",
+  "details": {
+   "kinds": [
+    "peche",
+    "balade"
+   ],
+   "highlight": "2e catégorie",
+   "summary": "Les berges de l’Allier au pied de l’ancienne cité des bateliers.",
+   "facts": [
+    "Rivière de 2e catégorie : carnassiers et poissons blancs",
+    "Pêche du saumon interdite sur tout l’Allier",
+    "Balade sur les berges et le vieux pont"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-martailles",
+  "name": "Étang des Martailles",
+  "category": "spot",
+  "latitude": 45.8323,
+  "longitude": 3.2603,
+  "subtitle": "Les Martres-d’Artière",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "peche",
+  "details": {
+   "kinds": [
+    "peche",
+    "balade"
+   ],
+   "highlight": "18 ha",
+   "summary": "Un grand étang de pêche à l’est de Clermont, entre Limagne et Allier.",
+   "facts": [
+    "Plan d’eau d’environ 18 ha",
+    "Règlement de pêche propre à l’étang : renseigne-toi avant de lancer"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-sioule-pontgibaud",
+  "name": "La Sioule à Pontgibaud",
+  "category": "spot",
+  "latitude": 45.8303,
+  "longitude": 2.8494,
+  "subtitle": "Pontgibaud",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "peche",
+  "details": {
+   "kinds": [
+    "peche",
+    "balade"
+   ],
+   "highlight": "Rivière à truites",
+   "summary": "La Sioule, rivière de 1re catégorie, serpente au pied du château Dauphin de Pontgibaud.",
+   "facts": [
+    "1re catégorie : truite, ouverture en mars",
+    "Balade le long de la rivière dans le village"
+   ],
+   "propice": false,
+   "warning": null,
+   "positionApprox": false
+  }
+ },
+ {
+  "id": "nature-randan",
+  "name": "Forêt domaniale de Randan",
+  "category": "spot",
+  "latitude": 46.0167,
+  "longitude": 3.355,
+  "subtitle": "Randan",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "champignons",
+  "details": {
+   "kinds": [
+    "champignons",
+    "muguet",
+    "balade"
+   ],
+   "highlight": "Zone propice",
+   "summary": "Une grande forêt de feuillus gérée par l’ONF, au nord de la Limagne : un classique des promeneurs et des cueilleurs.",
+   "facts": [
+    "Forêt domaniale : cueillette familiale tolérée, sauf arrêté local",
+    "Allées forestières faciles, idéales en famille",
+    "Champignons à l’automne, muguet au printemps"
+   ],
+   "propice": true,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-chartreuse",
+  "name": "Forêt de la Chartreuse",
+  "category": "spot",
+  "latitude": 45.877,
+  "longitude": 2.811,
+  "subtitle": "Montfermy · Combrailles",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "champignons",
+  "details": {
+   "kinds": [
+    "champignons",
+    "balade"
+   ],
+   "highlight": "Zone propice",
+   "summary": "Une forêt domaniale de la vallée de la Sioule, entre Pontgibaud et les Combrailles.",
+   "facts": [
+    "Sentiers en sous-bois au-dessus de la Sioule",
+    "Cascade de Montfermy à proximité",
+    "Champignons à l’automne, selon la météo"
+   ],
+   "propice": true,
+   "warning": null,
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "nature-comte",
+  "name": "Forêt de la Comté",
+  "category": "spot",
+  "latitude": 45.6368,
+  "longitude": 3.3039,
+  "subtitle": "Sallèdes · Vic-le-Comte",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": "balade",
+  "details": {
+   "kinds": [
+    "balade"
+   ],
+   "highlight": "Site protégé",
+   "summary": "Un vaste massif forestier au sud-est de Clermont, classé Espace naturel sensible du Puy-de-Dôme.",
+   "facts": [
+    "Sentiers balisés en sous-bois"
+   ],
+   "propice": false,
+   "warning": "Espace naturel sensible : pas de cueillette, laisse fleurs et plantes en place.",
+   "positionApprox": true
+  }
+ },
+ {
+  "id": "lieu-vulcania",
+  "name": "Vulcania",
+  "category": "sport",
+  "latitude": 45.8137,
+  "longitude": 2.9406,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Vulcania"
+  }
+ },
+ {
+  "id": "lieu-panoramique-des-domes",
+  "name": "Panoramique des Dômes",
+  "category": "nature",
+  "latitude": 45.771,
+  "longitude": 2.988,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Panoramique des Dômes"
+  }
+ },
+ {
+  "id": "lieu-l-aventure-michelin",
+  "name": "L'Aventure Michelin",
+  "category": "culture",
+  "latitude": 45.7915,
+  "longitude": 3.1105,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "L'Aventure Michelin Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-museum-henri-lecoq",
+  "name": "Muséum Henri-Lecoq",
+  "category": "culture",
+  "latitude": 45.7737,
+  "longitude": 3.088,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Muséum Henri-Lecoq Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-musee-d-art-roger-quilliot",
+  "name": "Musée d'art Roger-Quilliot",
+  "category": "culture",
+  "latitude": 45.7964,
+  "longitude": 3.1135,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Musée d'art Roger-Quilliot"
+  }
+ },
+ {
+  "id": "lieu-musee-bargoin",
+  "name": "Musée Bargoin",
+  "category": "culture",
+  "latitude": 45.7735,
+  "longitude": 3.0874,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Musée Bargoin Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-stade-marcel-michelin",
+  "name": "Stade Marcel-Michelin",
+  "category": "sport",
+  "latitude": 45.789,
+  "longitude": 3.108,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Stade Marcel-Michelin"
+  }
+ },
+ {
+  "id": "lieu-stade-gabriel-montpied",
+  "name": "Stade Gabriel-Montpied",
+  "category": "sport",
+  "latitude": 45.8155,
+  "longitude": 3.1215,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Stade Gabriel-Montpied"
+  }
+ },
+ {
+  "id": "lieu-zenith-d-auvergne",
+  "name": "Zénith d'Auvergne",
+  "category": "culture",
+  "latitude": 45.7442,
+  "longitude": 3.1975,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Zénith d'Auvergne"
+  }
+ },
+ {
+  "id": "lieu-royatonic",
+  "name": "Royatonic",
+  "category": "sport",
+  "latitude": 45.7655,
+  "longitude": 3.0505,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Royatonic Royat"
+  }
+ },
+ {
+  "id": "lieu-opera-theatre-de-clermont-ferrand",
+  "name": "Opéra-Théâtre de Clermont-Ferrand",
+  "category": "culture",
+  "latitude": 45.7774,
+  "longitude": 3.0838,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Opéra-Théâtre Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-la-cooperative-de-mai",
+  "name": "La Coopérative de Mai",
+  "category": "culture",
+  "latitude": 45.784,
+  "longitude": 3.095,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "La Coopérative de Mai"
+  }
+ },
+ {
+  "id": "lieu-la-comedie-de-clermont-ferrand",
+  "name": "La Comédie de Clermont-Ferrand",
+  "category": "culture",
+  "latitude": 45.7712,
+  "longitude": 3.087,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "La Comédie de Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-jardin-botanique-de-la-charme",
+  "name": "Jardin botanique de la Charme",
+  "category": "nature",
+  "latitude": 45.7935,
+  "longitude": 3.096,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Jardin botanique de la Charme"
+  }
+ },
+ {
+  "id": "lieu-basilique-notre-dame-du-port",
+  "name": "Basilique Notre-Dame-du-Port",
+  "category": "culture",
+  "latitude": 45.7795,
+  "longitude": 3.089,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Basilique Notre-Dame-du-Port"
+  }
+ },
+ {
+  "id": "lieu-fontaine-d-amboise",
+  "name": "Fontaine d'Amboise",
+  "category": "culture",
+  "latitude": 45.7797,
+  "longitude": 3.085,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Fontaine d'Amboise Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-stade-nautique-pierre-de-coubertin",
+  "name": "Stade nautique Pierre-de-Coubertin",
+  "category": "sport",
+  "latitude": 45.77,
+  "longitude": 3.097,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Stade nautique Pierre-de-Coubertin Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-patinoire-de-clermont-ferrand",
+  "name": "Patinoire de Clermont-Ferrand",
+  "category": "sport",
+  "latitude": 45.7677,
+  "longitude": 3.1186,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Patinoire Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-cinema-le-rio",
+  "name": "Cinéma Le Rio",
+  "category": "culture",
+  "latitude": 45.7935,
+  "longitude": 3.082,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Cinéma Le Rio Clermont-Ferrand"
+  }
+ },
+ {
+  "id": "lieu-polydome",
+  "name": "Polydôme",
+  "category": "culture",
+  "latitude": 45.788,
+  "longitude": 3.0925,
+  "subtitle": "",
+  "phone": null,
+  "website": null,
+  "isPartner": false,
+  "demoName": null,
+  "natureKind": null,
+  "details": {
+   "positionApprox": true,
+   "searchQuery": "Polydôme Clermont-Ferrand"
+  }
+ }
+]

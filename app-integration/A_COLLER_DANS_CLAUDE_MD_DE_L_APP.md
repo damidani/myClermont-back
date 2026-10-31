@@ -20,6 +20,17 @@ Content-Type: application/json
 
 ### 1. Au début de CHAQUE session, avant tout autre travail
 
+0. **Mettre à jour le dossier `app-integration/` tout seul** (consignes, routes, fixtures). Ne jamais demander au propriétaire de le renvoyer à la main :
+   ```bash
+   V=$(curl -s -H "X-Agent-Token: $AGENTS_TOKEN" -H "X-Agent-Name: ios" https://api.myclermont.app/api/v1/agents/status | python3 -c 'import sys,json; print(json.load(sys.stdin)["bundle"]["version"])')
+   if [ "$V" != "$(cat app-integration/VERSION 2>/dev/null)" ]; then
+     curl -sf -H "X-Agent-Token: $AGENTS_TOKEN" -H "X-Agent-Name: ios" -o /tmp/app-integration.zip https://api.myclermont.app/api/v1/agents/bundle \
+       && unzip -oq /tmp/app-integration.zip -d . && echo "app-integration mis à jour ($V)"
+   fi
+   ```
+   - L'archive ne contient jamais `test-instance.local.md` (secrets) : le fichier local est conservé tel quel.
+   - Si ce fichier (`A_COLLER_DANS_CLAUDE_MD_DE_L_APP.md`) a changé, recopier son contenu dans le `CLAUDE.md` de l'app.
+   - Relire ensuite `app-integration/CLAUDE.md` et les fixtures modifiées.
 1. Lire l'état des assistants (dernière connexion du back-end, son dernier compte rendu) : `GET /agents/status`.
 2. Lire les messages qui te sont adressés : `GET /agents/messages?to=ios` (les 200 derniers) ; ouvrir le fil complet de chaque réponse `done` non encore intégrée : `GET /agents/messages/<id>`.
 3. Lire les comptes rendus du back-end depuis ta dernière session : `GET /agents/messages?from=backend&kind=report&since=<date de ta dernière session>`.

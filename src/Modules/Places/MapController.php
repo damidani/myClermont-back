@@ -156,7 +156,7 @@ final class MapController
     public static function place(array $p): array
     {
         return [
-            'id'          => $p['uid'],
+            'id'          => $p['app_id'] ?? $p['uid'],   // identifiant de l'app pour les lieux qu'elle a fournis (clé spot-<id>)
             'name'        => $p['name'],
             'category'    => $p['app_category_value'],
             'latitude'    => round((float) $p['latitude'], 6),
@@ -178,18 +178,23 @@ final class MapController
 
     public static function columns(): string
     {
-        return 'p.id, p.uid, p.slug, p.name, p.demo_name, p.subtitle, p.tagline, p.latitude, p.longitude, p.phone, p.website_url, '
+        return 'p.id, p.uid, p.app_id, p.slug, p.name, p.demo_name, p.subtitle, p.tagline, p.latitude, p.longitude, p.phone, p.website_url, '
              . self::APP_CATEGORY . ' AS app_category_value, ' . self::PARTNER . ' AS is_partner_active, '
              . "JSON_UNQUOTE(JSON_EXTRACT(p.nature, '$.kinds[0]')) AS nature_kind";
     }
 
     private function find(string $id): array
     {
+        $id = rawurldecode($id);
         $by = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id) ? 'p.uid' : (preg_match('/^[a-z0-9-]{1,140}$/', $id) ? 'p.slug' : null);
+        // Identifiant de l'app (« demo-Place de Jaude », « nature-puy-de-dome ») : prioritaire s'il existe
+        if (mb_strlen($id) <= 120 && Database::fetch('SELECT 1 FROM places WHERE app_id = :a', ['a' => $id])) {
+            $by = 'p.app_id';
+        }
         $p = $by === null ? null : Database::fetch(
             'SELECT ' . self::columns() . ', p.address, p.postal_code, p.city, p.facts, p.highlights, p.timeline, p.nature, p.rating_avg, p.rating_count, p.partner_since
              FROM places p JOIN place_categories c ON c.id = p.category_id WHERE ' . $by . " = :id AND p.status = 'published' AND p.deleted_at IS NULL",
-            ['id' => strtolower($id)],
+            ['id' => $by === 'p.app_id' ? $id : strtolower($id)],
         );
 
         return $p ?? throw new HttpException(404, 'place_not_found', 'Ce lieu n\'existe pas ou n\'est plus en ligne.');

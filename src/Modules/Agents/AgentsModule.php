@@ -127,8 +127,10 @@ final class AgentsModule
         $items = [];
         foreach (Database::fetchAll('SELECT * FROM agent_presence ORDER BY last_seen_at DESC') as $p) {
             $open = Database::fetch("SELECT COUNT(*) AS n FROM agent_messages WHERE recipient = :a AND status IN ('open', 'in_progress')", ['a' => $p['agent']]);
+            // Ce qui demande une action : demandes, bugs et réponses encore « open » (jamais les comptes rendus ni les notes)
+            $actionable = Database::fetch("SELECT COUNT(*) AS n FROM agent_messages WHERE recipient = :a AND status = 'open' AND kind IN ('request', 'bug', 'reply')", ['a' => $p['agent']]);
             $items[] = ['agent' => $p['agent'], 'lastSeenAt' => $iso($p['last_seen_at']), 'appVersion' => $p['app_version'], 'branch' => $p['branch'],
-                        'commit' => $p['commit_sha'], 'lastReport' => $p['last_report'], 'pendingForAgent' => (int) $open['n']];
+                        'commit' => $p['commit_sha'], 'lastReport' => $p['last_report'], 'pendingForAgent' => (int) $open['n'], 'actionableForAgent' => (int) $actionable['n']];
         }
 
         return Response::json(['items' => $items, 'bundle' => ['version' => self::bundleVersion(), 'url' => '/api/v1/agents/bundle'],

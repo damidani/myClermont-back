@@ -53,6 +53,13 @@ curl -s -X POST -H "X-Agent-Token: $AGENTS_TOKEN" -H "X-Agent-Name: ios" -H "Con
 - **Présence** : chaque appel enregistre la dernière connexion de l'assistant. Les en-têtes facultatifs `X-Agent-Version`, `X-Agent-Branch` et `X-Agent-Commit` la complètent.
 - **État de tous les assistants** : `GET /agents/status` → `{ items: [{ agent, lastSeenAt, appVersion, branch, commit, lastReport, pendingForAgent }] }`.
 
+## Mise à jour automatique du dossier
+
+- `GET /agents/status` donne `bundle.version`, l'empreinte du dossier `app-integration/` côté back-end.
+- Si elle diffère du fichier local `app-integration/VERSION`, télécharger `GET /agents/bundle` (zip, mêmes en-têtes) et le décompresser à la racine du projet.
+- L'archive exclut les fichiers `*.local.md`, qui contiennent les secrets.
+- Seuls les messages `request`, `bug` et `reply` au statut `open` comptent dans `actionableForAgent`. Les comptes rendus et les notes n'y comptent pas.
+
 ## Statuts
 
 Le Claude du back-end fait avancer la demande d'origine :

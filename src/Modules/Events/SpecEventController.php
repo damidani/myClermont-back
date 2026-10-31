@@ -32,7 +32,7 @@ final class SpecEventController
 
     private const COLUMNS = 'e.id, e.uid, e.slug, e.title, e.kind, e.venue_name, e.address, e.city, e.latitude, e.longitude, e.starts_at, e.ends_at,
                              e.schedule_label, e.price_label, e.age_limit, e.link_url, e.ticket_url, e.external_url, e.all_day, e.summary, e.description,
-                             e.image_url, e.status, e.author_user_id, e.deleted_at, p.uid AS place_uid';
+                             e.image_url, e.status, e.author_user_id, e.deleted_at, COALESCE(p.app_id, p.uid) AS place_uid';
     private const FROM = 'events e LEFT JOIN places p ON p.id = e.place_id';
 
     public function index(Request $request): Response
@@ -76,14 +76,14 @@ final class SpecEventController
             ->withHeader('Cache-Control', 'private, max-age=60');
     }
 
-    /** Catégorie de l'agenda de l'app (brief §11.5) par catégorie interne ou type d'événement */
+    /** Catégorie de l'agenda de l'app par type d'événement (demande iOS 14200a63), puis par catégorie interne */
     private const AGENDA_CATEGORIES = [
-        'sport' => 'Sport', 'musique' => 'Musique', 'concert' => 'Musique', 'festival' => 'Musique', 'soiree' => 'Musique',
-        'nature' => 'Nature', 'culture' => 'Culture', 'expo' => 'Culture', 'spectacle' => 'Culture', 'conference' => 'Culture',
-        'gastronomie' => 'Gastronomie', 'marche' => 'Gastronomie', 'famille' => 'Famille',
+        'concert' => 'Musique', 'soiree' => 'Musique', 'festival' => 'Musique', 'spectacle' => 'Culture', 'expo' => 'Culture',
+        'famille' => 'Famille', 'sport' => 'Sport', 'marche' => 'Gastronomie',
+        'musique' => 'Musique', 'nature' => 'Nature', 'culture' => 'Culture', 'conference' => 'Culture', 'gastronomie' => 'Gastronomie',
     ];
-    private const AGENDA_ICONS = ['Sport' => 'figure.run', 'Musique' => 'music.note', 'Nature' => 'mountain.2.fill',
-                                  'Culture' => 'theatermasks.fill', 'Gastronomie' => 'fork.knife', 'Famille' => 'figure.and.child.holdinghands'];
+    private const AGENDA_ICONS = ['Sport' => 'sportscourt.fill', 'Musique' => 'music.mic', 'Nature' => 'mountain.2.fill',
+                                  'Culture' => 'building.columns.fill', 'Gastronomie' => 'fork.knife', 'Famille' => 'figure.2.and.child.holdinghands'];
 
     /** GET /events/agenda?limit=&cursor= — agenda de Ma Ville : { items: AgendaItem[], nextCursor } */
     public function agenda(Request $request): Response
@@ -92,8 +92,10 @@ final class SpecEventController
         $limit = min(50, max(1, (int) ($q['limit'] ?? 20)));
         $offset = isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : 0;
         $rows = Database::fetchAll(
+            // Hors agenda : les événements sur plusieurs jours (l'app y lit une durée en heures) et ceux sans position
             'SELECT ' . self::COLUMNS . ', c.slug AS category_slug FROM ' . self::FROM . ' LEFT JOIN event_categories c ON c.id = e.category_id
              WHERE e.status = \'published\' AND e.deleted_at IS NULL AND e.ends_at >= :now
+               AND e.latitude IS NOT NULL AND e.longitude IS NOT NULL AND TIMESTAMPDIFF(HOUR, e.starts_at, e.ends_at) <= 24
              ORDER BY e.starts_at, e.id LIMIT ' . ($limit + 1) . ' OFFSET ' . $offset,
             ['now' => gmdate('Y-m-d H:i:s')],
         );
@@ -105,7 +107,7 @@ final class SpecEventController
 
     public static function agendaItem(array $e): array
     {
-        $category = self::AGENDA_CATEGORIES[$e['category_slug'] ?? ''] ?? self::AGENDA_CATEGORIES[$e['kind'] ?? ''] ?? 'Culture';
+        $category = self::AGENDA_CATEGORIES[$e['kind'] ?? ''] ?? self::AGENDA_CATEGORIES[$e['category_slug'] ?? ''] ?? 'Culture';
         $minutes = $e['ends_at'] === null ? 0 : (int) round((strtotime($e['ends_at'] . ' UTC') - strtotime($e['starts_at'] . ' UTC')) / 60);
         $duration = match (true) {
             (bool) $e['all_day'] || $minutes >= 12 * 60 => 'Journée',

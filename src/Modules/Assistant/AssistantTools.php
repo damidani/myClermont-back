@@ -74,8 +74,9 @@ final class AssistantTools
     public function run(string $name, array $in): array
     {
         return match ($name) {
-            'search_events' => $this->events($in),
-            'search_places' => $this->places($in),
+            // Mots-clés trop précis du modèle (« belle vue », « truffade ») : sans résultat, on relance sans eux
+            'search_events' => ($r = $this->events($in))['events'] === [] && !empty($in['query']) ? $this->events(['query' => null] + $in) : $r,
+            'search_places' => ($r = $this->places($in))['places'] === [] && !empty($in['query']) ? $this->places(['query' => null] + $in) : $r,
             'list_deals'    => $this->rows('deal', "SELECT uid, title, merchant, discount_label, area, exclusive_plus FROM deals WHERE status = 'published' AND deleted_at IS NULL
                                 AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())" . (!empty($in['category']) ? ' AND category = :c' : '') . ' ORDER BY id DESC LIMIT 6',
                                 !empty($in['category']) ? ['c' => $in['category']] : []),
@@ -120,7 +121,10 @@ final class AssistantTools
             $params['q'] = $params['q2'] = '%' . $in['query'] . '%';
         }
         $out = [];
-        foreach (Database::fetchAll("SELECT e.slug, e.title, e.kind, e.venue_name, e.starts_at, e.ends_at, e.price_label, e.schedule_label FROM events e WHERE {$where} ORDER BY e.starts_at LIMIT 6", $params) as $e) {
+        // D'abord ce qui commence dans la période (les soirées de ce soir), puis ce qui est déjà en cours (expositions longues)
+        $params['from2'] = $params['from'];
+        foreach (Database::fetchAll("SELECT e.slug, e.title, e.kind, e.venue_name, e.starts_at, e.ends_at, e.price_label, e.schedule_label FROM events e
+                                     WHERE {$where} ORDER BY (e.starts_at >= :from2) DESC, TIMESTAMPDIFF(HOUR, e.starts_at, e.ends_at) <= 24 DESC, e.starts_at LIMIT 8", $params) as $e) {
             $ref = 'event:' . $e['slug'];
             $this->seen[$ref] = ['type' => 'event'] + $e;
             $out[] = ['ref' => $ref, 'title' => $e['title'], 'kind' => $e['kind'], 'venue' => $e['venue_name'],

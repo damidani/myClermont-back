@@ -37,6 +37,7 @@ Règles :
 - Sur l'écran carte (screen = map), privilégie les lieux à épingler.
 - Santé : en cas d'urgence, donne immédiatement le 15 (SAMU) ou le 112, et le 3237 pour la pharmacie de garde. Ne pose jamais de diagnostic.
 - Texte brut uniquement : jamais de Markdown (pas de **gras**, de titres, de listes à puces ni de liens), l'app l'affiche tel quel.
+- Honnêteté : n'annonce jamais d'adresses, de lieux ou de bons plans (« voici… », « je te propose… ») sans mettre leurs références dans cards. Si les outils ne renvoient rien, dis-le simplement (« je n'ai pas encore d'adresse référencée près de toi ») et propose une autre piste.
 - Termine TOUJOURS par l'outil reply : le texte de ta réponse, les références (champ ref) des résultats à montrer en cartes (6 maximum, uniquement des références reçues des outils), et 2 ou 3 relances courtes que l'utilisateur pourrait taper.
 TXT;
 
@@ -85,10 +86,16 @@ TXT;
         $result = [
             // Filet de sécurité : l'app affiche le texte brut, sans Markdown
             'text'            => trim((string) preg_replace(['/\*\*(.+?)\*\*/u', '/__(.+?)__/u', '/^#+\s*/mu', '/`([^`]*)`/u'], ['$1', '$1', '', '$1'], (string) $reply['text'])),
-            'cards'           => CardBuilder::cards($reply['cards'] ?? [], $tools->seen),
+            // Le petit modèle oublie parfois de citer ses résultats, ou en invente : à défaut, les 3 premiers résultats réels des outils
+            'cards'           => CardBuilder::cards($reply['cards'], $tools->seen) ?: CardBuilder::cards(array_slice(array_keys($tools->seen), 0, 3), $tools->seen),
             'nearby_searches' => $tools->nearbySearches,
             'follow_ups'      => array_slice(array_values(array_filter(array_map(static fn ($f) => is_string($f) ? mb_substr(trim($f), 0, 80) : null, $reply['follow_ups'] ?? []))), 0, 3),
         ];
+        // Filet de sécurité (bug iOS c3c45faf) : sans carte, retirer les phrases qui annoncent des suggestions à suivre
+        if ($result['cards'] === [] && preg_match('/\b(voici|voilà|ci-dessous|ci-après|je te propose|quelques (adresses|bons plans|idées|lieux))\b/iu', $result['text'])) {
+            $kept = array_filter(preg_split('/(?<=[.!?])\s+/u', $result['text']) ?: [], static fn ($p) => !preg_match('/\b(voici|voilà|ci-dessous|ci-après|je te propose|quelques (adresses|bons plans|idées|lieux))\b/iu', $p));
+            $result['text'] = trim(implode(' ', $kept)) ?: 'Je n\'ai pas encore d\'adresse référencée pour ça près de toi. Essaie une autre question ou regarde la carte de l\'app.';
+        }
         if ($status === 'answered') {
             if ($cacheKey !== null) {
                 Cache::store()->set($cacheKey, $result, (int) Config::get('assistant.cache_ttl', 600));

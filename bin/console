@@ -213,7 +213,8 @@ switch ($command) {
                 foreach ($d['items'] as $i => $item) {
                     $count++;
                     $errors = [...$errors, ...$S::validate($item, $schema, "items[{$i}]")];
-                    if (str_starts_with((string) ($item['id'] ?? ''), 'demo-')) {
+                    // Brief §3 : pas d'événement de démo (les lieux gardent les identifiants de l'app, « demo-Place de Jaude » compris)
+                    if (str_contains($path, '/events') && str_starts_with((string) ($item['id'] ?? ''), 'demo-')) {
                         $errors[] = "items[{$i}].id : donnée de démo ({$item['id']})";
                     }
                 }
@@ -226,6 +227,22 @@ switch ($command) {
             }
         }
         exit($failed > 0 ? 1 : 0);
+
+    case 'app:import-content':
+        // Contenu réel envoyé par le Claude de l'app (database/content/*.json) : lieux, fiches des incontournables, événements.
+        // Upsert par identifiant de l'app, rejouable.   php bin/console app:import-content [--no-geocode]
+        $importer = new \App\Content\AppContentImporter();
+        $dir = dirname(__DIR__) . '/database/content';
+        $read = static fn (string $f) => json_decode((string) file_get_contents("{$dir}/{$f}.json"), true, 64, JSON_THROW_ON_ERROR);
+        $geo = !isset($options['no-geocode']);
+        $out('Lieux : ' . $importer->places($read('places'), $geo));
+        $out('Fiches : ' . $importer->guides($read('guides')));
+        $out('Événements : ' . $importer->events($read('events'), $geo));
+        foreach ($importer->log as $line) {
+            $out('  · ' . $line);
+        }
+        \App\Admin\CacheInvalidator::all();
+        break;
 
     case 'demo:purge':
         // Brief §7 : retire les données de démo et de test de la base (événements demo-…, lieux « … démo », offres « · Démo »,
@@ -928,6 +945,7 @@ switch ($command) {
           source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
           import:run <slug> | import:all [--force]   Lance un import (import:all : seulement les sources dues)
           api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]   Appel signé de l'API (outil de développement)
+          app:import-content [--no-geocode]           Importe le contenu réel de l'app (database/content : lieux, fiches, événements)
           demo:purge [--dry-run]                       Retire les données de démo et de test (événements demo-…, picsum, comptes de test)
           schema:check [--base=URL]                    Vérifie les réponses réelles contre les schémas de l'app iOS
           events:maintenance               Archive les événements terminés depuis 90 jours

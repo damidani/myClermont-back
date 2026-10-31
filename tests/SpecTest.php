@@ -287,7 +287,7 @@ return [
         assert_same([], $S::validate($sv, $S::service()));
         assert_same(['Animaux', 'wrench.adjustable.fill', 0.0], [$sv['category'], $sv['icon'], $sv['rating']]);
 
-        $a = $C(App\Modules\Events\SpecEventController::agendaItem(['slug' => 'balade-des-volcans-2026-11-08', 'title' => 'Balade des volcans', 'kind' => 'famille',
+        $a = $C(App\Modules\Events\SpecEventController::agendaItem(['slug' => 'balade-des-volcans-2026-11-08', 'title' => 'Balade des volcans', 'kind' => null,
             'category_slug' => 'nature', 'venue_name' => 'Chaîne des Puys', 'city' => 'Orcines', 'starts_at' => '2026-11-08 08:00:00', 'ends_at' => '2026-11-08 11:00:00',
             'all_day' => 0, 'price_label' => 'Gratuit', 'image_url' => null, 'summary' => null, 'description' => 'Sortie guidée.', 'latitude' => '45.7726', 'longitude' => '2.9644']));
         assert_same([], $S::validate($a, $S::agenda()));

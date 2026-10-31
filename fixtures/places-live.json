@@ -1,0 +1,57 @@
+{
+    "items": [
+        {
+            "id": "demo-Place de Jaude",
+            "name": "Place de Jaude",
+            "category": "incontournable",
+            "latitude": 45.7765,
+            "longitude": 3.0821,
+            "subtitle": "À découvrir · Cœur de Clermont",
+            "phone": null,
+            "website": null,
+            "isPartner": false,
+            "demoName": "Place de Jaude",
+            "natureKind": null
+        },
+        {
+            "id": "demo-Jardin Lecoq",
+            "name": "Jardin Lecoq",
+            "category": "incontournable",
+            "latitude": 45.7706,
+            "longitude": 3.0897,
+            "subtitle": "Nature · à 880 m de Jaude",
+            "phone": null,
+            "website": null,
+            "isPartner": false,
+            "demoName": "Jardin Lecoq",
+            "natureKind": null
+        },
+        {
+            "id": "demo-Cathédrale",
+            "name": "Cathédrale",
+            "category": "incontournable",
+            "latitude": 45.7785,
+            "longitude": 3.0853,
+            "subtitle": "Culture · à 330 m de Jaude",
+            "phone": null,
+            "website": null,
+            "isPartner": false,
+            "demoName": "Cathédrale",
+            "natureKind": null
+        },
+        {
+            "id": "demo-Montferrand",
+            "name": "Montferrand",
+            "category": "incontournable",
+            "latitude": 45.7932,
+            "longitude": 3.115,
+            "subtitle": "Culture · à 3,2 km de Jaude",
+            "phone": null,
+            "website": null,
+            "isPartner": false,
+            "demoName": "Montferrand",
+            "natureKind": null
+        }
+    ],
+    "nextCursor": null
+}

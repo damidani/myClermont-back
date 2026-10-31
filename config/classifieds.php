@@ -31,9 +31,9 @@ return [
 
     // Encart « Conseils de sécurité » de la fiche (modifiable sans mise à jour de l'app)
     'safety_tips' => [
-        ['icon' => 'people', 'text' => 'Rencontre l\'autre personne dans un lieu public et fréquenté.'],
-        ['icon' => 'eye',    'text' => 'Vérifie l\'objet avant de payer.'],
-        ['icon' => 'euro',   'text' => 'Ne verse jamais d\'acompte sans avoir vu l\'objet.'],
+        ['icon' => 'person.2.fill', 'text' => 'Rencontre l\'autre personne dans un lieu public et fréquenté.'],
+        ['icon' => 'eye.fill', 'text' => 'Vérifie l\'objet avant de payer.'],
+        ['icon' => 'eurosign.circle.fill', 'text' => 'Ne verse jamais d\'acompte sans avoir vu l\'objet.'],
         ['icon' => 'link',   'text' => 'Méfie-toi des liens de paiement reçus par message.'],
     ],
 
