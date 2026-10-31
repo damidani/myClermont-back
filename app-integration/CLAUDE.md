@@ -13,6 +13,7 @@ Il sert à brancher l'app sur le back-end PHP/MySQL, qui implémente la « Spéc
 | [SIGNATURE.md](SIGNATURE.md) | Protocole de signature, code Swift et Kotlin prêts à copier, vecteur de test |
 | [ETAT_SPEC_V1.md](ETAT_SPEC_V1.md) | Ce qui est livré, les écarts avec la spec, les questions ouvertes |
 | `fixtures/*.json` | Vraies réponses du serveur, une par route : à utiliser comme tests de décodage |
+| [CANAL_AGENTS.md](CANAL_AGENTS.md) | **À lire à chaque session** : boîte de messages avec le Claude du back-end (demandes de routes, bugs, réponses) |
 | `test-instance.local.md` | Adresse et clé application de l'instance de test. **Secret, non versionné** : fourni à part |
 
 ## Serveur
@@ -104,6 +105,6 @@ Un refresh token déjà utilisé révoque toute la session. Deux refresh en para
 2. Le décodage de chaque fichier de `fixtures/` vers le modèle Swift ou Kotlin correspondant, y compris `error-validation.json` et `error-account-required.json` vers le type d'erreur. Ces fixtures sont construites par les presenters du back et validées contre les mêmes schémas que le décodeur iOS (`php tests/run.php --fixtures`).
 3. Le décodage d'une date `2026-11-02T20:00:00+01:00` et d'une date `…Z`.
 
-## Questions
+## Questions et nouvelles fonctionnalités
 
-S'il manque une route ou si un champ ne correspond pas aux modèles de l'app, **ne pas contourner côté app**. Noter l'écart, avec la route, le JSON reçu et le JSON attendu, pour qu'il soit corrigé dans le back-end.
+S'il manque une route ou si un champ ne correspond pas aux modèles de l'app, **ne pas contourner côté app** : déposer une demande sur le canal agents ([CANAL_AGENTS.md](CANAL_AGENTS.md)), avec la route, le JSON reçu et le JSON attendu. Au début de chaque session, lire les réponses du back-end sur ce canal et intégrer ce qui a été livré.

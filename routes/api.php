@@ -42,6 +42,14 @@ return static function (Router $router, array $modules): void {
         // --- Notifications serveur de l'App Store (appelées par Apple : vérifiées par leur signature JWS) ---
         $r->post('/webhooks/apple/app-store', [App\Modules\Subscriptions\SubscriptionsModule::class, 'webhook'], ['throttle:public,ip']);
 
+        // --- Canal entre assistants (Claude de l'app ↔ Claude du back) : jeton X-Agent-Token, hors signature d'appareil ---
+        $r->group(['middleware' => ['throttle:public,ip']], static function (Router $r): void {
+            $r->post('/agents/messages', [App\Modules\Agents\AgentsModule::class, 'create']);
+            $r->get('/agents/messages', [App\Modules\Agents\AgentsModule::class, 'index']);
+            $r->get('/agents/messages/{id}', [App\Modules\Agents\AgentsModule::class, 'show']);
+            $r->patch('/agents/messages/{id}', [App\Modules\Agents\AgentsModule::class, 'update']);
+        });
+
         // --- Envoi direct d'un fichier sur l'URL signée (jeton dans l'URL, valable 10 min) ---
         $r->put('/uploads/{id}/blob', [App\Content\Uploads\UploadController::class, 'receive'], ['throttle:upload,ip']);
 
