@@ -6,12 +6,13 @@ use App\Core\Env;
 
 /*
  * Clermont IA (spec v1 › Clermont IA) : POST /assistant/answer.
- * La clé n'est jamais dans l'app : le serveur appelle l'API Claude d'Anthropic.
+ * Moteur : Mistral AI (API Chat Completions, appel d'outils). La clé n'est jamais dans l'app.
  */
 return [
-    'api_key'    => Env::get('ANTHROPIC_API_KEY', ''),
-    'model'      => Env::get('ANTHROPIC_MODEL', 'claude-opus-5-5'),
-    'effort'     => Env::get('ANTHROPIC_EFFORT', 'low'),      // réponses courtes de conversation : effort bas suffit
+    'api_key'    => Env::get('MISTRAL_API_KEY', ''),
+    'model'      => Env::get('MISTRAL_MODEL', 'mistral-medium-latest'),
+    // Essayés dans l'ordre si le modèle principal répond 429 (limite du forfait Mistral)
+    'fallback_models' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('MISTRAL_FALLBACK_MODELS', 'mistral-small-latest,ministral-8b-latest'))))),
     'max_tokens' => 600,
     'max_steps'  => 4,                                       // appels d'outils maximum par question
 

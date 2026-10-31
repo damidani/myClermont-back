@@ -40,7 +40,7 @@ Le brief « Aligner le back-end sur l'app iOS » (build 17) est traité section 
 | 5 | Modération | ✅ Post, commentaire et avis filtrés : succès pour l'auteur, en attente du modérateur. Avis avec lien ou domaine en attente. Lexique renforcé |
 | 6 | Comptes | ✅ Inscription avec le profil de l'app, `Session` / `SocialSession` (`isNewUser`), `PATCH /me`, mot de passe oublié (page `/password/reset`), `GOOGLE_CLIENT_IDS` |
 | 7 | Données de démo | ✅ `demo:purge`, seeders limités à `APP_ENV=local` ; base de production vidée le 31/10 |
-| 8 | Clermont IA | ✅ Compte gratuit suffisant, `401 account_required` sans compte après 1 question. ⚠️ Clé Anthropic à installer sur le serveur |
+| 8 | Clermont IA | ✅ Compte gratuit suffisant, `401 account_required` sans compte après 1 question. Moteur Mistral AI, clé installée |
 | 9 | Favoris et avis par clé de l'app | ✅ |
 | 10 | Carburants, trafic | ✅ `automate24h`, TomTom Orbis v2 (clé installée, `features.traffic: true`) |
 | 11 | Ma Ville | ✅ Emploi, logement, bons plans, services, agenda (`GET /events/agenda`) |
@@ -101,7 +101,7 @@ Appareils et notifications :
 
 | Route | État |
 |---|---|
-| `POST /assistant/answer` | ✅ codé ; test réel à faire quand une clé Anthropic sera configurée (aujourd'hui : `503 not_configured`) |
+| `POST /assistant/answer` | ✅ codé ; moteur Mistral AI (`mistral-medium-latest`), clé installée et testé en réel |
 | `GET /fuel/stations` | ✅ Flux officiel data.economie.gouv.fr, cache 10 min, prix par carburant avec date de relevé |
 | `GET /me/subscription`, `POST /subscriptions/apple/verify`, `POST /webhooks/apple/app-store` | ✅ Détail ci-dessous |
 | `GET /me/export` | ✅ Archive JSON de toutes les données du compte |
@@ -137,7 +137,7 @@ Ce sont les points où l'implémentation a dû choisir :
 6. **Sondage.** `votes[]` est toujours rempli ; `myVote` est l'index de mon choix, ou `null`. Pour voter : `POST …/vote { "optionIndex": 1 }`.
 7. **HEIC.** Le serveur ne sait pas convertir le HEIC (extension Imagick absente) et répond 415. L'app doit envoyer du JPEG, ce que fait `UIImage.jpegData`.
 8. **URL d'envoi.** `uploadUrl` pointe vers l'API elle-même (`PUT /v1/uploads/{id}/blob?t=…`), pas vers un stockage S3. Le principe est le même : URL signée, valable 10 minutes.
-9. **Modèle de Clermont IA.** Par défaut `claude-opus-5-5`, effort `low`, 600 jetons maximum. La spec proposait un modèle intermédiaire : il suffit de régler `ANTHROPIC_MODEL=claude-sonnet-5-5`. La réponse en flux (SSE, lot 3 facultatif) n'est pas faite.
+9. **Moteur de Clermont IA.** Mistral AI, modèle `mistral-medium-latest` (réglable par `MISTRAL_MODEL`), 600 jetons maximum. La réponse en flux (SSE) n'est pas faite.
 10. **Android.** Google Play Billing et les notifications RTDN ne sont pas faits ; la table `subscriptions` est prête (`store = google`).
 
 ## À fournir (variables d'environnement)
@@ -149,7 +149,7 @@ Ce sont les points où l'implémentation a dû choisir :
 | `APNS_KEY_ID`, `APNS_KEY` (.p8 APNs), `APNS_SANDBOX` | Notifications iOS |
 | `FCM_SERVICE_ACCOUNT` (chemin du JSON Firebase) | Notifications Android |
 | `TOMTOM_API_KEY` | Info trafic |
-| `ANTHROPIC_API_KEY` (+ `ANTHROPIC_MODEL`) | Clermont IA |
+| `MISTRAL_API_KEY` (+ `MISTRAL_MODEL`) | Clermont IA (Mistral AI) |
 | `MIN_APP_VERSION_IOS`, `MIN_APP_VERSION_ANDROID`, `FEATURE_*` | `/meta` |
 | `SMTP_*` | Codes de connexion par e-mail, candidatures, demandes de contact |
 

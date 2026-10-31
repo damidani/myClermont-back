@@ -171,7 +171,7 @@ final class AdminController
         // Services externes : configurés ou non (les fonctions de l'app correspondantes répondent « indisponible » sinon)
         $services = $role === 'admin' ? [
             ['Info trafic (TomTom)', Config::get('mobility.tomtom_key') !== ''],
-            ['Clermont IA (Anthropic)', Config::get('assistant.api_key') !== ''],
+            ['Clermont IA (Mistral)', Config::get('assistant.api_key') !== ''],
             ['Notifications iOS (APNs)', (string) Config::get('push.apns.key_id', '') !== ''],
             ['Notifications Android (Firebase)', (string) Config::get('push.fcm.service_account', '') !== ''],
             ['Connexion Google', (array) Config::get('auth.google.client_ids', []) !== []],

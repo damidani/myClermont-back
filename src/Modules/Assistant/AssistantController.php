@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Assistant;
 
-use Anthropic\Client;
-use Anthropic\Messages\ToolUseBlock;
 use App\Cache\Cache;
 use App\Core\Config;
 use App\Core\Database;
@@ -20,7 +18,7 @@ use App\Support\Validator;
  * POST /assistant/answer (spec v1 › Clermont IA) : texte, cartes cliquables, recherches autour de soi et relances,
  * au format AssistantReply de l'app.
  *
- *  1. Claude (API Anthropic) répond en s'appuyant sur des outils qui lisent la base de My Clermont ;
+ *  1. Mistral AI (API Chat Completions) répond en s'appuyant sur des outils qui lisent la base de My Clermont ;
  *  2. il termine par l'outil « reply » qui cite des références de résultats ; les cartes sont construites par le serveur
  *     à partir de ces résultats : un lien pointe toujours vers un objet qui existe ;
  *  3. quotas : 1 question découverte sans compte (par appareil), puis compte gratuit requis ; 10 par minute dans tous les cas (throttle:ai) ;
@@ -38,6 +36,7 @@ Règles :
 - Pour un commerce ou service courant autour de l'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…), utilise nearby_search : l'app fera la recherche sur sa carte.
 - Sur l'écran carte (screen = map), privilégie les lieux à épingler.
 - Santé : en cas d'urgence, donne immédiatement le 15 (SAMU) ou le 112, et le 3237 pour la pharmacie de garde. Ne pose jamais de diagnostic.
+- Texte brut uniquement : jamais de Markdown (pas de **gras**, de titres, de listes à puces ni de liens), l'app l'affiche tel quel.
 - Termine TOUJOURS par l'outil reply : le texte de ta réponse, les références (champ ref) des résultats à montrer en cartes (6 maximum, uniquement des références reçues des outils), et 2 ou 3 relances courtes que l'utilisateur pourrait taper.
 TXT;
 
@@ -74,9 +73,18 @@ TXT;
 
         $tools = new AssistantTools($lat, $lon);
         [$reply, $used, $in, $out, $status] = $this->converse($data['question'], $history, $screen, $lat, $lon, $tools);
+        // Un petit modèle renvoie parfois une liste sous forme de texte (« a, b » ou JSON) : on la remet en liste
+        foreach (['cards', 'follow_ups'] as $k) {
+            if (is_string($reply[$k] ?? null)) {
+                $decoded = json_decode($reply[$k], true);
+                $reply[$k] = is_array($decoded) ? $decoded : array_map('trim', preg_split('/\s*[|\n;]\s*/u', $reply[$k]) ?: []);
+            }
+            $reply[$k] = is_array($reply[$k] ?? null) ? array_values($reply[$k]) : [];
+        }
 
         $result = [
-            'text'            => $reply['text'],
+            // Filet de sécurité : l'app affiche le texte brut, sans Markdown
+            'text'            => trim((string) preg_replace(['/\*\*(.+?)\*\*/u', '/__(.+?)__/u', '/^#+\s*/mu', '/`([^`]*)`/u'], ['$1', '$1', '', '$1'], (string) $reply['text'])),
             'cards'           => CardBuilder::cards($reply['cards'] ?? [], $tools->seen),
             'nearby_searches' => $tools->nearbySearches,
             'follow_ups'      => array_slice(array_values(array_filter(array_map(static fn ($f) => is_string($f) ? mb_substr(trim($f), 0, 80) : null, $reply['follow_ups'] ?? []))), 0, 3),
@@ -96,16 +104,14 @@ TXT;
     /** @return array{0: array, 1: list<string>, 2: int, 3: int, 4: string} réponse, outils utilisés, jetons, statut */
     private function converse(string $question, array $history, string $screen, float $lat, float $lon, AssistantTools $tools): array
     {
-        $client = new Client(apiKey: (string) Config::get('assistant.api_key'));
         $definitions = AssistantTools::definitions();
         $paris = new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris'));
 
-        $messages = [];
+        $messages = [['role' => 'system', 'content' => self::SYSTEM]];
         foreach ($history as $turn) {
             $messages[] = ['role' => 'user', 'content' => $turn['q']];
             $messages[] = ['role' => 'assistant', 'content' => $turn['a']];
         }
-        // Le contexte variable (date, écran, position) est dans le message, pas dans la consigne : la consigne et les outils restent en cache
         $messages[] = ['role' => 'user', 'content' => sprintf(
             "[%s · écran : %s · position approximative : %.3f, %.3f]\n%s",
             self::frenchDate($paris), $screen, $lat, $lon, $question,
@@ -113,48 +119,41 @@ TXT;
 
         $used = [];
         $in = $out = 0;
-        for ($step = 0; $step <= (int) Config::get('assistant.max_steps', 4); $step++) {
+        // Budget de temps : une requête PHP est coupée à 20 s ; au-delà de 9 s, le modèle doit conclure (outil reply imposé)
+        $maxSteps = (int) Config::get('assistant.max_steps', 4);
+        $started = microtime(true);
+        for ($step = 0; $step <= $maxSteps; $step++) {
+            $elapsed = microtime(true) - $started;
             try {
-                $response = $client->messages->create(
-                    model: (string) Config::get('assistant.model'),
-                    maxTokens: (int) Config::get('assistant.max_tokens', 600),
-                    system: [['type' => 'text', 'text' => self::SYSTEM, 'cacheControl' => ['type' => 'ephemeral']]],
-                    tools: $definitions,
-                    outputConfig: ['effort' => (string) Config::get('assistant.effort', 'low')],
-                    messages: $messages,
-                );
+                $response = MistralClient::chat($messages, $definitions, $step === $maxSteps || $elapsed > 9, (int) max(3, min(10, 17 - $elapsed)));
             } catch (\Throwable $e) {
                 Logger::warning('Clermont IA : appel en échec', ['error' => mb_substr($e->getMessage(), 0, 300)]);
                 throw new HttpException(503, 'upstream_unavailable', 'Clermont IA est momentanément indisponible, réessaie dans un instant.');
             }
-            $in += (int) ($response->usage->inputTokens ?? 0) + (int) ($response->usage->cacheReadInputTokens ?? 0);
-            $out += (int) ($response->usage->outputTokens ?? 0);
+            $in += (int) ($response['usage']['prompt_tokens'] ?? 0);
+            $out += (int) ($response['usage']['completion_tokens'] ?? 0);
+            $message = $response['choices'][0]['message'] ?? [];
+            $calls = (array) ($message['tool_calls'] ?? []);
+            $text = is_string($message['content'] ?? null) ? $message['content'] : '';
 
-            if ($response->stopReason === 'refusal') {
-                return [['text' => 'Je ne peux pas t\'aider sur ce sujet. Pose-moi plutôt une question sur Clermont : sorties, lieux, bons plans…', 'cards' => [], 'follow_ups' => ['Que faire ce soir ?']], $used, $in, $out, 'refused'];
-            }
-
-            $results = [];
-            $text = '';
-            foreach ($response->content as $block) {
-                if ($block instanceof ToolUseBlock) {
-                    $input = is_array($block->input) ? $block->input : (array) $block->input;
-                    if ($block->name === 'reply') {
-                        return [$input + ['text' => ''], $used, $in, $out, 'answered'];
-                    }
-                    $used[] = $block->name;
-                    $results[] = ['type' => 'tool_result', 'toolUseID' => $block->id,
-                                  'content' => json_encode($tools->run($block->name, $input), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)];
-                } elseif ($block->type === 'text') {
-                    $text .= $block->text;
-                }
-            }
-            if ($response->stopReason !== 'tool_use' || $results === []) {
-                // Le modèle a répondu en texte sans passer par reply : réponse gardée, sans cartes
+            if ($calls === []) {
+                // Réponse en texte sans passer par reply : gardée, sans cartes
                 return [['text' => trim($text) ?: 'Je n\'ai pas trouvé de réponse, reformule ta question.', 'cards' => [], 'follow_ups' => []], $used, $in, $out, 'answered'];
             }
-            $messages[] = ['role' => 'assistant', 'content' => $response->content];
-            $messages[] = ['role' => 'user', 'content' => $results];
+            $results = [];
+            foreach ($calls as $call) {
+                $name = (string) ($call['function']['name'] ?? '');
+                $args = $call['function']['arguments'] ?? [];
+                $input = is_array($args) ? $args : (json_decode((string) $args, true) ?: []);
+                if ($name === 'reply') {
+                    return [$input + ['text' => ''], $used, $in, $out, 'answered'];
+                }
+                $used[] = $name;
+                $results[] = ['role' => 'tool', 'tool_call_id' => (string) ($call['id'] ?? ''), 'name' => $name,
+                              'content' => (string) json_encode($tools->run($name, $input), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)];
+            }
+            $messages[] = ['role' => 'assistant', 'content' => $text, 'tool_calls' => $calls];
+            array_push($messages, ...$results);
         }
 
         return [['text' => 'Je n\'ai pas réussi à finaliser la réponse, réessaie.', 'cards' => [], 'follow_ups' => []], $used, $in, $out, 'failed'];

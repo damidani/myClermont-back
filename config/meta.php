@@ -16,8 +16,8 @@ return [
 
     // Drapeaux de fonctions (activables sans publier l'app)
     'features' => [
-        // Vrai seulement si la clé Anthropic est installée (sinon /assistant/answer répond 503 not_configured)
-        'assistant'      => (bool) Env::get('FEATURE_ASSISTANT', true) && Env::get('ANTHROPIC_API_KEY', '') !== '',
+        // Vrai seulement si la clé Mistral est installée (sinon /assistant/answer répond 503 not_configured)
+        'assistant'      => (bool) Env::get('FEATURE_ASSISTANT', true) && Env::get('MISTRAL_API_KEY', '') !== '',
         'plus'           => (bool) Env::get('FEATURE_PLUS', false),       // paiement My Clermont+ (désactivé dans l'app actuelle)
         'classifiedsChat' => (bool) Env::get('FEATURE_CLASSIFIEDS_CHAT', true),
         'fuel'           => (bool) Env::get('FEATURE_FUEL', true),
