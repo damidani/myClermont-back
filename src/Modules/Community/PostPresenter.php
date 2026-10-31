@@ -14,30 +14,45 @@ use App\Core\Config;
 final class PostPresenter
 {
     /** Clé de format de la spec v1 (l'app passe des libellés français aux clés anglaises). */
-    private const KINDS = ['text' => 'text', 'poll' => 'poll', 'photos' => 'photos', 'photo' => 'photoCaption', 'video' => 'video'];
+    /** Type interne → libellé de l'app (brief iOS §12.1) */
+    private const KINDS = ['text' => 'Texte', 'poll' => 'Sondage', 'photos' => 'Photos + texte', 'photo' => 'Photo + description', 'video' => 'Vidéo'];
+    /** Type interne → valeur de la spec v1 (gardée dans specKind) */
+    private const SPEC_KINDS = ['text' => 'text', 'poll' => 'poll', 'photos' => 'photos', 'photo' => 'photoCaption', 'video' => 'video'];
 
     /**
-     * Post de la spec v1 : id, author { id, displayName, avatar }, neighborhood, createdAt, kind, text, media[],
-     * poll { options[], votes[], myVote }, likes, liked, commentsCount. Jamais d'e-mail.
+     * Post de l'app iOS (brief §12.1) : author = prénom, neighborhood (chaîne), date, kind (libellé), text, mediaFiles[] (URL),
+     * pollOptions[] / votes[] / myVote / pollQuestion à plat, likes, liked, comments[] (les 20 derniers).
+     * Gardés en plus : authorInfo { id, displayName, avatar }, createdAt, commentsCount, mediaItems, isMine, shareUrl.
      */
     public static function post(array $p, array $related, ?int $viewerId): array
     {
         $id = (int) $p['id'];
         $media = $related['media'][$id] ?? [];
+        $poll = $p['type'] === 'poll' ? self::poll($related['options'][$id] ?? [], $related['votes'][$id] ?? null, $viewerId !== null && (int) $p['user_id'] === $viewerId) : null;
+        $date = gmdate('Y-m-d\TH:i:s\Z', strtotime($p['created_at'] . ' UTC'));
 
         return [
             'id'             => $p['uid'],
-            'author'         => self::specAuthor($p),
-            'neighborhood'   => $p['neighborhood_name'],
-            'created_at'     => gmdate('Y-m-d\TH:i:s\Z', strtotime($p['created_at'] . ' UTC')),
-            'kind'           => self::KINDS[$p['type']] ?? $p['type'],
-            'text'           => $p['type'] === 'photo' && $p['media_caption'] !== null ? $p['media_caption'] : $p['body'],
-            'media'          => array_column($media, 'url'),
-            'poll'           => $p['type'] === 'poll' ? self::poll($related['options'][$id] ?? [], $related['votes'][$id] ?? null, $viewerId !== null && (int) $p['user_id'] === $viewerId) : null,
+            'author'         => self::authorName($p),
+            'neighborhood'   => (string) ($p['neighborhood_name'] ?? ''),
+            'date'           => $date,
+            'kind'           => self::KINDS[$p['type']] ?? 'Texte',
+            'text'           => (string) ($p['type'] === 'photo' && $p['media_caption'] !== null ? $p['media_caption'] : ($p['body'] ?? '')),
+            'media_files'    => array_values(array_filter(array_column($media, 'url'), static fn ($u) => is_string($u) && str_starts_with($u, 'https://'))),
+            'poll_options'   => $poll['options'] ?? [],
+            'votes'          => $poll['votes'] ?? [],
+            'my_vote'        => $poll['my_vote'] ?? null,
+            'poll_question'  => $p['type'] === 'poll' ? (string) ($p['body'] ?? '') : null,
             'likes'          => (int) $p['likes_count'],
             'liked'          => $viewerId !== null && in_array($id, $related['liked'], true),
+            'comments'       => array_map(static fn ($c) => self::comment($c, $viewerId), $related['comments'][$id] ?? []),
+            // En plus (spec v1, autres clients)
+            'author_info'    => self::specAuthor($p),
+            'created_at'     => $date,
+            'spec_kind'      => self::SPEC_KINDS[$p['type']] ?? $p['type'],
+            'media'          => array_column($media, 'url'),
+            'poll'           => $poll,
             'comments_count' => (int) $p['comments_count'],
-            // En plus de la spec
             'media_items'    => $media,
             'is_mine'        => $viewerId !== null && (int) $p['user_id'] === $viewerId,
             'share_url'      => str_replace('{id}', $p['uid'], (string) Config::get('community.share_url')),
@@ -66,15 +81,31 @@ final class PostPresenter
         ];
     }
 
+    /** Commentaire de l'app (brief §12.1) : { id, author (prénom), message, date } ; text / createdAt / authorInfo en plus. */
     public static function comment(array $c, ?int $viewerId): array
     {
+        $date = gmdate('Y-m-d\TH:i:s\Z', strtotime($c['created_at'] . ' UTC'));
+
         return [
-            'id'         => $c['uid'],
-            'author'     => self::specAuthor($c),
-            'text'       => $c['body'],
-            'created_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($c['created_at'] . ' UTC')),
-            'is_mine'    => $viewerId !== null && (int) $c['user_id'] === $viewerId,
+            'id'          => $c['uid'],
+            'author'      => self::authorName($c),
+            'message'     => (string) $c['body'],
+            'date'        => $date,
+            'author_info' => self::specAuthor($c),
+            'text'        => (string) $c['body'],
+            'created_at'  => $date,
+            'is_mine'     => $viewerId !== null && (int) $c['user_id'] === $viewerId,
         ];
+    }
+
+    /** Prénom affiché ; « Compte supprimé » pour un compte effacé */
+    private static function authorName(array $row): string
+    {
+        if (($row['author_status'] ?? 'active') === 'deleted') {
+            return 'Compte supprimé';
+        }
+
+        return (string) ($row['author_first_name'] ?? null ?: $row['author_display_name'] ?? null ?: $row['author_username'] ?? '');
     }
 
     private static function specAuthor(array $row): array

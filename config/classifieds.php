@@ -6,11 +6,12 @@ use App\Core\Env;
 
 return [
     'conditions' => [
+        // Libellés de l'app (brief iOS §12.2) ; « fair » (ancien « État correct ») est affiché « Bon état »
         'new'       => 'Neuf',
+        'like_new'  => 'Comme neuf',
         'very_good' => 'Très bon état',
         'good'      => 'Bon état',
-        'fair'      => 'État correct',
-        'for_parts' => 'Pour pièces',
+        'for_parts' => 'À réparer',
     ],
 
     'limits' => [

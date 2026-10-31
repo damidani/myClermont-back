@@ -25,15 +25,21 @@ final class FuelService
         $data = Cache::store()->get($key);
         if (!is_array($data)) {
             try {
-                $r = (new HttpClient(timeout: 8, retries: 0))->getJson(self::URL . '?' . http_build_query([
+                // Le flux officiel répond en 6 à 12 s aux heures chargées
+                $r = (new HttpClient(timeout: 14, retries: 0))->getJson(self::URL . '?' . http_build_query([
                     'where' => sprintf("within_distance(geom, geom'POINT(%F %F)', %dkm)", round($lon, 2), round($lat, 2), (int) ceil($radiusKm)),
                     'limit' => 100,
                 ]));
+                $data = ['fetched' => gmdate('Y-m-d\TH:i:s\Z'), 'rows' => array_values(array_filter(array_map([self::class, 'map'], (array) ($r['results'] ?? []))))];
+                Cache::store()->set($key, $data, 600);
+                Cache::store()->set($key . ':stale', $data, 6 * 3600);
             } catch (\Throwable) {
-                throw new HttpException(503, 'upstream_unavailable', 'Les prix des carburants sont momentanément indisponibles.');
+                // Derniers prix connus (6 h au plus), avec leur date de relevé, plutôt qu'une erreur
+                $data = Cache::store()->get($key . ':stale');
+                if (!is_array($data)) {
+                    throw new HttpException(503, 'upstream_unavailable', 'Les prix des carburants sont momentanément indisponibles.');
+                }
             }
-            $data = ['fetched' => gmdate('Y-m-d\TH:i:s\Z'), 'rows' => array_values(array_filter(array_map([self::class, 'map'], (array) ($r['results'] ?? []))))];
-            Cache::store()->set($key, $data, 600);
         }
 
         $items = [];

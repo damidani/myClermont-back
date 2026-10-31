@@ -161,7 +161,7 @@ final class MapController
             'category'    => $p['app_category_value'],
             'latitude'    => round((float) $p['latitude'], 6),
             'longitude'   => round((float) $p['longitude'], 6),
-            'subtitle'    => $p['subtitle'] ?? $p['tagline'],
+            'subtitle'    => (string) ($p['subtitle'] ?? $p['tagline'] ?? ''),   // brief iOS §12.3 : jamais null
             'phone'       => $p['phone'],
             'website'     => $p['website_url'],
             'is_partner'  => (bool) $p['is_partner_active'],

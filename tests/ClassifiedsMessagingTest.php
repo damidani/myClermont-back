@@ -42,8 +42,8 @@ return [
 
     'annonce : vendeur et conseils de sécurité' => function () {
         $d = ClassifiedPresenter::detail(demo_classified(), [], null, 99, ['active' => 3, 'sold' => 2], 'conv-uid');
-        assert_same([3, 2, 'conv-uid'], [$d['seller']['active_listings'], $d['seller']['sold_listings'], $d['conversation_id']]);
-        assert_true(isset($d['seller']['display_name'], $d['seller']['avatar']), 'vendeur : { id, displayName, avatar }');
+        assert_same([3, 2, 'conv-uid'], [$d['seller_info']['active_listings'], $d['seller_info']['sold_listings'], $d['conversation_id']]);
+        assert_true(is_string($d['seller']) && isset($d['seller_info']['display_name'], $d['seller_info']['avatar']), 'brief §12.2 : seller = prénom, sellerInfo { id, displayName, avatar }');
         assert_same(4, count($d['safety_tips']));
     },
 

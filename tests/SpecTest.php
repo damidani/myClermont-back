@@ -293,4 +293,23 @@ return [
         assert_same([], $S::validate($a, $S::agenda()));
         assert_same(['Nature', '3 h', '2026-11-08T09:00:00+01:00'], [$a['category'], $a['duration'], $a['date']]);
     },
+
+    'brief §12 : post, commentaire et petite annonce valident les schémas de l\'app' => function () {
+        $S = App\Support\AppSchemas::class;
+        $C = static fn (array $a) => App\Core\Contract::camel($a);
+        $post = ['id' => 7, 'uid' => 'd045a91b-fa20-44fd-a11c-c09199c2f7ff', 'user_id' => 3, 'type' => 'poll', 'body' => 'Vide-grenier en décembre ?',
+                 'media_caption' => null, 'likes_count' => 3, 'comments_count' => 1, 'created_at' => '2026-11-16 18:20:00', 'neighborhood_name' => null,
+                 'author_uid' => 'u1', 'author_username' => 'u1x', 'author_display_name' => 'Camille 2', 'author_first_name' => 'Camille', 'author_status' => 'active'];
+        $comment = ['uid' => '7c1e2b0a-4d55-4a8e-9f3b-2a6c1d9e8f10', 'user_id' => 4, 'body' => 'Carrément !', 'created_at' => '2026-11-16 18:41:00',
+                    'author_uid' => 'u2', 'author_username' => 'leo', 'author_display_name' => 'Léo', 'author_first_name' => null, 'author_status' => 'active'];
+        $related = ['media' => [], 'liked' => [], 'votes' => [7 => 21], 'comments' => [7 => [$comment]],
+                    'options' => [7 => [['id' => 20, 'label' => 'Oui', 'votes_count' => 12], ['id' => 21, 'label' => 'Non', 'votes_count' => 4]]]];
+        $p = $C(App\Modules\Community\PostPresenter::post($post, $related, 3));
+        assert_same([], $S::validate($p, $S::post()));
+        assert_same(['Camille', 'Sondage', '', ['Oui', 'Non'], [12, 4], 1, 'Léo'], [$p['author'], $p['kind'], $p['neighborhood'], $p['pollOptions'], $p['votes'], $p['myVote'], $p['comments'][0]['author']]);
+
+        $ad = $C(App\Modules\Classifieds\ClassifiedPresenter::card(demo_classified(['category_name' => 'Maison & déco', 'item_condition' => 'fair', 'badge_label' => null])));
+        assert_same([], $S::validate($ad, $S::classified()));
+        assert_same('Bon état', $ad['condition']);
+    },
 ];

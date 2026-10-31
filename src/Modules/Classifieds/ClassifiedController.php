@@ -41,6 +41,10 @@ final class ClassifiedController
         }
         $counts = $this->classifieds->counts();
         $category = ($q['category'] ?? '') !== '' ? (string) $q['category'] : null;
+        // Libellé de l'app (« Maison & déco ») accepté comme le slug
+        if ($category !== null && isset(array_column($counts['categories'], 'slug', 'name')[$category])) {
+            $category = array_column($counts['categories'], 'slug', 'name')[$category];
+        }
         if ($category !== null && !in_array($category, array_column($counts['categories'], 'slug'), true)) {
             throw new ValidationException(['category' => 'Catégorie inconnue.']);
         }
@@ -282,7 +286,7 @@ final class ClassifiedController
         ]);
 
         $errors = [];
-        $category = Database::fetch('SELECT id, slug FROM classified_categories WHERE slug = :s', ['s' => $data['category']]);
+        $category = Database::fetch('SELECT id, slug FROM classified_categories WHERE slug = :s OR name = :n', ['s' => $data['category'], 'n' => $data['category']]);
         if ($category === null) {
             $errors['category'] = 'Catégorie inconnue.';
         }

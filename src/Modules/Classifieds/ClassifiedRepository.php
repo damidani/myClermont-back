@@ -15,7 +15,7 @@ final class ClassifiedRepository
                              a.location_label, a.neighborhood_id, a.latitude, a.longitude, a.badge_label, a.notice, a.status,
                              a.published_at, a.expires_at,
                              c.slug AS category_slug, c.name AS category_name, c.icon AS category_icon, c.color AS category_color,
-                             u.uid AS seller_uid, u.username AS seller_username, u.display_name AS seller_display_name, u.avatar_kind AS seller_avatar_kind,
+                             u.uid AS seller_uid, u.username AS seller_username, u.display_name AS seller_display_name, u.first_name AS seller_first_name, u.avatar_kind AS seller_avatar_kind,
                              u.avatar_value AS seller_avatar_value, u.status AS seller_status, u.created_at AS seller_since, a.created_at,
                              (SELECT COALESCE(m.path, cm.url) FROM classified_media cm LEFT JOIN media m ON m.id = cm.media_id
                               WHERE cm.classified_id = a.id ORDER BY cm.position LIMIT 1) AS cover, '

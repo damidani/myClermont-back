@@ -17,8 +17,10 @@ use App\Modules\Community\PostPresenter;
 final class ClassifiedPresenter
 {
     /** États de la spec v1 (libellés de l'app) ↔ codes internes */
-    public const CONDITION_LABELS = ['new' => 'Comme neuf', 'very_good' => 'Très bon état', 'good' => 'Bon état', 'fair' => 'État correct', 'for_parts' => 'État correct'];
-    public const CONDITION_CODES = ['Comme neuf' => 'new', 'Très bon état' => 'very_good', 'Bon état' => 'good', 'État correct' => 'fair'];
+    public const CONDITION_LABELS = ['new' => 'Neuf', 'like_new' => 'Comme neuf', 'very_good' => 'Très bon état', 'good' => 'Bon état', 'fair' => 'Bon état', 'for_parts' => 'À réparer'];
+    public const CONDITION_CODES = ['Neuf' => 'new', 'Comme neuf' => 'like_new', 'Très bon état' => 'very_good', 'Bon état' => 'good', 'État correct' => 'fair', 'À réparer' => 'for_parts'];
+    public const CATEGORIES = ['Maison & déco', 'High-tech', 'Vélos & mobilité', 'Mode & accessoires', 'Sport & plein air', 'Jardin & bricolage',
+                               'Livres & loisirs', 'Enfants & bébé', 'Musique', 'Jeux & collections', 'Dons & gratuit'];
 
     /**
      * Ad de la spec v1 : id, title, category, price (euros entiers, 0 = don), priceLabel (« Gratuit »), district, description,
@@ -31,20 +33,26 @@ final class ClassifiedPresenter
 
         return [
             'id'          => $a['uid'],
-            'title'       => $a['title'],
-            'category'    => $a['category_slug'],
+            'title'       => (string) $a['title'],
+            // Brief iOS §12.2 : libellés de l'app, seller = prénom, created, isDemo
+            'category'    => in_array($a['category_name'], self::CATEGORIES, true) ? $a['category_name'] : 'Maison & déco',
             'price'       => $a['is_free'] ? 0 : intdiv($cents, 100),
             'price_label' => $a['is_free'] || $cents === 0 ? 'Gratuit' : self::priceLabel($cents),
-            'district'    => $a['location_label'],
-            'description' => $a['description'],
-            'condition'   => self::CONDITION_LABELS[$a['item_condition']] ?? $a['item_condition'],
-            'seller'      => $a['seller_uid'] === null ? null : \App\Modules\Account\Repositories\UserRepository::presentAuthor([
+            'district'    => (string) ($a['location_label'] ?? ''),
+            'description' => (string) ($a['description'] ?? ''),
+            'condition'   => self::CONDITION_LABELS[$a['item_condition']] ?? 'Bon état',
+            'seller'      => ($a['seller_status'] ?? 'active') === 'deleted' ? 'Compte supprimé'
+                : (string) (($a['seller_first_name'] ?? null) ?: ($a['seller_display_name'] ?? null) ?: ($a['seller_username'] ?? '')),
+            'images'      => array_values(array_filter($images ?? [$cover], static fn ($u) => is_string($u) && str_starts_with($u, 'https://') && !str_contains($u, 'picsum.photos'))),
+            'created'     => gmdate('Y-m-d\TH:i:s\Z', strtotime(($a['created_at'] ?? $a['published_at']) . ' UTC')),
+            'is_demo'     => ($a['badge_label'] ?? null) === 'DÉMO',
+            // En plus (spec v1, autres clients)
+            'category_slug' => $a['category_slug'],
+            'seller_info' => $a['seller_uid'] === null ? null : \App\Modules\Account\Repositories\UserRepository::presentAuthor([
                 'uid' => $a['seller_uid'], 'display_name' => $a['seller_display_name'] ?? null, 'username' => $a['seller_username'],
                 'avatar_kind' => $a['seller_avatar_kind'] ?? 'symbol', 'avatar_value' => $a['seller_avatar_value'] ?? null, 'status' => $a['seller_status'] ?? 'active',
             ]),
-            'images'      => $images ?? array_values(array_filter([$cover])),
             'created_at'  => gmdate('Y-m-d\TH:i:s\Z', strtotime(($a['created_at'] ?? $a['published_at']) . ' UTC')),
-            // En plus de la spec
             'category_name' => $a['category_name'],
             'category_icon' => $a['category_icon'],
             'category_color' => $a['category_color'],
@@ -71,8 +79,8 @@ final class ClassifiedPresenter
         };
 
         $card = self::card($a, $isFavorite, $viewerId, array_values(array_filter(array_map(static fn ($p) => is_array($p) ? ($p['url'] ?? null) : $p, $photos))));
-        if ($card['seller'] !== null) {
-            $card['seller'] += [
+        if ($card['seller_info'] !== null) {
+            $card['seller_info'] += [
                 'member_since'    => gmdate('Y-m-d', strtotime($a['seller_since'] . ' UTC')),
                 'active_listings' => $sellerStats['active'] ?? 0,
                 'sold_listings'   => $sellerStats['sold'] ?? 0,
