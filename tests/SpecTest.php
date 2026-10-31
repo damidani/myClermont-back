@@ -249,4 +249,15 @@ return [
         assert_throws(fn () => $F::key(str_repeat('a', 201)), 'validation_failed');
         assert_throws(fn () => $F::key(''), 'validation_failed');
     },
+
+    'brief §10.1 : station carburant avec automate24h et prix par carburant' => function () {
+        $st = App\Modules\Fuel\FuelService::map(['id' => 63000019, 'adresse' => '2 AVENUE MARX DORMOY', 'ville' => 'CLERMONT-FERRAND',
+            'geom' => ['lat' => 45.771719, 'lon' => 3.080998], 'gazole_prix' => '2.49', 'gazole_maj' => '2026-10-29T21:00:00+00:00',
+            'horaires_automate_24_24' => 'Oui']);
+        $out = App\Core\Contract::camel($st + ['distance' => 749]);
+        assert_same([], App\Support\AppSchemas::validate($out, App\Support\AppSchemas::fuelStation()));
+        assert_same(true, $out['automate24h']);
+        assert_same(['price' => 2.49, 'updatedAt' => '2026-10-29T21:00:00Z'], $out['prices']['gazole']);
+        assert_same(false, isset($out['prices']['e10']), 'carburant absent omis');
+    },
 ];

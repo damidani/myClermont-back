@@ -10,7 +10,7 @@ use App\Core\Response;
 use App\Core\Router;
 use App\Exceptions\ValidationException;
 
-/** GET /fuel/stations?lat=&lon=&radiusKm=&fuel=   → { items: FuelStation[], updatedAt } (spec v1, cache 10 min) */
+/** GET /fuel/stations?lat=&lon=&radiusKm=&limit=&fuel=   → { items: FuelStation[], nextCursor: null, updatedAt } (cache 10 min) */
 final class FuelModule implements Module
 {
     public function routes(Router $r): void
@@ -32,9 +32,10 @@ final class FuelModule implements Module
         if ($fuel !== null && !in_array($fuel, FuelService::FUELS, true)) {
             throw new ValidationException(['fuel' => 'Carburant inconnu : ' . implode(', ', FuelService::FUELS) . '.']);
         }
+        $limit = isset($q['limit']) && ctype_digit((string) $q['limit']) ? min(100, max(1, (int) $q['limit'])) : 100;
         $data = (new FuelService())->stations((float) $q['lat'], (float) $q['lon'], $radius, $fuel);
 
-        return Response::success($data['items'], 200, ['updated_at' => $data['updated_at']])->withHeader('Cache-Control', 'private, max-age=600');
+        return Response::success(array_slice($data['items'], 0, $limit), 200, ['next_cursor' => null, 'updated_at' => $data['updated_at']])->withHeader('Cache-Control', 'private, max-age=600');
     }
 
     public function listeners(): array

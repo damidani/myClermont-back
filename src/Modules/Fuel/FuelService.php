@@ -21,7 +21,7 @@ final class FuelService
     public function stations(float $lat, float $lon, float $radiusKm, ?string $fuel = null): array
     {
         // Zone arrondie (~1 km) : les téléphones proches partagent le même cache
-        $key = sprintf('fuel:%.2f:%.2f:%d', $lat, $lon, (int) ceil($radiusKm));
+        $key = sprintf('fuel:v2:%.2f:%.2f:%d', $lat, $lon, (int) ceil($radiusKm));
         $data = Cache::store()->get($key);
         if (!is_array($data)) {
             try {
@@ -74,6 +74,8 @@ final class FuelService
             'latitude'  => round((float) $lat, 6),
             'longitude' => round((float) $lon, 6),
             'prices'    => $prices,
+            // Brief §10.1 : pompe accessible 24 h/24 par automate (champ horaires_automate_24_24 = « Oui »)
+            'automate24h' => mb_strtolower(trim((string) ($r['horaires_automate_24_24'] ?? ''))) === 'oui',
         ];
     }
 
