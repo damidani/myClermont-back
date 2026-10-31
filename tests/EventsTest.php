@@ -82,4 +82,15 @@ return [
         $res = app()->handle(signed_request('GET', '/v1/events/' . str_repeat('a', 130)));
         assert_same('event_not_found', err($res));
     },
+
+    'brief §3 : événement sans adresse ni résumé => schéma iOS valide' => function () {
+        $row = demo_event(['kind' => null, 'title' => 'Marché des producteurs', 'address' => null, 'summary' => null, 'description' => null,
+                           'venue_name' => null, 'schedule_label' => null, 'age_limit' => null, 'link_url' => null, 'external_url' => null,
+                           'all_day' => 0, 'place_uid' => null]);
+        $e = App\Core\Contract::camel(App\Modules\Events\SpecEventController::present($row));
+        assert_same([], App\Support\AppSchemas::validate($e, App\Support\AppSchemas::event()));
+        assert_same('marche', $e['kind']);
+        assert_same('', $e['address']);
+        assert_same('', $e['summary']);
+    },
 ];

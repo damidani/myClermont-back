@@ -136,10 +136,11 @@ final class SpecEventController
     {
         return [
             'id'         => $e['slug'],
-            'title'      => $e['title'],
-            'kind'       => $e['kind'] ?? 'soiree',
-            'venue'      => $e['venue_name'],
-            'address'    => $e['address'] !== null ? $e['address'] : null,
+            // Décodeur iOS strict : textes jamais null (chaîne vide), kind toujours dans la liste
+            'title'      => (string) $e['title'],
+            'kind'       => in_array($e['kind'] ?? null, self::KINDS, true) ? $e['kind'] : self::guessKind((string) $e['title']),
+            'venue'      => (string) ($e['venue_name'] ?? ''),
+            'address'    => (string) ($e['address'] ?? ''),
             'latitude'   => $e['latitude'] === null ? null : (float) $e['latitude'],
             'longitude'  => $e['longitude'] === null ? null : (float) $e['longitude'],
             'start'      => self::iso($e['starts_at']),
@@ -149,10 +150,27 @@ final class SpecEventController
             'age_limit'  => $e['age_limit'],
             'url'        => $e['link_url'] ?? $e['ticket_url'] ?? $e['external_url'],
             'all_day'    => (bool) $e['all_day'],
-            'summary'    => $e['summary'] ?? ($e['description'] !== null ? mb_strimwidth((string) $e['description'], 0, 280, '…') : null),
+            'summary'    => (string) ($e['summary'] ?? ($e['description'] !== null ? mb_strimwidth((string) $e['description'], 0, 280, '…') : '')),
             'image_url'  => $e['image_url'],
             'place_id'   => $e['place_uid'],
         ];
+    }
+
+    /** Type d'un événement sans kind (import, ancien seeder) d'après son titre. */
+    public static function guessKind(string $title): string
+    {
+        $t = mb_strtolower($title);
+        foreach (['marche' => ['marché', 'brocante', 'vide-grenier'], 'concert' => ['concert'], 'festival' => ['festival'],
+                  'expo' => ['expo', 'musée', 'vernissage'], 'spectacle' => ['spectacle', 'théâtre', 'cirque'],
+                  'sport' => ['course', 'match', 'trail', 'rando'], 'famille' => ['enfant', 'famille', 'jeux']] as $kind => $words) {
+            foreach ($words as $w) {
+                if (str_contains($t, $w)) {
+                    return $kind;
+                }
+            }
+        }
+
+        return 'soiree';
     }
 
     /** « 2026-10-31T19:30:00+01:00 » (heure de Paris, jamais de millisecondes : .iso8601 de Swift les refuse). */

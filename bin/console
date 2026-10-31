@@ -156,49 +156,69 @@ switch ($command) {
         $method = strtoupper($positional[0] ?? $fail('Usage : php bin/console api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]'));
         $path = (string) ($positional[1] ?? $fail('Chemin manquant'));
         $body = (string) ($positional[2] ?? '');
-        $base = rtrim((string) ($options['base'] ?? 'http://127.0.0.1'), '/');
-        $stateFile = dirname(__DIR__) . '/storage/dev-device.json';
-        $sign = static function (string $m, string $p, string $b, string $secret, string $uid) {
-            [$path, $query] = array_pad(explode('?', $p, 2), 2, '');
-            $ts = (string) time();
-            $nonce = bin2hex(random_bytes(16));
-            return [$ts, $nonce, \App\Security\Signature::sign($secret, \App\Security\Signature::stringToSign($m, $path, $query, $ts, $nonce, $uid, $b))];
-        };
-        $http = static function (string $m, string $url, array $headers, string $b) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $m, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $headers,
-                                    CURLOPT_POSTFIELDS => $b === '' ? null : $b, CURLOPT_HEADER => false]);
-            $res = (string) curl_exec($ch);
-            return [(int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE), $res];
-        };
-        $state = is_file($stateFile) ? json_decode((string) file_get_contents($stateFile), true) : null;
-        if (!is_array($state) || ($state['base'] ?? null) !== $base) {
-            $keys = (array) Config::get('security.app_keys');
-            $keyId = (string) array_key_first($keys) ?: $fail('Aucune clé application (APP_SIGNING_KEYS).');
-            $uid = \App\Security\Crypto::uuid4();
-            $reg = json_encode(['platform' => $keys[$keyId]['platform'], 'model' => 'console', 'app_version' => 'dev']);
-            [$ts, $nonce, $sig] = $sign('POST', '/v1/devices/register', $reg, $keys[$keyId]['secret'], $uid);
-            [$code, $res] = $http('POST', $base . '/v1/devices/register', ['Content-Type: application/json', "X-Key-Id: {$keyId}", "X-Device-Id: {$uid}",
-                                   "X-Timestamp: {$ts}", "X-Nonce: {$nonce}", "X-Signature: {$sig}"], $reg);
-            $d = json_decode($res, true);
-            if ($code >= 300 || empty($d['deviceSecret'])) {
-                $fail("Enregistrement de l'appareil refusé ({$code}) : {$res}");
-            }
-            $state = ['base' => $base, 'uid' => $uid, 'token' => $d['deviceToken'], 'secret' => $d['deviceSecret']];
-            file_put_contents($stateFile, json_encode($state));
-            chmod($stateFile, 0600);
-        }
-        [$ts, $nonce, $sig] = $sign($method, $path, $body, $state['secret'], $state['uid']);
-        $headers = ['Content-Type: application/json', 'X-Platform: ios', "X-Device-Id: {$state['uid']}", "X-Device-Token: {$state['token']}",
-                    "X-Timestamp: {$ts}", "X-Nonce: {$nonce}", "X-Signature: {$sig}"];
-        if (isset($options['token'])) {
-            $headers[] = 'Authorization: Bearer ' . $options['token'];
-        }
-        [$code, $res] = $http($method, $base . $path, $headers, $body);
+        $client = new \App\Support\DevClient(rtrim((string) ($options['base'] ?? 'http://127.0.0.1'), '/'), str_starts_with($path, '/v1/') ? '/v1' : '/api/v1');
+        [$code, $res] = $client->call($method, $path, $body, isset($options['token']) ? (string) $options['token'] : null);
         $out("HTTP {$code}");
         $decoded = json_decode($res, true);
         $out($decoded !== null ? json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : $res);
         exit($code >= 400 ? 1 : 0);
+
+    case 'schema:check':
+        // Vérifie les vraies réponses contre les schémas du décodeur iOS (src/Support/AppSchemas.php), toutes pages comprises.
+        //   php bin/console schema:check [--base=http://127.0.0.1]
+        $client = new \App\Support\DevClient(rtrim((string) ($options['base'] ?? 'http://127.0.0.1'), '/'));
+        $S = \App\Support\AppSchemas::class;
+        $routes = [
+            ['/api/v1/events?limit=50', $S::event(), true],
+            ['/api/v1/places?limit=50', $S::mapSpot(), true],
+            ['/api/v1/jobs?limit=50', $S::job(), true],
+            ['/api/v1/housing?limit=50', $S::housing(), true],
+            ['/api/v1/deals?limit=50', $S::deal(), true],
+            ['/api/v1/services?limit=50', $S::service(), true],
+            ['/api/v1/events/agenda?limit=50', $S::agenda(), true],
+            ['/api/v1/community/posts?limit=50', $S::post(), true],
+            ['/api/v1/classifieds?limit=50', $S::classified(), true],
+            ['/api/v1/fuel/stations?lat=45.7772&lon=3.087&radiusKm=5&limit=50', $S::fuelStation(), true],
+            ['/api/v1/traffic/incidents?lat=45.7772&lon=3.087', ['incidents' => 'list:' . json_encode($S::trafficIncident())], false],
+        ];
+        $failed = 0;
+        foreach ($routes as [$path, $schema, $isList]) {
+            $errors = [];
+            $count = 0;
+            $pages = 0;
+            $url = $path;
+            do {
+                [$code, $res] = $client->call('GET', $url);
+                $d = json_decode($res, true);
+                if ($code !== 200 || !is_array($d)) {
+                    $errors[] = "HTTP {$code} " . mb_substr($res, 0, 200);
+                    break;
+                }
+                $pages++;
+                if (!$isList) {
+                    $errors = $S::validate($d, $schema);
+                    break;
+                }
+                if (!array_key_exists('items', $d) || !array_key_exists('nextCursor', $d)) {
+                    $errors[] = 'items / nextCursor manquants';
+                    break;
+                }
+                foreach ($d['items'] as $i => $item) {
+                    $count++;
+                    $errors = [...$errors, ...$S::validate($item, $schema, "items[{$i}]")];
+                    if (str_starts_with((string) ($item['id'] ?? ''), 'demo-')) {
+                        $errors[] = "items[{$i}].id : donnée de démo ({$item['id']})";
+                    }
+                }
+                $url = $d['nextCursor'] === null ? null : $path . (str_contains($path, '?') ? '&' : '?') . 'cursor=' . rawurlencode((string) $d['nextCursor']);
+            } while ($url !== null && $pages < 50);
+            $failed += $errors === [] ? 0 : 1;
+            $out(($errors === [] ? '✔' : '✘') . " {$path} ({$count} éléments, {$pages} page(s))");
+            foreach (array_slice($errors, 0, 8) as $e) {
+                $out("    {$e}");
+            }
+        }
+        exit($failed > 0 ? 1 : 0);
 
     case 'push:topics':
         $r = (new \App\Modules\Notifications\TopicScheduler())->run();
@@ -845,6 +865,7 @@ switch ($command) {
           source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
           import:run <slug> | import:all [--force]   Lance un import (import:all : seulement les sources dues)
           api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]   Appel signé de l'API (outil de développement)
+          schema:check [--base=URL]                    Vérifie les réponses réelles contre les schémas de l'app iOS
           events:maintenance               Archive les événements terminés depuis 90 jours
           account:purge                    Efface les comptes supprimés depuis plus de 30 jours (cron quotidien)
           import:status                    État des sources importées (dernier passage, résultat)
