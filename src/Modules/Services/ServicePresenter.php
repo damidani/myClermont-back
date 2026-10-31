@@ -6,6 +6,7 @@ namespace App\Modules\Services;
 
 use App\Content\ContentSources;
 use App\Core\Config;
+use App\Support\AppSchemas;
 
 /**
  * Format JSON des professionnels, calqué sur les écrans « Services » :
@@ -26,19 +27,22 @@ final class ServicePresenter
 
         return [
             'id'           => $s['uid'],
-            'name'         => $s['name'],
-            'category'     => $s['category_slug'],
-            'district'     => $s['neighborhood_name'] ?? $s['city'],
-            'icon'         => $s['category_icon'],
-            'description'  => $s['description'] ?? $s['summary'],
+            'name'         => (string) $s['name'],
+            // Brief iOS §11.4 : libellé (« Maison & travaux »), icône SF Symbols, textes jamais null, note 0 sans avis
+            'category'     => (string) $s['category_name'],
+            'district'     => (string) ($s['neighborhood_name'] ?? $s['city'] ?? ''),
+            'icon'         => in_array($s['category_icon'], AppSchemas::ICONS, true) ? $s['category_icon'] : 'wrench.adjustable.fill',
+            'description'  => (string) ($s['description'] ?? $s['summary'] ?? ''),
             'specialties'  => array_values(array_filter($specialties, 'is_string')),
-            'hours'        => $s['hours_label'] ?? null,
-            'price'        => $s['price_label'],
-            'rating'       => $rating['value'] ?? null,
+            'hours'        => (string) ($s['hours_label'] ?? ''),
+            'price'        => (string) ($s['price_label'] ?? ''),
+            'rating'       => (float) ($rating['value'] ?? 0),
             'rating_count' => $rating['count'] ?? 0,
-            'latitude'     => isset($s['latitude']) ? (float) $s['latitude'] : null,
-            'longitude'    => isset($s['longitude']) ? (float) $s['longitude'] : null,
+            // Prestataire sans adresse précise : centre de la métropole (zone d'intervention)
+            'latitude'     => isset($s['latitude']) ? (float) $s['latitude'] : 45.7772,
+            'longitude'    => isset($s['longitude']) ? (float) $s['longitude'] : 3.0870,
             // En plus de la spec
+            'category_slug'  => $s['category_slug'],
             'category_name'  => $s['category_name'],
             'summary'        => $s['summary'],
             'logo_url'       => $s['logo_url'],

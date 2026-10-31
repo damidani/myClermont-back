@@ -6,6 +6,7 @@ namespace App\Modules\Jobs;
 
 use App\Content\ContentSources;
 use App\Core\Config;
+use App\Support\AppSchemas;
 
 /**
  * Format JSON des offres, calqué sur les écrans :
@@ -28,14 +29,16 @@ final class JobPresenter
 
         return [
             'id'               => $j['uid'],
-            'title'            => $j['title'],
-            'company'          => $j['company_name'],
-            'location'         => $j['city'],
-            'salary'           => $salary['label'] ?? null,
-            'contract'         => $contracts[$j['contract']][0] ?? $j['contract'],     // « CDI », « Alternance »…
-            'work_mode'        => $modes[$j['work_mode']][0] ?? $j['work_mode'],       // « Sur site », « Hybride », « Télétravail »
-            'icon'             => $j['category_icon'],
-            'summary'          => $j['summary'],
+            'title'            => (string) $j['title'],
+            'company'          => (string) ($j['company_name'] ?? ''),
+            'location'         => (string) ($j['city'] ?? ''),
+            'salary'           => (string) ($salary['label'] ?? ''),
+            // Brief iOS §11.1 : 5 valeurs seulement ; Intérim et Saisonnier (offres importées) sont des CDD, libellé exact dans contractLabel
+            'contract'         => in_array($j['contract'], ['interim', 'saisonnier'], true) ? 'CDD' : ($contracts[$j['contract']][0] ?? 'CDD'),
+            'contract_label'   => $contracts[$j['contract']][0] ?? $j['contract'],
+            'work_mode'        => $modes[$j['work_mode']][0] ?? 'Sur site',        // « Sur site », « Hybride », « Télétravail »
+            'icon'             => in_array($j['category_icon'], AppSchemas::ICONS, true) ? $j['category_icon'] : 'briefcase.fill',
+            'summary'          => (string) ($j['summary'] ?? ''),
             'description'      => $j['description'],
             'published_at'     => $publishedAt === null ? null : gmdate('Y-m-d\TH:i:s\Z', $publishedAt),
             'expires_at'       => $j['expires_at'] === null ? null : gmdate('Y-m-d\TH:i:s\Z', strtotime($j['expires_at'] . ' UTC')),

@@ -260,4 +260,37 @@ return [
         assert_same(['price' => 2.49, 'updatedAt' => '2026-10-29T21:00:00Z'], $out['prices']['gazole']);
         assert_same(false, isset($out['prices']['e10']), 'carburant absent omis');
     },
+
+    'brief §11 : emploi, logement, bons plans, services, agenda valident les schémas de l\'app' => function () {
+        $S = App\Support\AppSchemas::class;
+        $C = static fn (array $a) => App\Core\Contract::camel($a);
+        assert_same([], $S::validate($C(App\Modules\Jobs\JobPresenter::card(demo_job(['contract' => 'interim', 'summary' => null]))), $S::job()));
+        assert_same('CDD', App\Modules\Jobs\JobPresenter::card(demo_job(['contract' => 'saisonnier']))['contract']);
+        $h = $C(App\Modules\Housing\HousingPresenter::card(demo_listing(['cover_url' => 'https://picsum.photos/x', 'surface_m2' => null])));
+        assert_same([], $S::validate($h, $S::housing()));
+        assert_true(str_contains($h['images'][0], '/static/defaults/housing.jpg'), 'visuel par défaut au lieu de picsum');
+
+        $deal = ['uid' => 'c78e01b5-aa03-4a75-84ca-752453b1586d', 'title' => 'Café offert pour un croissant acheté', 'merchant' => 'Café de Jaude',
+                 'place_uid' => null, 'area' => 'Jaude', 'category' => 'cafe', 'original_cents' => 350, 'reduced_cents' => 180, 'discount_label' => null,
+                 'exclusive_plus' => 0, 'image_url' => null, 'description' => null, 'conditions' => null, 'expires_at' => '2026-11-30 22:59:00'];
+        $d = $C(App\Modules\Deals\DealController::present($deal));
+        assert_same([], $S::validate($d, $S::deal()));
+        assert_same(['Restaurants', '3,50 €', '1,80 €', '-49 %', "Jusqu'au 30 novembre"], [$d['category'], $d['original'], $d['reduced'], $d['discount'], $d['expires']]);
+
+        $svc = ['uid' => 'b2f14441-982f-4ea8-9aef-7eedba04743b', 'name' => 'Pattes & Volcans', 'category_slug' => 'animaux', 'category_name' => 'Animaux',
+                'category_icon' => 'paw', 'neighborhood_name' => null, 'city' => 'Clermont-Ferrand', 'description' => null, 'summary' => 'Garde et promenade.',
+                'services' => '["Promenade","Garde"]', 'hours_label' => '7j/7', 'price_label' => 'À partir de 15 €', 'latitude' => null, 'longitude' => null,
+                'logo_url' => null, 'badge_label' => null, 'notice' => null, 'rating_avg' => null, 'rating_count' => 0, 'display_rating' => null,
+                'display_rating_label' => null, 'status' => 'published', 'external_url' => null, 'source_id' => 1, 'source_slug' => 'myclermont',
+                'source_name' => 'myClermont', 'contact_url' => null, 'phone' => null, 'email' => null, 'website' => null];
+        $sv = $C(App\Modules\Services\ServicePresenter::card($svc));
+        assert_same([], $S::validate($sv, $S::service()));
+        assert_same(['Animaux', 'wrench.adjustable.fill', 0.0], [$sv['category'], $sv['icon'], $sv['rating']]);
+
+        $a = $C(App\Modules\Events\SpecEventController::agendaItem(['slug' => 'balade-des-volcans-2026-11-08', 'title' => 'Balade des volcans', 'kind' => 'famille',
+            'category_slug' => 'nature', 'venue_name' => 'Chaîne des Puys', 'city' => 'Orcines', 'starts_at' => '2026-11-08 08:00:00', 'ends_at' => '2026-11-08 11:00:00',
+            'all_day' => 0, 'price_label' => 'Gratuit', 'image_url' => null, 'summary' => null, 'description' => 'Sortie guidée.', 'latitude' => '45.7726', 'longitude' => '2.9644']));
+        assert_same([], $S::validate($a, $S::agenda()));
+        assert_same(['Nature', '3 h', '2026-11-08T09:00:00+01:00'], [$a['category'], $a['duration'], $a['date']]);
+    },
 ];

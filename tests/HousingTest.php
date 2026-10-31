@@ -29,8 +29,8 @@ return [
         $c = HousingPresenter::card(demo_listing());
         assert_same("690\u{00A0}€ / mois", $c['price_label']);
         assert_same(690, $c['price']);
-        assert_same('Centre-ville', $c['district']);
-        assert_same([44.0, 2, 1], [$c['surface'], $c['rooms'], $c['bedrooms']]);
+        assert_same('Centre-ville · Clermont-Ferrand', $c['district'], 'brief §11.2 : quartier · commune');
+        assert_same([44, 2, 1], [$c['surface'], $c['rooms'], $c['bedrooms']]);
         assert_same(['Balcon', 'Cuisine équipée', 'Proche tram', 'Double vitrage'], $c['features'], 'code inconnu ignoré');
         assert_same('Location', $c['type']);
         assert_same(null, $c['source'], 'contenu myClermont : pas de mention de source');

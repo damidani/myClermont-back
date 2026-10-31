@@ -31,11 +31,19 @@ final class DealController
         $q = $request->query();
         $where = [self::LIVE];
         $params = [];
-        foreach (['category', 'area'] as $f) {
-            if (isset($q[$f]) && is_string($q[$f]) && $q[$f] !== '') {
-                $where[] = "d.{$f} = :{$f}";
-                $params[$f] = $q[$f];
+        if (isset($q['area']) && is_string($q['area']) && $q['area'] !== '') {
+            $where[] = 'd.area = :area';
+            $params['area'] = $q['area'];
+        }
+        // Catégorie : libellé de l'app (« Restaurants ») ou slug interne
+        if (isset($q['category']) && is_string($q['category']) && $q['category'] !== '') {
+            $slugs = array_keys(self::CATEGORIES, $q['category'], true) ?: [$q['category']];
+            $in = [];
+            foreach (array_values($slugs) as $i => $slug) {
+                $in[] = ':cat' . $i;
+                $params['cat' . $i] = $slug;
             }
+            $where[] = 'd.category IN (' . implode(', ', $in) . ')';
         }
         $limit = min(50, max(1, (int) ($q['limit'] ?? 20)));
         $offset = isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : 0;
@@ -127,26 +135,45 @@ final class DealController
         return Response::success(['code' => $code, 'deal' => ['id' => $row['deal_uid'], 'title' => $row['title']], 'validated_at' => gmdate('Y-m-d\TH:i:s\Z')]);
     }
 
+    /** Catégorie interne (slug) → libellé de l'app (brief iOS §11.3) */
+    public const CATEGORIES = [
+        'restaurant' => 'Restaurants', 'restaurants' => 'Restaurants', 'cafe' => 'Restaurants', 'boulangerie' => 'Restaurants', 'bar' => 'Sorties',
+        'bien-etre' => 'Bien-être', 'beaute' => 'Bien-être', 'spa' => 'Bien-être', 'sante' => 'Bien-être',
+        'sorties' => 'Sorties', 'culture' => 'Sorties', 'loisirs' => 'Sorties', 'spectacle' => 'Sorties', 'shopping' => 'Sorties',
+        'sport' => 'Sport', 'autre' => 'Sorties',
+    ];
+
     public static function present(array $d): array
     {
         $euros = static fn ($c) => $c === null ? null : round((int) $c / 100, 2);
+        $label = static fn ($c) => $c === null ? '' : number_format((int) $c / 100, 2, ',', ' ') . ' €';
+        $expires = $d['expires_at'] ? strtotime($d['expires_at'] . ' UTC') : null;
+        $months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        $paris = $expires === null ? null : (new \DateTimeImmutable('@' . $expires))->setTimezone(new \DateTimeZone('Europe/Paris'));
+
+        $category = self::CATEGORIES[$d['category']] ?? (in_array($d['category'], self::CATEGORIES, true) ? $d['category'] : 'Sorties');
 
         return [
             'id'          => $d['uid'],
-            'title'       => $d['title'],
-            'merchant'    => $d['merchant'],
+            'title'       => (string) $d['title'],
+            'merchant'    => (string) ($d['merchant'] ?? ''),
             'place_id'    => $d['place_uid'],
-            'area'        => $d['area'],
-            'category'    => $d['category'],
-            'original'    => $euros($d['original_cents']),
-            'reduced'     => $euros($d['reduced_cents']),
-            'discount'    => $d['discount_label'] ?? ($d['original_cents'] && $d['reduced_cents'] !== null
-                                ? '-' . (int) round(100 - $d['reduced_cents'] * 100 / $d['original_cents']) . ' %' : null),
+            'area'        => (string) ($d['area'] ?? ''),
+            'category'    => $category,
+            // Libellés prêts à afficher (« 3,50 € ») ; montants en euros dans originalAmount / reducedAmount
+            'original'    => $label($d['original_cents']),
+            'reduced'     => $label($d['reduced_cents']),
+            'original_amount' => $euros($d['original_cents']),
+            'reduced_amount'  => $euros($d['reduced_cents']),
+            'discount'    => (string) ($d['discount_label'] ?? ($d['original_cents'] && $d['reduced_cents'] !== null
+                                ? '-' . (int) round(100 - $d['reduced_cents'] * 100 / $d['original_cents']) . ' %' : '')),
             'exclusive'   => (bool) $d['exclusive_plus'],
+            'image'       => \App\Support\DefaultImage::urls([$d['image_url']], 'deal-' . \App\Support\DefaultImage::slug($category))[0],
             'image_url'   => $d['image_url'],
-            'description' => $d['description'],
-            'conditions'  => $d['conditions'],
-            'expires_at'  => $d['expires_at'] ? gmdate('Y-m-d\TH:i:s\Z', strtotime($d['expires_at'] . ' UTC')) : null,
+            'description' => (string) ($d['description'] ?? ''),
+            'conditions'  => (string) ($d['conditions'] ?? ''),
+            'expires'     => $paris === null ? 'Sans date limite' : 'Jusqu\'au ' . $paris->format('j') . ' ' . $months[(int) $paris->format('n') - 1],
+            'expires_at'  => $expires ? gmdate('Y-m-d\TH:i:s\Z', $expires) : null,
         ];
     }
 

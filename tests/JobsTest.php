@@ -19,7 +19,7 @@ function demo_job(array $override = []): array
         'start_date' => null, 'duration_label' => null, 'badge_label' => 'DÉMO', 'image_caption' => "Découvre l'entreprise",
         'notice' => 'Annonce fictive.', 'cover_letter_mode' => 'optional', 'status' => 'published',
         'published_at' => gmdate('Y-m-d H:i:s', time() - 3600), 'expires_at' => null,
-        'category_slug' => 'tech', 'category_name' => 'Informatique & numérique', 'category_icon' => 'phone',
+        'category_slug' => 'tech', 'category_name' => 'Informatique & numérique', 'category_icon' => 'laptopcomputer',
         'source_slug' => 'myclermont', 'source_kind' => 'internal', 'source_name' => 'myClermont', 'source_logo_url' => null,
         'source_attribution' => null, 'source_contact_mode' => 'internal',
     ];
@@ -42,7 +42,7 @@ return [
     'carte : contrat, rythme, salaire, NOUVEAU, catégorie' => function () {
         $c = JobPresenter::card(demo_job());
         assert_same("38\u{202F}000–45\u{202F}000\u{00A0}€ / an", $c['salary']);
-        assert_same(['CDI', 'Hybride', 'phone', 'DÉMO'], [$c['contract'], $c['work_mode'], $c['icon'], $c['badge']]);
+        assert_same(['CDI', 'Hybride', 'laptopcomputer', 'DÉMO'], [$c['contract'], $c['work_mode'], $c['icon'], $c['badge']]);
         assert_true($c['is_new'], 'publiée il y a 1 h');
         assert_true(!JobPresenter::card(demo_job(['published_at' => '2020-01-01 00:00:00']))['is_new']);
     },

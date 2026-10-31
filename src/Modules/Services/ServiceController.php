@@ -37,6 +37,10 @@ final class ServiceController
         }
         $categories = $this->services->categoriesWithCounts();
         $category = ($q['category'] ?? '') !== '' ? (string) $q['category'] : null;
+        // Libellé de l'app (« Maison & travaux ») accepté comme le slug
+        if ($category !== null && ($bySlug = array_column($categories, 'slug', 'name')) && isset($bySlug[$category])) {
+            $category = $bySlug[$category];
+        }
         if ($category !== null && !in_array($category, array_column($categories, 'slug'), true)) {
             throw new ValidationException(['category' => 'Catégorie inconnue.']);
         }

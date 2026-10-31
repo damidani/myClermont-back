@@ -76,6 +76,62 @@ final class SpecEventController
             ->withHeader('Cache-Control', 'private, max-age=60');
     }
 
+    /** Catégorie de l'agenda de l'app (brief §11.5) par catégorie interne ou type d'événement */
+    private const AGENDA_CATEGORIES = [
+        'sport' => 'Sport', 'musique' => 'Musique', 'concert' => 'Musique', 'festival' => 'Musique', 'soiree' => 'Musique',
+        'nature' => 'Nature', 'culture' => 'Culture', 'expo' => 'Culture', 'spectacle' => 'Culture', 'conference' => 'Culture',
+        'gastronomie' => 'Gastronomie', 'marche' => 'Gastronomie', 'famille' => 'Famille',
+    ];
+    private const AGENDA_ICONS = ['Sport' => 'figure.run', 'Musique' => 'music.note', 'Nature' => 'mountain.2.fill',
+                                  'Culture' => 'theatermasks.fill', 'Gastronomie' => 'fork.knife', 'Famille' => 'figure.and.child.holdinghands'];
+
+    /** GET /events/agenda?limit=&cursor= — agenda de Ma Ville : { items: AgendaItem[], nextCursor } */
+    public function agenda(Request $request): Response
+    {
+        $q = $request->query();
+        $limit = min(50, max(1, (int) ($q['limit'] ?? 20)));
+        $offset = isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : 0;
+        $rows = Database::fetchAll(
+            'SELECT ' . self::COLUMNS . ', c.slug AS category_slug FROM ' . self::FROM . ' LEFT JOIN event_categories c ON c.id = e.category_id
+             WHERE e.status = \'published\' AND e.deleted_at IS NULL AND e.ends_at >= :now
+             ORDER BY e.starts_at, e.id LIMIT ' . ($limit + 1) . ' OFFSET ' . $offset,
+            ['now' => gmdate('Y-m-d H:i:s')],
+        );
+        $next = count($rows) > $limit ? (string) ($offset + $limit) : null;
+
+        return Response::success(array_map([self::class, 'agendaItem'], array_slice($rows, 0, $limit)), 200, ['next_cursor' => $next])
+            ->withHeader('Cache-Control', 'private, max-age=60');
+    }
+
+    public static function agendaItem(array $e): array
+    {
+        $category = self::AGENDA_CATEGORIES[$e['category_slug'] ?? ''] ?? self::AGENDA_CATEGORIES[$e['kind'] ?? ''] ?? 'Culture';
+        $minutes = $e['ends_at'] === null ? 0 : (int) round((strtotime($e['ends_at'] . ' UTC') - strtotime($e['starts_at'] . ' UTC')) / 60);
+        $duration = match (true) {
+            (bool) $e['all_day'] || $minutes >= 12 * 60 => 'Journée',
+            $minutes <= 0 => '',
+            $minutes < 60 => $minutes . ' min',
+            $minutes % 60 === 0 => intdiv($minutes, 60) . ' h',
+            default => intdiv($minutes, 60) . ' h ' . str_pad((string) ($minutes % 60), 2, '0', STR_PAD_LEFT),
+        };
+
+        return [
+            'id'          => $e['slug'],
+            'title'       => (string) $e['title'],
+            'category'    => $category,
+            'venue'       => implode(' · ', array_values(array_filter([$e['venue_name'] ?? null, $e['city'] ?? null]))),
+            'date'        => self::iso($e['starts_at']),
+            'duration'    => $duration,
+            'price'       => (string) ($e['price_label'] ?? ''),
+            'image'       => \App\Support\DefaultImage::urls([$e['image_url']], 'agenda-' . \App\Support\DefaultImage::slug($category))[0],
+            'icon'        => self::AGENDA_ICONS[$category],
+            'description' => (string) ($e['summary'] ?? ($e['description'] !== null ? mb_strimwidth((string) $e['description'], 0, 500, '…') : '')),
+            'program'     => [],
+            'latitude'    => $e['latitude'] === null ? 45.7772 : (float) $e['latitude'],
+            'longitude'   => $e['longitude'] === null ? 3.0870 : (float) $e['longitude'],
+        ];
+    }
+
     public function show(Request $request): Response
     {
         return Response::success(self::present($this->find((string) $request->param('id'), true)));

@@ -26,7 +26,8 @@ final class EventsModule implements Module
             // Spec v1 : Event (identifiant = slug)
             $r->get('/events', [SpecEventController::class, 'index']);
             $r->get('/events/categories', [EventController::class, 'categories']);
-            $r->get('/events/agenda', [EventController::class, 'index']);          // liste enrichie historique (participants, favoris)
+            $r->get('/events/agenda', [SpecEventController::class, 'agenda']);     // brief iOS §11.5 : agenda de Ma Ville
+            $r->get('/events/agenda/full', [EventController::class, 'index']);     // liste enrichie historique (participants, favoris)
             $r->get('/events/{id}', [SpecEventController::class, 'show']);
             $r->get('/events/{id}/sheet', [EventController::class, 'show']);
             $r->get('/events/{id}/calendar.ics', [EventController::class, 'calendar']);

@@ -28,18 +28,20 @@ final class HousingPresenter
 
         return [
             'id'            => $h['uid'],
-            'title'         => $h['title'],
-            'district'      => $h['district_label'] ?? $h['neighborhood_name'],
-            'price'         => $priceCents % 100 === 0 ? intdiv($priceCents, 100) : round($priceCents / 100, 2),
+            'title'         => (string) $h['title'],
+            // Brief iOS §11.2 : « quartier · commune », prix en euros entiers
+            'district'      => implode(' · ', array_values(array_unique(array_filter([$h['district_label'] ?? $h['neighborhood_name'] ?? null, $h['city'] ?? null])))),
+            'price'         => (int) round($priceCents / 100),
             'price_label'   => self::priceLabel($priceCents, $isRent),
-            'surface'       => $h['surface_m2'] === null ? null : (float) $h['surface_m2'],
-            'rooms'         => $h['rooms'] === null ? null : (int) $h['rooms'],
-            'bedrooms'      => $h['bedrooms'] === null ? null : (int) $h['bedrooms'],
-            'type'          => $transactions[$h['transaction']] ?? $h['transaction'],   // « Location », « Colocation », « Achat »
+            'surface'       => (int) round((float) ($h['surface_m2'] ?? 0)),
+            'rooms'         => (int) ($h['rooms'] ?? 0),
+            'bedrooms'      => (int) ($h['bedrooms'] ?? 0),
+            'type'          => $transactions[$h['transaction']] ?? 'Location',   // « Location », « Colocation », « Achat »
             'furnished'     => (bool) $h['furnished'],
-            'images'        => $images !== [] ? $images : array_values(array_filter([$h['cover_url']])),
+            // URL absolues en HTTPS, au moins une (visuel par défaut sinon), jamais d'image tierce de remplissage (brief §2.8)
+            'images'        => \App\Support\DefaultImage::urls($images !== [] ? $images : [$h['cover_url']], 'housing'),
             'features'      => array_column(self::features($h['features']), 'label'),
-            'description'   => $h['description'] ?? null,
+            'description'   => (string) ($h['description'] ?? ''),
             'latitude'      => $h['latitude'] === null ? null : round(round((float) $h['latitude'] / 0.0015) * 0.0015, 4),
             'longitude'     => $h['longitude'] === null ? null : round(round((float) $h['longitude'] / 0.002) * 0.002, 4),
             // En plus de la spec
