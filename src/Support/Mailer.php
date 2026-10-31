@@ -25,7 +25,7 @@ final class Mailer
             }
         }
 
-        $from = (string) Config::get('app.mail_from', 'no-reply@myclermont.fr');
+        $from = (string) Config::get('app.mail_from', 'no-reply@myclermont.app');
         $headers = [
             'From'                      => 'myClermont <' . $from . '>',
             'MIME-Version'              => '1.0',

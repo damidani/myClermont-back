@@ -23,7 +23,7 @@ final class Ics
             'PRODID:-//myClermont//Agenda//FR',
             'CALSCALE:GREGORIAN',
             'BEGIN:VEVENT',
-            'UID:' . $e['uid'] . '@myclermont.fr',
+            'UID:' . $e['uid'] . '@myclermont.app',
             'DTSTAMP:' . gmdate('Ymd\THis\Z'),
             'DTSTART:' . $utc($e['starts_at']),
             'DTEND:' . $utc($e['ends_at']),

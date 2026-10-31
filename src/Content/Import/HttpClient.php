@@ -12,7 +12,7 @@ namespace App\Content\Import;
  */
 final class HttpClient
 {
-    public const USER_AGENT = 'myClermont-importer/2.0 (+https://myclermont.fr/robots)';
+    public const USER_AGENT = 'myClermont-importer/2.0 (+https://myclermont.app/robots)';
 
     private static ?\Closure $fake = null;
 

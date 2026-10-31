@@ -39,7 +39,7 @@ return [
         'retention_days'       => 90,   // après la candidature (le recruteur l'a reçu par e-mail)
     ],
 
-    'share_url'    => Env::get('JOBS_SHARE_URL', 'https://myclermont.fr/emploi/{id}'),
+    'share_url'    => Env::get('JOBS_SHARE_URL', 'https://myclermont.app/emploi/{id}'),
     'per_page'     => 20,
     'max_per_page' => 50,
     'counts_cache_ttl' => 60,

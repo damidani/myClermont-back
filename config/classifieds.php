@@ -36,6 +36,6 @@ return [
         ['icon' => 'link',   'text' => 'Méfie-toi des liens de paiement reçus par message.'],
     ],
 
-    'share_url' => Env::get('CLASSIFIEDS_SHARE_URL', 'https://myclermont.fr/annonces/{id}'),
+    'share_url' => Env::get('CLASSIFIEDS_SHARE_URL', 'https://myclermont.app/annonces/{id}'),
     'per_page'  => 20,
 ];

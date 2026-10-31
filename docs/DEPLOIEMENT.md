@@ -27,7 +27,7 @@ composer install --no-dev --classmap-authoritative
 php bin/console key:generate          # note les clés application affichées → équipes iOS/Android
 nano .env                             # APP_ENV=production, APP_DEBUG=false, accès MySQL
 php bin/console migrate
-php bin/console admin:create vous@myclermont.fr "Votre nom" --role=admin   # back-office /admin
+php bin/console admin:create vous@myclermont.app "Votre nom" --role=admin   # back-office /admin
 php bin/console config:cache
 
 chown -R www-data:www-data storage
@@ -53,7 +53,7 @@ Ajuster `pm.max_children` : `(RAM disponible pour PHP) / 30 Mo` environ.
 ```bash
 cp deploy/nginx.conf /etc/nginx/sites-available/myclermont
 ln -s /etc/nginx/sites-available/myclermont /etc/nginx/sites-enabled/
-certbot --nginx -d api.myclermont.fr
+certbot --nginx -d api.myclermont.app
 nginx -t && systemctl reload nginx
 ```
 
@@ -68,8 +68,8 @@ crontab -u www-data deploy/crontab
 ## 7. Vérifications
 
 ```bash
-curl -s https://api.myclermont.fr/v1/health          # {"success":true,...}
-curl -s https://api.myclermont.fr/v1/users/me        # 401 invalid_device_id → la protection fonctionne
+curl -s https://api.myclermont.app/v1/health          # {"success":true,...}
+curl -s https://api.myclermont.app/v1/users/me        # 401 invalid_device_id → la protection fonctionne
 php -r 'var_dump(function_exists("apcu_enabled"));'  # APCu installé
 ```
 
@@ -103,9 +103,9 @@ systemctl reload php8.3-fpm        # obligatoire : OPcache ne relit pas les fich
 
 ```bash
 # Route publique (plafond du serveur)
-ab -n 20000 -c 100 https://api.myclermont.fr/v1/health
+ab -n 20000 -c 100 https://api.myclermont.app/v1/health
 # ou
-wrk -t4 -c100 -d30s https://api.myclermont.fr/v1/health
+wrk -t4 -c100 -d30s https://api.myclermont.app/v1/health
 ```
 
 Pour les routes signées, générer les requêtes avec `php bin/console sign …` (chaque requête doit avoir un nonce unique : utiliser un script, pas `ab`).

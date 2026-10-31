@@ -1,6 +1,6 @@
 # Référence de l'API — v1
 
-URL de base : `https://api.myclermont.fr/v1`
+URL de base : `https://api.myclermont.app/v1`
 Spécification machine : [openapi.yaml](openapi.yaml)
 
 ## Conventions
@@ -59,7 +59,7 @@ Exemple de requête 👤 :
 
 ```http
 GET /v1/users/me HTTP/1.1
-Host: api.myclermont.fr
+Host: api.myclermont.app
 X-Device-Id: 3f2504e0-4f89-41d3-9a0c-0305e82c3301
 X-Device-Token: q3Jx2r…
 X-Timestamp: 1793139600
@@ -549,7 +549,7 @@ Fiche détaillée. `{id}` = UUID **ou** slug (liens de partage). Ajoute à l'obj
   "ticket_url": null,
   "capacity": null,
   "is_full": false,
-  "share_url": "https://myclermont.fr/agenda/match-de-rugby-soiree-supporters",
+  "share_url": "https://myclermont.app/agenda/match-de-rugby-soiree-supporters",
   "calendar_url": "/v1/events/0e8b3c4a-…/calendar.ics"
 }
 ```
@@ -713,7 +713,7 @@ Fiche. Ajoute à l'objet `listing` :
   "notice": "Annonce fictive : aucune prise de contact réelle.",
   "is_active": true,
   "contact": { "mode": "form", "url": null, "label": "Contacter" },
-  "share_url": "https://myclermont.fr/logement/7d1e…"
+  "share_url": "https://myclermont.app/logement/7d1e…"
 }
 ```
 
@@ -842,7 +842,7 @@ Ajoute à l'objet `job` :
   "is_active": true,
   "apply": { "mode": "form", "url": null, "label": "Postuler", "cv": "required", "cover_letter": "optional" },
   "my_application": null,
-  "share_url": "https://myclermont.fr/emploi/5a5a…"
+  "share_url": "https://myclermont.app/emploi/5a5a…"
 }
 ```
 
@@ -957,7 +957,7 @@ Module Community. Lecture **sans compte** ; publier, aimer, voter, commenter, si
   "likes_count": 0,
   "comments_count": 0,
   "is_liked": false,
-  "share_url": "https://myclermont.fr/communaute/9c1f…",
+  "share_url": "https://myclermont.app/communaute/9c1f…",
   "created_at": "2026-10-28T00:11:00Z"
 }
 ```
@@ -995,7 +995,7 @@ Corps brut, comme les CV : `Content-Type: image/jpeg | image/png | video/mp4 | v
 - Vidéos : MP4 ou MOV, 50 Mo max. Le serveur ne peut pas nettoyer les métadonnées vidéo : exporter **sans la localisation** (iOS : `AVAssetExportSession` avec `metadata = []`).
 - 20 envois par heure. Un média non publié sous 24 h est supprimé.
 
-**201** → `{ "id": "…", "kind": "image", "mime": "image/jpeg", "url": "https://api.myclermont.fr/media/2026/10/….jpg", "width": 1200, "height": 900, "size_bytes": 184320 }`
+**201** → `{ "id": "…", "kind": "image", "mime": "image/jpeg", "url": "https://api.myclermont.app/media/2026/10/….jpg", "width": 1200, "height": 900, "size_bytes": 184320 }`
 
 **Erreurs** : `unsupported_media` 415, `payload_too_large` 413
 
@@ -1103,7 +1103,7 @@ Ajoute à la carte :
   "quote": { "mode": "form", "url": null, "label": "Demander un devis" },
   "my_quote_request": null,
   "can_review": false,
-  "share_url": "https://myclermont.fr/services/…"
+  "share_url": "https://myclermont.app/services/…"
 }
 ```
 
@@ -1301,7 +1301,7 @@ Ajoute à la carte :
   "contact": { "mode": "message", "url": null, "label": "Contacter" },
   "conversation_id": null,
   "expires_at": "2026-12-27T00:20:00Z",
-  "share_url": "https://myclermont.fr/annonces/1b2c…"
+  "share_url": "https://myclermont.app/annonces/1b2c…"
 }
 ```
 

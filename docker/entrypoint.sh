@@ -48,7 +48,7 @@ logfile /proc/self/fd/2
 account default
 host ${SMTP_HOST}
 port ${SMTP_PORT:-587}
-from ${MAIL_FROM:-no-reply@myclermont.fr}
+from ${MAIL_FROM:-no-reply@myclermont.app}
 ${SMTP_USER:+user ${SMTP_USER}}
 ${SMTP_PASSWORD:+password ${SMTP_PASSWORD}}
 CONF

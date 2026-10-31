@@ -20,7 +20,7 @@ composer install                     # génère uniquement l'autoloader (aucun p
 php bin/console key:generate         # crée .env + APP_KEY, JWT_SECRET, clés application iOS/Android
 # éditer .env : identifiants MySQL
 php bin/console migrate              # crée les tables
-php bin/console admin:create vous@myclermont.fr "Votre nom"   # compte du back-office
+php bin/console admin:create vous@myclermont.app "Votre nom"   # compte du back-office
 composer serve                       # serveur de dev sur http://127.0.0.1:8080 (back-office : /admin)
 curl http://127.0.0.1:8080/v1/health
 ```

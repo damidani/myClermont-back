@@ -10,11 +10,11 @@ Interface web pour que l'équipe myClermont consulte, ajoute, modifie et supprim
 
 ```bash
 php bin/console migrate                                    # crée admin_users, admin_sessions, admin_audit_log
-php bin/console admin:create vous@myclermont.fr "Votre nom" --role=admin
+php bin/console admin:create vous@myclermont.app "Votre nom" --role=admin
 # le mot de passe est demandé (12 caractères minimum)
 ```
 
-Puis ouvrir `https://api.myclermont.fr/admin` (en local : `composer serve` puis http://127.0.0.1:8080/admin).
+Puis ouvrir `https://api.myclermont.app/admin` (en local : `composer serve` puis http://127.0.0.1:8080/admin).
 
 `admin:create` sur un email existant **réinitialise** son mot de passe et le réactive. C'est la procédure en cas d'oubli ou de blocage.
 

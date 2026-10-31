@@ -8,7 +8,7 @@ info:
     Toutes les routes sauf `/health` exigent une **signature HMAC-SHA256** (voir docs/SECURITE.md).
     Ces en-têtes ne peuvent pas être générés depuis Swagger UI : utiliser `php bin/console sign`.
 servers:
-  - url: https://api.myclermont.fr/v1
+  - url: https://api.myclermont.app/v1
     description: Production
   - url: http://127.0.0.1:8080/v1
     description: Développement local

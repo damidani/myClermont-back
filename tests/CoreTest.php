@@ -64,4 +64,11 @@ return [
         assert_throws(fn () => Jwt::decode(Jwt::encode(['iss' => 'test', 'sub' => '1', 'exp' => time() - 1])), 'token_expired');
         assert_throws(fn () => Jwt::decode(Jwt::encode(['iss' => 'autre', 'sub' => '1', 'exp' => time() + 60])), 'invalid_token');
     },
+
+    'brief §4 : liens de partage vers https://myclermont.app/' => function () {
+        foreach (['events', 'housing', 'jobs', 'services', 'community', 'classifieds', 'places'] as $module) {
+            $url = (string) App\Core\Config::get($module . '.share_url');
+            assert_true(str_starts_with($url, 'https://myclermont.app/'), "{$module}.share_url = {$url}");
+        }
+    },
 ];

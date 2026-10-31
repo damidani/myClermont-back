@@ -14,7 +14,7 @@ return [
         'crève', 'je vais te tuer', 'suicide-toi',
     ],
     // Domaines de liens toujours acceptés
-    'allowed_domains' => ['myclermont.fr', 'myclermont.app', 'clermont-ferrand.fr', 'clermontmetropole.eu', 't2c.fr', 'francetravail.fr',
+    'allowed_domains' => ['myclermont.app', 'myclermont.app', 'clermont-ferrand.fr', 'clermontmetropole.eu', 't2c.fr', 'francetravail.fr',
                           'instagram.com', 'facebook.com', 'youtube.com', 'leboncoin.fr', 'service-public.fr', 'gouv.fr'],
     // Raccourcisseurs et domaines de liens suspects
     'suspicious_domains' => ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'is.gd', 'cutt.ly', 'rebrand.ly', 'shorturl.at', 'tiny.cc', 't.me', 'wa.me'],

@@ -48,7 +48,7 @@ return [
 
     'jwt' => [
         'secret'      => (string) Env::get('JWT_SECRET', ''),
-        'issuer'      => Env::get('JWT_ISSUER', 'api.myclermont.fr'),
+        'issuer'      => Env::get('JWT_ISSUER', 'api.myclermont.app'),
         'access_ttl'  => (int) Env::get('JWT_ACCESS_TTL', 900),
         'refresh_ttl' => (int) Env::get('JWT_REFRESH_TTL', 5184000),
     ],

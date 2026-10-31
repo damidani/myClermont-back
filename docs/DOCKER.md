@@ -44,7 +44,7 @@ docker compose exec web cat storage/.env > env.backup            # à garder dan
 ## Commandes utiles
 
 ```bash
-docker compose exec -u www-data web php bin/console admin:create moi@myclermont.fr "Moi" --role=admin
+docker compose exec -u www-data web php bin/console admin:create moi@myclermont.app "Moi" --role=admin
 docker compose exec -u www-data web php bin/console import:run <slug>
 docker compose exec -u www-data web php bin/console device:block <device-id>
 docker compose logs -f web                                         # accès Nginx + erreurs PHP
@@ -57,7 +57,7 @@ Mise à jour : `docker compose up -d --build`. Les migrations s'exécutent toute
 
 - **HTTPS** : le conteneur sert du HTTP sur le port 80. Mets-le derrière un reverse proxy qui gère le certificat (Nginx Proxy Manager, Traefik, Caddy…). L'IP réelle des clients est lue dans `X-Forwarded-For` quand la requête vient d'un réseau privé Docker.
 - `APP_ENV=production`, `APP_DEBUG=false`, `ADMIN_REQUIRE_2FA=true`, des mots de passe forts.
-- `MEDIA_BASE_URL=https://api.myclermont.fr/media`.
+- `MEDIA_BASE_URL=https://api.myclermont.app/media`.
 - **Emails** : `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` (Brevo, Mailjet, OVH…).
 - `PHP_FPM_MAX_CHILDREN` : compter environ 30 Mo par worker. Le conteneur `web` utilise environ 60 Mo au repos.
 - Le port MySQL n'est pas exposé sur l'hôte.

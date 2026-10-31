@@ -48,7 +48,7 @@ return [
         'fallback_email' => Env::get('HOUSING_CONTACT_FALLBACK_EMAIL', ''),
     ],
 
-    'share_url'      => Env::get('HOUSING_SHARE_URL', 'https://myclermont.fr/logement/{id}'),
+    'share_url'      => Env::get('HOUSING_SHARE_URL', 'https://myclermont.app/logement/{id}'),
     'per_page'       => 20,
     'max_per_page'   => 50,
     'max_map_pins'   => 500,

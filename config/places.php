@@ -16,5 +16,5 @@ return [
 
     'nearby_limit_max' => 100,
     'timezone' => 'Europe/Paris',
-    'share_url' => Env::get('PLACES_SHARE_URL', 'https://myclermont.fr/lieux/{id}'),
+    'share_url' => Env::get('PLACES_SHARE_URL', 'https://myclermont.app/lieux/{id}'),
 ];

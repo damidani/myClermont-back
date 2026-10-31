@@ -67,7 +67,7 @@ final class ServicePresenter
             'notice'           => $s['notice'],
             'my_request'       => $myQuote,
             'can_review'       => $myQuote !== null && $myQuote['status'] === 'sent',
-            'share_url'        => str_replace('{id}', $s['uid'], (string) Config::get('services.share_url', 'https://myclermont.fr/services/{id}')),
+            'share_url'        => str_replace('{id}', $s['uid'], (string) Config::get('services.share_url', 'https://myclermont.app/services/{id}')),
         ]);
     }
 

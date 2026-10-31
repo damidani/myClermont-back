@@ -37,6 +37,6 @@ return [
     // Masquage automatique après N signalements (en attente de modération)
     'auto_hide_reports' => 5,
 
-    'share_url' => Env::get('COMMUNITY_SHARE_URL', 'https://myclermont.fr/communaute/{id}'),
+    'share_url' => Env::get('COMMUNITY_SHARE_URL', 'https://myclermont.app/communaute/{id}'),
     'per_page'  => 20,
 ];

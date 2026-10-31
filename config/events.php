@@ -9,7 +9,7 @@ return [
     'timezone'  => 'Europe/Paris',
 
     // Lien du bouton « Partager » ({slug} est remplacé). Prévoir une page web / universal link.
-    'share_url' => Env::get('EVENTS_SHARE_URL', 'https://myclermont.fr/agenda/{slug}'),
+    'share_url' => Env::get('EVENTS_SHARE_URL', 'https://myclermont.app/agenda/{slug}'),
 
     // Taille de page par défaut / maximale de la liste
     'per_page'  => 20,
