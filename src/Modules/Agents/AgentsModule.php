@@ -21,7 +21,8 @@ use App\Security\Crypto;
  *   GET   /agents/messages?to=&status=&thread=&since=                       → { items }
  *   GET   /agents/messages/{id}                                              → message + messages du fil
  *   PATCH /agents/messages/{id}         { status }                           → message
- *   GET   /agents/status                                                     → dernière connexion de chaque assistant
+ *   GET   /agents/status                                                     → dernière connexion de chaque assistant + version du dossier
+ *   GET   /agents/bundle                                                     → dossier app-integration en zip (sans les fichiers *.local.md)
  *
  * kind = report : compte rendu de session (ce qui a été fait, fichiers, build, questions) pour que l'autre côté reste au courant.
  * Chaque appel met à jour la présence ; les en-têtes facultatifs X-Agent-Version, X-Agent-Branch, X-Agent-Commit la complètent.
@@ -130,7 +131,57 @@ final class AgentsModule
                         'commit' => $p['commit_sha'], 'lastReport' => $p['last_report'], 'pendingForAgent' => (int) $open['n']];
         }
 
-        return Response::json(['items' => $items, 'serverTime' => gmdate('Y-m-d\TH:i:s\Z')]);
+        return Response::json(['items' => $items, 'bundle' => ['version' => self::bundleVersion(), 'url' => '/api/v1/agents/bundle'],
+                               'serverTime' => gmdate('Y-m-d\TH:i:s\Z')]);
+    }
+
+    /** Dossier app-integration (consignes, routes, fixtures) en zip : l'app le récupère seule quand la version change. */
+    public function bundle(Request $request): Response
+    {
+        $this->agent($request);
+        $tmp = tempnam(sys_get_temp_dir(), 'bundle');
+        $zip = new \ZipArchive();
+        $zip->open($tmp, \ZipArchive::OVERWRITE);
+        foreach (self::bundleFiles() as $rel => $abs) {
+            $zip->addFile($abs, 'app-integration/' . $rel);
+        }
+        $zip->addFromString('app-integration/VERSION', self::bundleVersion() . "\n");
+        $zip->close();
+        $bytes = (string) file_get_contents($tmp);
+        @unlink($tmp);
+
+        return Response::raw($bytes, 'application/zip')
+            ->withHeader('Content-Disposition', 'attachment; filename="app-integration-' . self::bundleVersion() . '.zip"')
+            ->withHeader('X-Bundle-Version', self::bundleVersion())
+            ->withHeader('Cache-Control', 'no-store');
+    }
+
+    /** @return array<string, string> chemin relatif => chemin absolu (secrets *.local.md exclus) */
+    private static function bundleFiles(): array
+    {
+        $root = dirname(__DIR__, 3) . '/app-integration';
+        $files = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $f) {
+            $rel = substr($f->getPathname(), strlen($root) + 1);
+            if ($f->isFile() && !str_ends_with($rel, '.local.md')) {
+                $files[$rel] = $f->getPathname();
+            }
+        }
+        ksort($files);
+
+        return $files;
+    }
+
+    /** Empreinte du contenu : change dès qu'un fichier du dossier change */
+    private static function bundleVersion(): string
+    {
+        $h = hash_init('sha256');
+        foreach (self::bundleFiles() as $rel => $abs) {
+            hash_update($h, $rel . "\0" . hash_file('sha256', $abs));
+        }
+
+        return substr(hash_final($h), 0, 12);
     }
 
     public static function present(array $m): array
