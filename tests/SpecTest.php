@@ -133,8 +133,8 @@ return [
                  'venue_name' => 'La Coopé', 'starts_at' => gmdate('Y-m-d H:i:s', time() + 3 * 86400)]];
         $cards = App\Modules\Assistant\CardBuilder::cards(['event:concert-2026-11-07', 'place:inventé', 42], $seen);
         assert_same(1, count($cards), 'référence inventée ignorée');
+        assert_same(['type' => 'event', 'id' => 'concert-2026-11-07'], $cards[0]['link']);
         assert_same(['#FF4F8B', '#7B5CFF'], $cards[0]['colors'], 'couleurs du type concert');
-        assert_same('concert', $cards[0]['tone']);
     },
 
     'Clermont IA : accroche « CE SOIR · 19 H 30 », « DEMAIN · 20 H »' => function () {
