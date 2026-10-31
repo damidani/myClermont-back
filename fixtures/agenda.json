@@ -1,0 +1,20 @@
+{
+    "items": [
+        {
+            "id": "balade-des-volcans-2026-11-08",
+            "title": "Balade des volcans",
+            "category": "Nature",
+            "venue": "Chaîne des Puys · secteur Clermont",
+            "date": "2026-11-08T09:00:00+01:00",
+            "duration": "3 h",
+            "price": "Gratuit",
+            "image": "https://api.myclermont.app/static/defaults/agenda-nature.jpg",
+            "icon": "mountain.2.fill",
+            "description": "Sortie guidée à travers les puys.",
+            "program": [],
+            "latitude": 45.7726,
+            "longitude": 2.9644
+        }
+    ],
+    "nextCursor": null
+}

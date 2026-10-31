@@ -1,6 +1,23 @@
 {
     "id": "b278efc6-943a-4c36-a827-d09e71f2f75a",
-    "displayName": "Orga",
+    "provider": "email",
+    "firstName": "Camille",
+    "email": "camille@exemple.fr",
+    "emailIsPrivate": false,
+    "phone": "+33612345678",
+    "gender": "nonBinary",
+    "genderDetail": null,
+    "pronouns": "iel",
+    "pronounsDetail": null,
+    "city": "Chamalières",
+    "postalCode": "63400",
+    "cityServed": true,
+    "notifyCityLaunch": false,
+    "marketingOptIn": false,
+    "consentVersion": "2026-11-01",
+    "consentedAt": "2026-11-15T09:12:00Z",
+    "createdAt": "2026-11-15T09:12:00Z",
+    "displayName": "Camille",
     "bio": null,
     "neighborhood": null,
     "avatar": {
@@ -8,11 +25,10 @@
         "value": "person.crop.circle.fill"
     },
     "notificationsEnabled": true,
-    "role": "admin",
+    "role": "user",
     "plus": {
         "active": false,
         "expiresAt": null
     },
-    "points": 0,
-    "createdAt": "2026-10-29T20:00:11Z"
+    "points": 50
 }

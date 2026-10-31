@@ -1,0 +1,9 @@
+{
+    "error": {
+        "code": "unauthenticated",
+        "message": "Crée ton compte gratuit pour continuer avec Clermont IA.",
+        "details": {
+            "reason": "account_required"
+        }
+    }
+}

@@ -1,14 +1,12 @@
 {
     "items": [
         {
-            "targetType": "deal",
-            "targetId": "c78e01b5-aa03-4a75-84ca-752453b1586d",
-            "createdAt": "2026-10-29T20:19:12Z",
-            "preview": {
-                "title": "Café offert pour un croissant acheté",
-                "subtitle": "Café de Jaude",
-                "icon": "tag.fill"
-            }
+            "key": "spot-apple-48213",
+            "createdAt": "2026-11-15T09:12:00Z"
+        },
+        {
+            "key": "place-Cathédrale Notre-Dame-de-l'Assomption",
+            "createdAt": "2026-11-14T18:02:00Z"
         }
     ],
     "nextCursor": null

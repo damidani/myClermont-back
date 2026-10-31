@@ -3,86 +3,27 @@
         {
             "id": "b2f14441-982f-4ea8-9aef-7eedba04743b",
             "name": "Pattes & Volcans",
-            "category": "animaux",
+            "category": "Animaux",
             "district": "Clermont-Ferrand",
-            "icon": "paw",
-            "description": "Garde et promenade d'animaux. Fiche fictive.",
+            "icon": "pawprint.fill",
+            "description": "Garde et promenade d'animaux.",
             "specialties": [
                 "Promenade",
                 "Garde",
                 "Visites"
             ],
-            "hours": "7j/7 (démo)",
+            "hours": "7j/7",
             "price": "À partir de 15 €",
             "rating": 4.9,
-            "ratingCount": 0,
+            "ratingCount": 12,
             "latitude": 45.77,
             "longitude": 3.095,
+            "categorySlug": "animaux",
             "categoryName": "Animaux",
-            "summary": "Garde et promenade d'animaux. Fiche fictive.",
+            "summary": null,
             "logoUrl": null,
-            "ratingIsVerified": false,
-            "badge": "DÉMO",
-            "contact": {
-                "mode": "form",
-                "url": null
-            },
-            "source": null,
-            "isFavorite": null
-        },
-        {
-            "id": "5741923c-eaf8-4ff6-924d-482ff1ba52a9",
-            "name": "Atelier Plomberie des Puys",
-            "category": "maison-travaux",
-            "district": "Clermont-Ferrand",
-            "icon": "hammer",
-            "description": "Dépannage et entretien des installations sanitaires. Fiche et entreprise fictives.",
-            "specialties": [
-                "Plomberie",
-                "Dépannage",
-                "Installation"
-            ],
-            "hours": "Lun–Ven · 8h–18h (démo)",
-            "price": "Sur devis",
-            "rating": 4.8,
-            "ratingCount": 0,
-            "latitude": 45.7772,
-            "longitude": 3.087,
-            "categoryName": "Maison & travaux",
-            "summary": "Dépannage et entretien des installations sanitaires. Fiche et entreprise fictives.",
-            "logoUrl": null,
-            "ratingIsVerified": false,
-            "badge": "DÉMO",
-            "contact": {
-                "mode": "form",
-                "url": null
-            },
-            "source": null,
-            "isFavorite": null
-        },
-        {
-            "id": "403a8711-c628-4064-ab97-7493506df5fc",
-            "name": "Puy Dépannage PC",
-            "category": "informatique",
-            "district": "Clermont-Ferrand",
-            "icon": "desktop",
-            "description": "Réparation d'ordinateurs et assistance à domicile. Fiche fictive.",
-            "specialties": [
-                "Réparation",
-                "Installation",
-                "Cours"
-            ],
-            "hours": "Mar–Sam · 10h–18h (démo)",
-            "price": "À partir de 40 €",
-            "rating": 4.7,
-            "ratingCount": 0,
-            "latitude": 45.783,
-            "longitude": 3.09,
-            "categoryName": "Informatique",
-            "summary": "Réparation d'ordinateurs et assistance à domicile. Fiche fictive.",
-            "logoUrl": null,
-            "ratingIsVerified": false,
-            "badge": "DÉMO",
+            "ratingIsVerified": true,
+            "badge": null,
             "contact": {
                 "mode": "form",
                 "url": null
@@ -91,65 +32,5 @@
             "isFavorite": null
         }
     ],
-    "nextCursor": "2",
-    "categories": [
-        {
-            "slug": "maison-travaux",
-            "name": "Maison & travaux",
-            "icon": "hammer",
-            "count": 2
-        },
-        {
-            "slug": "services-domicile",
-            "name": "Services à domicile",
-            "icon": "house",
-            "count": 0
-        },
-        {
-            "slug": "informatique",
-            "name": "Informatique",
-            "icon": "desktop",
-            "count": 1
-        },
-        {
-            "slug": "sport-bien-etre",
-            "name": "Sport & bien-être",
-            "icon": "running",
-            "count": 0
-        },
-        {
-            "slug": "beaute-sante",
-            "name": "Beauté & santé",
-            "icon": "heart",
-            "count": 0
-        },
-        {
-            "slug": "cours-formation",
-            "name": "Cours & formation",
-            "icon": "school",
-            "count": 0
-        },
-        {
-            "slug": "animaux",
-            "name": "Animaux",
-            "icon": "paw",
-            "count": 1
-        },
-        {
-            "slug": "evenementiel",
-            "name": "Événementiel",
-            "icon": "camera",
-            "count": 0
-        },
-        {
-            "slug": "auto-mobilite",
-            "name": "Auto & mobilité",
-            "icon": "car",
-            "count": 0
-        }
-    ],
-    "allCount": 4,
-    "total": 4,
-    "page": 1,
-    "nextPage": 2
+    "nextCursor": null
 }

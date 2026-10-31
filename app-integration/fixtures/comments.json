@@ -1,0 +1,22 @@
+{
+    "items": [
+        {
+            "id": "7c1e2b0a-4d55-4a8e-9f3b-2a6c1d9e8f10",
+            "author": "Léo",
+            "message": "Carrément !",
+            "date": "2026-11-16T18:41:00Z",
+            "authorInfo": {
+                "id": "a9c1d2e3-0000-4000-8000-000000000004",
+                "displayName": "Léo",
+                "avatar": {
+                    "kind": "symbol",
+                    "value": "person.crop.circle.fill"
+                }
+            },
+            "text": "Carrément !",
+            "createdAt": "2026-11-16T18:41:00Z",
+            "isMine": false
+        }
+    ],
+    "nextCursor": null
+}

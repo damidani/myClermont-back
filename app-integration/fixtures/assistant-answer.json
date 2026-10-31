@@ -1,0 +1,38 @@
+{
+    "text": "Trois adresses à moins de 5 minutes à pied :",
+    "followUps": [
+        "Que faire ce soir ?",
+        "Où se garer près de Jaude ?"
+    ],
+    "cards": [
+        {
+            "icon": "fork.knife",
+            "kicker": "RESTAURANT · à 350 m",
+            "title": "Le Bouchon Auvergnat",
+            "detail": "Place de Jaude",
+            "badge": "Partenaire",
+            "isPartner": true,
+            "link": {
+                "type": "place",
+                "spot": {
+                    "subtitle": "Place de Jaude",
+                    "id": "f3b0c9a2-5d1e-4b7a-9c2d-1e2f3a4b5c6d",
+                    "name": "Le Bouchon Auvergnat",
+                    "category": "restaurant",
+                    "latitude": 45.778,
+                    "longitude": 3.084,
+                    "phone": null,
+                    "website": null,
+                    "isPartner": true,
+                    "demoName": null,
+                    "natureKind": null
+                }
+            },
+            "colors": [
+                "#FF4F8B",
+                "#7B5CFF"
+            ]
+        }
+    ],
+    "conversationId": "5f0c7a1e-2b3d-4c5e-8f90-a1b2c3d4e5f6"
+}

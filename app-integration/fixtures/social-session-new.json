@@ -1,0 +1,9 @@
+{
+    "accessToken": "eyJhbGciOiJIUzI1NiIs…",
+    "refreshToken": "mc_rt_…",
+    "expiresIn": 900,
+    "isNewUser": true,
+    "user": null,
+    "email": "abc123@privaterelay.appleid.com",
+    "firstName": "Camille"
+}

@@ -1,53 +1,15 @@
 {
     "items": [
         {
-            "id": "demo-2-concert-au-coeur-de-clermont",
-            "title": "Concert au cœur de Clermont",
-            "kind": "concert",
-            "venue": "Centre-ville",
-            "address": "Place de Jaude",
-            "latitude": 45.7772,
-            "longitude": 3.082,
-            "start": "2026-10-30T20:00:00+01:00",
-            "end": "2026-10-30T22:30:00+01:00",
-            "schedule": null,
-            "price": "À partir de 15 € · démo",
-            "ageLimit": null,
-            "url": null,
-            "allDay": false,
-            "summary": "Concert en plein air place de Jaude.",
-            "imageUrl": null,
-            "placeId": null
-        },
-        {
-            "id": "demo-3-lever-de-soleil-au-sommet-du-puy-de-dome",
-            "title": "Lever de soleil au sommet du puy de Dôme",
-            "kind": "famille",
-            "venue": "Puy de Dôme",
-            "address": "Orcines",
-            "latitude": 45.7726,
-            "longitude": 2.9644,
-            "start": "2026-10-31T06:30:00+01:00",
-            "end": "2026-10-31T09:30:00+01:00",
-            "schedule": null,
-            "price": "Gratuit",
-            "ageLimit": null,
-            "url": null,
-            "allDay": false,
-            "summary": "Randonnée guidée jusqu'au sommet.",
-            "imageUrl": null,
-            "placeId": null
-        },
-        {
-            "id": "demo-4-marche-des-producteurs-auvergnats",
-            "title": "Marché des producteurs auvergnats",
-            "kind": "soiree",
+            "id": "marche-des-producteurs-2026-11-21",
+            "title": "Marché des producteurs",
+            "kind": "marche",
             "venue": "Place Saint-Pierre",
-            "address": null,
+            "address": "",
             "latitude": 45.7797,
             "longitude": 3.0864,
-            "start": "2026-11-01T09:00:00+01:00",
-            "end": "2026-11-01T13:00:00+01:00",
+            "start": "2026-11-21T09:00:00+01:00",
+            "end": "2026-11-21T13:00:00+01:00",
             "schedule": null,
             "price": "Entrée libre",
             "ageLimit": null,
@@ -58,5 +20,5 @@
             "placeId": null
         }
     ],
-    "nextCursor": "3"
+    "nextCursor": null
 }

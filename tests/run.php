@@ -69,5 +69,22 @@ foreach (glob(__DIR__ . '/*Test.php') as $file) {
     }
 }
 
+// Fixtures de l'app iOS : construites par les presenters, validées contre les schémas (tests/fixtures.php)
+require __DIR__ . '/fixtures.php';
+try {
+    $errors = check_fixtures();
+    if ($errors !== []) {
+        throw new RuntimeException(implode("\n    ", $errors));
+    }
+    $passed++;
+    echo "\033[32m✔\033[0m fixtures › chaque fixture valide le schéma de l'app iOS\n";
+    if (in_array('--fixtures', $argv, true)) {
+        echo '  ' . write_fixtures(dirname(__DIR__)) . " fixtures écrites dans fixtures/ et app-integration/fixtures/\n";
+    }
+} catch (Throwable $e) {
+    $failed++;
+    echo "\033[31m✘\033[0m fixtures › chaque fixture valide le schéma de l'app iOS\n    {$e->getMessage()}\n";
+}
+
 echo "\n{$passed} réussi(s), {$failed} échoué(s)\n";
 exit($failed > 0 ? 1 : 0);

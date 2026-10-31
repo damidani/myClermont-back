@@ -3,163 +3,35 @@
         {
             "id": "e38ba020-a771-4a14-bcc0-a5955cfef1ff",
             "title": "Bureau en bois",
-            "category": "maison-deco",
+            "category": "Maison & déco",
             "price": 90,
             "priceLabel": "90 €",
             "district": "Clermont-Ferrand",
             "description": "Bureau en bois massif, quelques traces d'usage.",
             "condition": "Bon état",
-            "seller": {
-                "id": "6e2a97ee-aec2-441b-a3be-389b7936bc2c",
+            "seller": "Camille",
+            "images": [],
+            "created": "2026-10-28T09:31:09Z",
+            "isDemo": false,
+            "categorySlug": "maison-deco",
+            "sellerInfo": {
+                "id": "22222222-aaaa-4bbb-8ccc-ddddeeeeffff",
                 "displayName": "Habitant_11",
                 "avatar": {
                     "kind": "symbol",
                     "value": "person.crop.circle.fill"
                 }
             },
-            "images": [],
             "createdAt": "2026-10-28T09:31:09Z",
             "categoryName": "Maison & déco",
-            "categoryIcon": "sofa",
-            "categoryColor": "#4FA77E",
-            "status": "active",
-            "badge": "DÉMO",
-            "source": null,
-            "isMine": false,
-            "isFavorite": null
-        },
-        {
-            "id": "5fe1c309-f60b-4829-93f6-cffd01703ef9",
-            "title": "Chaussures de randonnée",
-            "category": "sport-loisirs",
-            "price": 45,
-            "priceLabel": "45 €",
-            "district": "Aubière",
-            "description": "Pointure 42, portées trois fois.",
-            "condition": "Très bon état",
-            "seller": {
-                "id": "6e2a97ee-aec2-441b-a3be-389b7936bc2c",
-                "displayName": "Habitant_11",
-                "avatar": {
-                    "kind": "symbol",
-                    "value": "person.crop.circle.fill"
-                }
-            },
-            "images": [],
-            "createdAt": "2026-10-28T09:21:09Z",
-            "categoryName": "Sport & loisirs",
-            "categoryIcon": "hiking",
-            "categoryColor": "#E2703A",
-            "status": "active",
-            "badge": "DÉMO",
-            "source": null,
-            "isMine": false,
-            "isFavorite": null
-        },
-        {
-            "id": "82f76b94-b317-436f-9e15-09583d3eac2f",
-            "title": "Don de plantes",
-            "category": "dons",
-            "price": 0,
-            "priceLabel": "Gratuit",
-            "district": "Montferrand",
-            "description": "Boutures de plantes vertes à récupérer gratuitement.",
-            "condition": "Bon état",
-            "seller": {
-                "id": "6e2a97ee-aec2-441b-a3be-389b7936bc2c",
-                "displayName": "Habitant_11",
-                "avatar": {
-                    "kind": "symbol",
-                    "value": "person.crop.circle.fill"
-                }
-            },
-            "images": [],
-            "createdAt": "2026-10-28T09:11:09Z",
-            "categoryName": "Dons & gratuit",
             "categoryIcon": "gift",
             "categoryColor": "#4A9A9A",
             "status": "active",
-            "badge": "DÉMO",
+            "badge": null,
             "source": null,
             "isMine": false,
             "isFavorite": null
         }
     ],
-    "nextCursor": "cmVjZW50fDIwMjYtMTAtMjggMDk6MTE6MDl8Mw",
-    "categories": [
-        {
-            "slug": "maison-deco",
-            "name": "Maison & déco",
-            "icon": "sofa",
-            "color": "#4FA77E",
-            "count": 1
-        },
-        {
-            "slug": "high-tech",
-            "name": "High-tech",
-            "icon": "laptop",
-            "color": "#4A6FD6",
-            "count": 0
-        },
-        {
-            "slug": "mode",
-            "name": "Mode",
-            "icon": "tshirt",
-            "color": "#C2508A",
-            "count": 0
-        },
-        {
-            "slug": "sport-loisirs",
-            "name": "Sport & loisirs",
-            "icon": "hiking",
-            "color": "#E2703A",
-            "count": 1
-        },
-        {
-            "slug": "bricolage",
-            "name": "Bricolage & jardin",
-            "icon": "hammer",
-            "color": "#3E9A6A",
-            "count": 1
-        },
-        {
-            "slug": "enfants",
-            "name": "Enfants",
-            "icon": "teddy",
-            "color": "#E0A43A",
-            "count": 0
-        },
-        {
-            "slug": "livres-media",
-            "name": "Livres & médias",
-            "icon": "book",
-            "color": "#7B4FD6",
-            "count": 0
-        },
-        {
-            "slug": "vehicules",
-            "name": "Vélos & mobilité",
-            "icon": "bike",
-            "color": "#3A8EA5",
-            "count": 0
-        },
-        {
-            "slug": "dons",
-            "name": "Dons & gratuit",
-            "icon": "gift",
-            "color": "#4A9A9A",
-            "count": 1
-        },
-        {
-            "slug": "autre",
-            "name": "Autre",
-            "icon": "tag",
-            "color": "#6B7A8A",
-            "count": 0
-        }
-    ],
-    "allCount": 4,
-    "freeCount": 1,
-    "total": 4,
-    "sort": "recent"
+    "nextCursor": null
 }

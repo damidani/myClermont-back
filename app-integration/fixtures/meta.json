@@ -9,7 +9,7 @@
         "plus": false,
         "classifiedsChat": true,
         "fuel": true,
-        "traffic": false
+        "traffic": true
     },
     "enums": {
         "placeCategories": [
@@ -97,47 +97,47 @@
         {
             "key": "maison-travaux",
             "name": "Maison & travaux",
-            "icon": "hammer"
+            "icon": "hammer.fill"
         },
         {
             "key": "services-domicile",
             "name": "Services à domicile",
-            "icon": "house"
+            "icon": "house.fill"
         },
         {
             "key": "informatique",
             "name": "Informatique",
-            "icon": "desktop"
+            "icon": "desktopcomputer"
         },
         {
             "key": "sport-bien-etre",
             "name": "Sport & bien-être",
-            "icon": "running"
+            "icon": "figure.run"
         },
         {
             "key": "beaute-sante",
             "name": "Beauté & santé",
-            "icon": "heart"
+            "icon": "heart.fill"
         },
         {
             "key": "cours-formation",
             "name": "Cours & formation",
-            "icon": "school"
+            "icon": "graduationcap.fill"
         },
         {
             "key": "animaux",
             "name": "Animaux",
-            "icon": "paw"
+            "icon": "pawprint.fill"
         },
         {
             "key": "evenementiel",
             "name": "Événementiel",
-            "icon": "camera"
+            "icon": "camera.fill"
         },
         {
             "key": "auto-mobilite",
             "name": "Auto & mobilité",
-            "icon": "car"
+            "icon": "car.fill"
         }
     ],
     "classifiedCategories": [
@@ -153,27 +153,27 @@
         },
         {
             "key": "mode",
-            "name": "Mode",
+            "name": "Mode & accessoires",
             "icon": "tshirt"
         },
         {
             "key": "sport-loisirs",
-            "name": "Sport & loisirs",
+            "name": "Sport & plein air",
             "icon": "hiking"
         },
         {
             "key": "bricolage",
-            "name": "Bricolage & jardin",
+            "name": "Jardin & bricolage",
             "icon": "hammer"
         },
         {
             "key": "enfants",
-            "name": "Enfants",
+            "name": "Enfants & bébé",
             "icon": "teddy"
         },
         {
             "key": "livres-media",
-            "name": "Livres & médias",
+            "name": "Livres & loisirs",
             "icon": "book"
         },
         {
@@ -182,13 +182,18 @@
             "icon": "bike"
         },
         {
+            "key": "musique",
+            "name": "Musique",
+            "icon": "music"
+        },
+        {
             "key": "dons",
             "name": "Dons & gratuit",
             "icon": "gift"
         },
         {
-            "key": "autre",
-            "name": "Autre",
+            "key": "jeux-collections",
+            "name": "Jeux & collections",
             "icon": "tag"
         }
     ],
@@ -221,5 +226,5 @@
         3.44,
         46.08
     ],
-    "serverTime": "2026-10-29T20:27:25Z"
+    "serverTime": "2026-10-31T10:33:57Z"
 }

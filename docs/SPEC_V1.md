@@ -27,6 +27,26 @@ Côté contrat JSON :
 - **Code d'erreur** : le motif précis reste lisible dans `details.reason`.
 - **Champs en plus** : certains objets portent des champs que la spec ne prévoit pas (lien d'origine d'une offre, source, `isFavorite`…). Un décodeur Swift les ignore.
 
+## Brief app iOS du 30 octobre 2026
+
+Le brief « Aligner le back-end sur l'app iOS » (build 17) est traité section par section, un commit chacune. Les réponses sont vérifiées par :
+- `php tests/run.php` : un test de schéma par route, avec les schémas du décodeur iOS (`src/Support/AppSchemas.php`) ; les fixtures sont reconstruites par `php tests/run.php --fixtures` ;
+- `php bin/console schema:check` : les vraies réponses de l'API, page par page.
+
+| § | Sujet | État |
+|---|---|---|
+| 3 | Événements | ✅ Textes jamais null, `kind` deviné pour un marché |
+| 4 | Liens de partage | ✅ `https://myclermont.app/<rubrique>/<id>` partout |
+| 5 | Modération | ✅ Post, commentaire et avis filtrés : succès pour l'auteur, en attente du modérateur. Avis avec lien ou domaine en attente. Lexique renforcé |
+| 6 | Comptes | ✅ Inscription avec le profil de l'app, `Session` / `SocialSession` (`isNewUser`), `PATCH /me`, mot de passe oublié (page `/password/reset`), `GOOGLE_CLIENT_IDS` |
+| 7 | Données de démo | ✅ `demo:purge`, seeders limités à `APP_ENV=local` ; base de production vidée le 31/10 |
+| 8 | Clermont IA | ✅ Compte gratuit suffisant, `401 account_required` sans compte après 1 question. ⚠️ Clé Anthropic à installer sur le serveur |
+| 9 | Favoris et avis par clé de l'app | ✅ |
+| 10 | Carburants, trafic | ✅ `automate24h`, TomTom Orbis v2 (clé installée, `features.traffic: true`) |
+| 11 | Ma Ville | ✅ Emploi, logement, bons plans, services, agenda (`GET /events/agenda`) |
+| 12 | Communauté, annonces, lieux | ✅ |
+| 13 | Divers | ✅ `PATCH /devices/me { pushToken }`, `minAppVersion.ios = 0.9.1`, `X-Request-Id`. ⚠️ Clé APNs (.p8) à installer |
+
 ## Routes
 
 ✅ = en place et testé de bout en bout sur la base de test.

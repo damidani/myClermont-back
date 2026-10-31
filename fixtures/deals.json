@@ -6,15 +6,19 @@
             "merchant": "Café de Jaude",
             "placeId": null,
             "area": "Jaude",
-            "category": "cafe",
-            "original": 3.5,
-            "reduced": 1.8,
+            "category": "Restaurants",
+            "original": "3,50 €",
+            "reduced": "1,80 €",
+            "originalAmount": 3.5,
+            "reducedAmount": 1.8,
             "discount": "-49 %",
             "exclusive": false,
+            "image": "https://api.myclermont.app/static/defaults/deal-restaurants.jpg",
             "imageUrl": null,
-            "description": null,
-            "conditions": null,
-            "expiresAt": null
+            "description": "Un café offert pour tout croissant acheté.",
+            "conditions": "Valable une fois par personne, du lundi au vendredi.",
+            "expires": "Jusqu'au 30 novembre",
+            "expiresAt": "2026-11-30T22:59:00Z"
         }
     ],
     "nextCursor": null
