@@ -5,7 +5,7 @@
         "android": "0.9.1"
     },
     "features": {
-        "assistant": true,
+        "assistant": false,
         "plus": false,
         "classifiedsChat": true,
         "fuel": true,
@@ -144,57 +144,57 @@
         {
             "key": "maison-deco",
             "name": "Maison & déco",
-            "icon": "sofa"
+            "icon": "sofa.fill"
         },
         {
             "key": "high-tech",
             "name": "High-tech",
-            "icon": "laptop"
+            "icon": "laptopcomputer"
         },
         {
             "key": "mode",
             "name": "Mode & accessoires",
-            "icon": "tshirt"
+            "icon": "bag.fill"
         },
         {
             "key": "sport-loisirs",
             "name": "Sport & plein air",
-            "icon": "hiking"
+            "icon": "figure.hiking"
         },
         {
             "key": "bricolage",
             "name": "Jardin & bricolage",
-            "icon": "hammer"
+            "icon": "hammer.fill"
         },
         {
             "key": "enfants",
             "name": "Enfants & bébé",
-            "icon": "teddy"
+            "icon": "figure.2.and.child.holdinghands"
         },
         {
             "key": "livres-media",
             "name": "Livres & loisirs",
-            "icon": "book"
+            "icon": "books.vertical.fill"
         },
         {
             "key": "vehicules",
             "name": "Vélos & mobilité",
-            "icon": "bike"
+            "icon": "bicycle"
         },
         {
             "key": "musique",
             "name": "Musique",
-            "icon": "music"
+            "icon": "music.note"
         },
         {
             "key": "dons",
             "name": "Dons & gratuit",
-            "icon": "gift"
+            "icon": "gift.fill"
         },
         {
             "key": "jeux-collections",
             "name": "Jeux & collections",
-            "icon": "tag"
+            "icon": "gamecontroller.fill"
         }
     ],
     "neighborhoods": [
@@ -226,5 +226,5 @@
         3.44,
         46.08
     ],
-    "serverTime": "2026-10-31T10:33:57Z"
+    "serverTime": "2026-10-31T12:09:54Z"
 }

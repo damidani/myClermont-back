@@ -27,4 +27,5 @@ return [
     App\Modules\Fuel\FuelModule::class,
     App\Modules\Assistant\AssistantModule::class,
     App\Modules\Subscriptions\SubscriptionsModule::class,
+    App\Modules\Games\GamesModule::class,
 ];

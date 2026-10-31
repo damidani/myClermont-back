@@ -37,7 +37,8 @@ final class PostPresenter
             'neighborhood'   => (string) ($p['neighborhood_name'] ?? ''),
             'date'           => $date,
             'kind'           => self::KINDS[$p['type']] ?? 'Texte',
-            'text'           => (string) ($p['type'] === 'photo' && $p['media_caption'] !== null ? $p['media_caption'] : ($p['body'] ?? '')),
+            // Photo : la légende ; sondage : la description facultative (la question est dans pollQuestion)
+            'text'           => (string) (in_array($p['type'], ['photo', 'poll'], true) && $p['media_caption'] !== null ? $p['media_caption'] : ($p['body'] ?? '')),
             'media_files'    => array_values(array_filter(array_column($media, 'url'), static fn ($u) => is_string($u) && str_starts_with($u, 'https://'))),
             'poll_options'   => $poll['options'] ?? [],
             'votes'          => $poll['votes'] ?? [],

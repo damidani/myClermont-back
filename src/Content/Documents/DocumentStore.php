@@ -72,7 +72,8 @@ final class DocumentStore
             'SELECT id, uid, kind, device_id, attached_at, expires_at FROM documents WHERE uid = :u',
             ['u' => strtolower($uid)],
         );
-        if ($doc === null || (int) $doc['device_id'] !== (int) $device['id'] || $doc['kind'] !== $kind
+        // Une lettre envoyée par POST /uploads (purpose cv, le seul pour les PDF) est rangée comme un CV : acceptée aussi
+        if ($doc === null || (int) $doc['device_id'] !== (int) $device['id'] || ($doc['kind'] !== $kind && !($kind === 'cover_letter' && $doc['kind'] === 'cv'))
             || $doc['attached_at'] !== null || strtotime($doc['expires_at'] . ' UTC') < time()) {
             $field = $kind === 'cv' ? 'cv_document_id' : 'cover_letter_document_id';
             throw new ValidationException([$field => 'Document introuvable ou expiré : renvoyez le fichier.']);

@@ -1,0 +1,22 @@
+{
+    "items": [
+        {
+            "rank": 1,
+            "displayName": "Alex",
+            "score": 968,
+            "isMe": false
+        },
+        {
+            "rank": 2,
+            "displayName": "Camille R.",
+            "score": 812,
+            "isMe": true
+        }
+    ],
+    "me": {
+        "rank": 2,
+        "displayName": "Camille R.",
+        "score": 812,
+        "isMe": true
+    }
+}

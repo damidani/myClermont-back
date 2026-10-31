@@ -224,7 +224,7 @@ final class IdentityController
         if (array_key_exists('neighborhood', $data)) {
             if ($data['neighborhood'] === null || $data['neighborhood'] === '') {
                 $fields['neighborhood_id'] = null;
-            } elseif ($hood = Database::fetch('SELECT id FROM neighborhoods WHERE (name = :n OR slug = :n2) AND is_active = 1', ['n' => $data['neighborhood'], 'n2' => $data['neighborhood']])) {
+            } elseif ($hood = Database::fetch('SELECT id FROM neighborhoods WHERE (name = :n' . (preg_match('/^[a-z0-9-]+$/', $data['neighborhood']) ? ' OR slug = :n2' : '') . ') AND is_active = 1', ['n' => $data['neighborhood']] + (preg_match('/^[a-z0-9-]+$/', $data['neighborhood']) ? ['n2' => $data['neighborhood']] : []))) {
                 $fields['neighborhood_id'] = (int) $hood['id'];
             } else {
                 $errors['neighborhood'] = 'Quartier inconnu.';

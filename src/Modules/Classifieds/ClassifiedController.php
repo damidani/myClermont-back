@@ -266,7 +266,8 @@ final class ClassifiedController
         }
         $json['location_label'] ??= $json['district'] ?? null;
         if (isset($json['images']) && !isset($json['media_ids'])) {
-            $json['media_ids'] = $json['images'];
+            // URLs renvoyées par POST /uploads/{id}/confirm (purpose classified), ou uploadIds
+            $json['media_ids'] = is_array($json['images']) ? \App\Content\Uploads\UploadController::uids($json['images'], $userId) : $json['images'];
         }
         unset($json['price'], $json['district'], $json['images']);
         foreach (['title', 'description'] as $f) {
@@ -286,7 +287,10 @@ final class ClassifiedController
         ]);
 
         $errors = [];
-        $category = Database::fetch('SELECT id, slug FROM classified_categories WHERE slug = :s OR name = :n', ['s' => $data['category'], 'n' => $data['category']]);
+        // Libellé de l'app (« Maison & déco ») ou slug ; le slug est en ASCII, un libellé accentué ne se compare qu'au nom
+        $category = preg_match('/^[a-z0-9-]+$/', $data['category'])
+            ? Database::fetch('SELECT id, slug FROM classified_categories WHERE slug = :s', ['s' => $data['category']])
+            : Database::fetch('SELECT id, slug FROM classified_categories WHERE name = :n', ['n' => $data['category']]);
         if ($category === null) {
             $errors['category'] = 'Catégorie inconnue.';
         }

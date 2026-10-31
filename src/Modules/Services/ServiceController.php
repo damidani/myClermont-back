@@ -116,7 +116,19 @@ final class ServiceController
             throw new HttpException(409, 'quote_external', 'La demande se fait sur ' . $provider['source_name'] . '.', ['url' => $contact['url']]);
         }
 
-        $data = Validator::validate($request->json(), [
+        // App iOS : fullName, details { urgency, contactBy } ajoutés en tête du message transmis au professionnel
+        $json = $request->json();
+        $json['name'] ??= $json['full_name'] ?? null;
+        $details = is_array($json['details'] ?? null) ? $json['details'] : [];
+        $lines = array_filter([
+            is_string($details['urgency'] ?? null) ? 'Délai : ' . mb_substr($details['urgency'], 0, 40) : null,
+            is_string($details['contact_by'] ?? null) ? 'Contact souhaité par : ' . mb_substr($details['contact_by'], 0, 20) : null,
+        ]);
+        if ($lines !== [] && is_string($json['message'] ?? null)) {
+            $json['message'] = implode("\n", $lines) . "\n\n" . $json['message'];
+        }
+        unset($json['details']);
+        $data = Validator::validate($json, [
             'name'           => 'required|string|min:2|max:120',
             'email'          => 'required|email|max:191',
             'phone'          => 'nullable|string|max:30',

@@ -312,4 +312,11 @@ return [
         assert_same([], $S::validate($ad, $S::classified()));
         assert_same('Bon état', $ad['condition']);
     },
+
+    'mini-jeux : nom affiché « Camille R. », jamais vide' => function () {
+        $G = App\Modules\Games\GamesModule::class;
+        assert_same('Camille R.', $G::name(['first_name' => 'Camille Robert', 'display_name' => null]));
+        assert_same('Camille', $G::name(['first_name' => 'Camille', 'display_name' => null]));
+        assert_same('Joueur MyClermont', $G::name(['first_name' => null, 'display_name' => '']));
+    },
 ];

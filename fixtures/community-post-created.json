@@ -1,0 +1,44 @@
+{
+    "id": "7129c792-94cf-41c7-9d42-0ddb30516d8d",
+    "author": "Camille",
+    "neighborhood": "",
+    "date": "2026-10-31T12:07:10Z",
+    "kind": "Photos + texte",
+    "text": "Coucher de soleil sur les puys",
+    "mediaFiles": [
+        "https://api.myclermont.app/media/2026/10/f1c549a9-6eda-4837-b1e5-286770f050da.jpg"
+    ],
+    "pollOptions": [],
+    "votes": [],
+    "myVote": null,
+    "pollQuestion": null,
+    "likes": 0,
+    "liked": false,
+    "comments": [],
+    "authorInfo": {
+        "id": "71ed1800-ac60-4e5a-8f95-b8b6e757c16e",
+        "displayName": "Camille",
+        "avatar": {
+            "kind": "symbol",
+            "value": "person.crop.circle.fill"
+        }
+    },
+    "createdAt": "2026-10-31T12:07:10Z",
+    "specKind": "photos",
+    "media": [
+        "https://api.myclermont.app/media/2026/10/f1c549a9-6eda-4837-b1e5-286770f050da.jpg"
+    ],
+    "poll": null,
+    "commentsCount": 0,
+    "mediaItems": [
+        {
+            "kind": "image",
+            "mime": "image/jpeg",
+            "url": "https://api.myclermont.app/media/2026/10/f1c549a9-6eda-4837-b1e5-286770f050da.jpg",
+            "width": 800,
+            "height": 600
+        }
+    ],
+    "isMine": true,
+    "shareUrl": "https://myclermont.app/communaute/7129c792-94cf-41c7-9d42-0ddb30516d8d"
+}

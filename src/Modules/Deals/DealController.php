@@ -66,11 +66,13 @@ final class DealController
     {
         $deal = $this->find((string) $request->param('id'));
         $userId = (int) $request->attributes['user_id'];
+        // Le compte a déjà son code : on le renvoie (l'utilisateur rouvre la fiche), 200 sans erreur
+        $existing = static fn () => Database::fetch('SELECT code FROM deal_redemptions WHERE deal_id = :d AND user_id = :u', ['d' => $deal['id'], 'u' => $userId]);
+        if ($row = $existing()) {
+            return Response::success(self::redemption($deal, $row['code']));
+        }
         if ($deal['exclusive_plus'] && !PremiumService::isActiveById($userId)) {
             throw new HttpException(403, 'plus_required', 'Ce bon plan est réservé aux membres My Clermont+.');
-        }
-        if (Database::fetch('SELECT 1 FROM deal_redemptions WHERE deal_id = :d AND user_id = :u', ['d' => $deal['id'], 'u' => $userId])) {
-            throw new HttpException(409, 'conflict', 'Tu as déjà obtenu ce bon plan.');
         }
 
         $code = Database::transaction(static function () use ($deal, $userId): string {
@@ -92,19 +94,29 @@ final class DealController
                     );
                     return $code;
                 } catch (\PDOException $e) {
-                    if ($e->getCode() !== '23000' || Database::fetch('SELECT 1 FROM deal_redemptions WHERE deal_id = :d AND user_id = :u', ['d' => $deal['id'], 'u' => $userId])) {
-                        throw new HttpException(409, 'conflict', 'Tu as déjà obtenu ce bon plan.');
+                    if ($e->getCode() !== '23000') {
+                        throw $e;
+                    }
+                    // Deux appels simultanés du même compte : le premier code gagne
+                    if ($row = Database::fetch('SELECT code FROM deal_redemptions WHERE deal_id = :d AND user_id = :u', ['d' => $deal['id'], 'u' => $userId])) {
+                        return $row['code'];
                     }
                 }
             }
             throw new \RuntimeException('Génération du code impossible.');
         });
 
-        return Response::success([
+        return Response::success(self::redemption($deal, $code), 201);
+    }
+
+    /** Réponse de POST /deals/{id}/redeem : { code, expiresAt, qrPayload } */
+    public static function redemption(array $deal, string $code): array
+    {
+        return [
             'code'       => $code,
             'expires_at' => $deal['expires_at'] ? gmdate('Y-m-d\TH:i:s\Z', strtotime($deal['expires_at'] . ' UTC')) : null,
             'qr_payload' => 'myclermont://deal/' . $deal['uid'] . '/' . $code,
-        ], 201);
+        ];
     }
 
     /** Validation en caisse par le commerçant (compte partner gérant le lieu du bon plan) ou un administrateur. */

@@ -44,7 +44,7 @@ final class CommunityController
         $limit = max(1, min(50, (int) ($q['limit'] ?? Config::get('community.per_page', 20))));
         $hood = isset($q['neighborhood_id']) ? (int) $q['neighborhood_id'] : null;
         if ($hood === null && isset($q['neighborhood']) && $q['neighborhood'] !== '') {
-            $hood = (int) (Database::fetch('SELECT id FROM neighborhoods WHERE name = :n OR slug = :s', ['n' => $q['neighborhood'], 's' => $q['neighborhood']])['id'] ?? -1);
+            $hood = (int) (Database::fetch('SELECT id FROM neighborhoods WHERE name = :n' . (preg_match('/^[a-z0-9-]+$/', (string) $q['neighborhood']) ? ' OR slug = :s' : ''), ['n' => $q['neighborhood']] + (preg_match('/^[a-z0-9-]+$/', (string) $q['neighborhood']) ? ['s' => $q['neighborhood']] : []))['id'] ?? -1);
         }
         $rows = $this->posts->feed(
             $filter !== null ? $filters[$filter][1] : null,
@@ -98,10 +98,24 @@ final class CommunityController
             $json['type'] = $kinds[$json['kind']] ?? $json['kind'];
         }
         $json['body'] ??= $json['text'] ?? null;
-        if (isset($json['media']) && !isset($json['media_ids'])) {
-            $json['media_ids'] = $json['media'];
+        // Sondage : { poll: { question, options } } ou pollQuestion + pollOptions (l'app envoie les deux) ; la question devient le texte
+        $poll = is_array($json['poll'] ?? null) ? $json['poll'] : [];
+        $question = $poll['question'] ?? $json['poll_question'] ?? null;
+        $pollDescription = null;
+        if (($json['type'] ?? null) === 'poll' && is_string($question) && trim($question) !== '') {
+            // Question dans body (pollQuestion), description facultative dans media_caption (text)
+            $text = is_string($json['body'] ?? null) ? trim($json['body']) : '';
+            $pollDescription = $text !== '' && $text !== trim($question) ? mb_substr($text, 0, 2000) : null;
+            $json['body'] = trim($question);
         }
-        unset($json['kind'], $json['text'], $json['media']);
+        if (!empty($poll['options']) && empty($json['poll_options'])) {
+            $json['poll_options'] = $poll['options'];
+        }
+        // Médias : URLs renvoyées par POST /uploads/{id}/confirm, ou uploadIds
+        if (isset($json['media']) && !isset($json['media_ids'])) {
+            $json['media_ids'] = is_array($json['media']) ? \App\Content\Uploads\UploadController::uids($json['media'], (int) $request->attributes['user_id']) : $json['media'];
+        }
+        unset($json['kind'], $json['text'], $json['media'], $json['poll'], $json['poll_question']);
         // Filtre automatique (brief §5) : l'auteur reçoit un succès, mais le post attend un modérateur, hors des listes publiques
         $status = \App\Modules\Moderation\ContentFilter::check(is_string($json['body']) ? $json['body'] : null) === null ? 'visible' : 'pending';
         $data = Validator::validate($json, [
@@ -165,6 +179,9 @@ final class CommunityController
             Events::dispatch('community.post_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'type' => $type]);
         }
 
+        if ($pollDescription !== null) {
+            Database::execute('UPDATE community_posts SET media_caption = :c WHERE id = :id', ['c' => $pollDescription, 'id' => $postId]);
+        }
         $created = $this->posts->find($post['uid'], true);
 
         return Response::success(PostPresenter::post($created, $this->posts->related([$created], $userId), $userId), 201);

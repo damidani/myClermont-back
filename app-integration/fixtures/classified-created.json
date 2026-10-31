@@ -1,0 +1,67 @@
+{
+    "id": "d9a60d00-b27a-4f89-842c-648ab4ef7ab9",
+    "title": "Bureau en bois",
+    "category": "Maison & déco",
+    "price": 90,
+    "priceLabel": "90 €",
+    "district": "Montferrand",
+    "description": "Bureau compact avec tiroir.",
+    "condition": "Bon état",
+    "seller": "Camille",
+    "images": [
+        "https://api.myclermont.app/media/2026/10/6e54c6f5-32be-4c6d-a8ed-58794217ce59.jpg"
+    ],
+    "created": "2026-10-31T12:09:14Z",
+    "isDemo": false,
+    "categorySlug": "maison-deco",
+    "sellerInfo": {
+        "id": "71ed1800-ac60-4e5a-8f95-b8b6e757c16e",
+        "displayName": "Camille",
+        "avatar": {
+            "kind": "symbol",
+            "value": "person.crop.circle.fill"
+        },
+        "memberSince": "2026-10-31",
+        "activeListings": 1,
+        "soldListings": 0
+    },
+    "createdAt": "2026-10-31T12:09:14Z",
+    "categoryName": "Maison & déco",
+    "categoryIcon": "sofa.fill",
+    "categoryColor": "#4FA77E",
+    "status": "active",
+    "badge": null,
+    "source": null,
+    "isMine": true,
+    "isFavorite": false,
+    "photos": [
+        "https://api.myclermont.app/media/2026/10/6e54c6f5-32be-4c6d-a8ed-58794217ce59.jpg"
+    ],
+    "safetyTips": [
+        {
+            "icon": "people",
+            "text": "Rencontre l'autre personne dans un lieu public et fréquenté."
+        },
+        {
+            "icon": "eye",
+            "text": "Vérifie l'objet avant de payer."
+        },
+        {
+            "icon": "euro",
+            "text": "Ne verse jamais d'acompte sans avoir vu l'objet."
+        },
+        {
+            "icon": "link",
+            "text": "Méfie-toi des liens de paiement reçus par message."
+        }
+    ],
+    "notice": null,
+    "contact": {
+        "mode": "none",
+        "url": null,
+        "label": "Ton annonce"
+    },
+    "conversationId": null,
+    "expiresAt": "2026-12-30T12:09:14Z",
+    "shareUrl": "https://myclermont.app/annonces/d9a60d00-b27a-4f89-842c-648ab4ef7ab9"
+}

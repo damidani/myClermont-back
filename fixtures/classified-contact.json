@@ -1,0 +1,14 @@
+{
+    "conversationId": "4fc232dc-2f15-43f4-b4da-e742ad58f341",
+    "message": {
+        "id": 1,
+        "uid": "b258479b-88ec-4172-96fd-52d929a4255a",
+        "clientId": null,
+        "type": "text",
+        "body": "Bonjour, l annonce est-elle toujours disponible ?",
+        "isMine": true,
+        "senderId": null,
+        "hasLink": false,
+        "createdAt": "2026-10-31T12:09:14Z"
+    }
+}

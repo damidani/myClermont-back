@@ -1,0 +1,17 @@
+{
+    "id": "9cb61bd1-05fa-47fb-8916-d56a8c08637c",
+    "author": "Léo",
+    "message": "Carrément !",
+    "date": "2026-10-31T12:07:10Z",
+    "authorInfo": {
+        "id": "55d678a6-51ca-49cc-89c4-a6c1d5d37dcb",
+        "displayName": "Léo",
+        "avatar": {
+            "kind": "symbol",
+            "value": "person.crop.circle.fill"
+        }
+    },
+    "text": "Carrément !",
+    "createdAt": "2026-10-31T12:07:10Z",
+    "isMine": true
+}

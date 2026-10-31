@@ -122,7 +122,9 @@ final class HousingController
             throw new HttpException(409, 'contact_external', 'Cette annonce se contacte sur ' . $listing['source_name'] . '.', ['url' => $action['url']]);
         }
 
-        $data = Validator::validate($request->json(), [
+        $json = $request->json();
+        $json['name'] ??= $json['full_name'] ?? null;   // app iOS : fullName
+        $data = Validator::validate($json, [
             'name'    => 'required|string|min:2|max:120',
             'email'   => 'required|email|max:191',
             'phone'   => 'nullable|string|max:30',

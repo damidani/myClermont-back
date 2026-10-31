@@ -106,8 +106,12 @@ final class JobController
         // Spec v1 : fullName, cvUploadId (uploadId d'un PDF envoyé par POST /uploads, purpose « cv »)
         $input = $request->json();
         $input['name'] ??= $input['full_name'] ?? null;
-        $input['cv_document_id'] ??= $input['cv_upload_id'] ?? null;
-        $input['cover_letter_document_id'] ??= $input['cover_letter_upload_id'] ?? null;
+        // App iOS : details { cvUrl, letterUrl } = URLs renvoyées par POST /uploads/{id}/confirm (purpose cv)
+        $details = is_array($input['details'] ?? null) ? $input['details'] : [];
+        $ref = static fn ($v) => is_string($v) && $v !== '' ? (\App\Content\Uploads\UploadController::uids([$v], (int) $request->attributes['user_id'])[0] ?? null) : null;
+        $input['cv_document_id'] ??= $input['cv_upload_id'] ?? $ref($details['cv_url'] ?? null);
+        $input['cover_letter_document_id'] ??= $input['cover_letter_upload_id'] ?? $ref($details['letter_url'] ?? null);
+        unset($input['details']);
         $data = Validator::validate(array_diff_key($input, array_flip(['full_name', 'cv_upload_id', 'cover_letter_upload_id'])), [
             'name'                     => 'required|string|min:2|max:120',
             'email'                    => 'required|email|max:191',

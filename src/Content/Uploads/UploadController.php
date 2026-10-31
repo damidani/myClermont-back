@@ -65,6 +65,7 @@ final class UploadController
         );
 
         return Response::success([
+            'id'         => $uid,
             'upload_id'  => $uid,
             'upload_url' => rtrim((string) Config::get('app.url'), '/') . '/v1/uploads/' . $uid . '/blob?t=' . $token,
             'expires_at' => gmdate('Y-m-d\TH:i:s\Z', $expires),
@@ -113,7 +114,8 @@ final class UploadController
         try {
             if ($upload['purpose'] === 'cv') {
                 (new DocumentStore())->store($bytes, 'cv', $device, $userId, null, $upload['uid']);
-                $result = ['kind' => 'document', 'url' => null, 'width' => null, 'height' => null];
+                // PDF privé : l'URL sert seulement de référence à renvoyer (candidature), elle n'est pas téléchargeable
+                $result = ['kind' => 'document', 'url' => self::documentRef($upload['uid']), 'width' => null, 'height' => null];
             } else {
                 $bytes = ImageProcessor::prepare($bytes, (string) MediaStore::detect($bytes) ?: '');
                 $media = (new MediaStore())->store($bytes, $device, $userId, $upload['uid']);
@@ -135,14 +137,47 @@ final class UploadController
 
         Database::execute('UPDATE uploads SET confirmed_at = :d, url = :url WHERE id = :id', ['d' => gmdate('Y-m-d H:i:s'), 'url' => $result['url'], 'id' => $upload['id']]);
 
-        return Response::success(['upload_id' => $upload['uid']] + $result);
+        return Response::success(['id' => $upload['uid'], 'upload_id' => $upload['uid']] + $result);
+    }
+
+    /** Référence d'un PDF privé (CV, lettre) : https://…/api/v1/uploads/{id}/document */
+    public static function documentRef(string $uid): string
+    {
+        return rtrim((string) Config::get('app.url'), '/') . '/api/v1/uploads/' . $uid . '/document';
+    }
+
+    /**
+     * Références envoyées par l'app (URL renvoyée par confirm, ou uploadId) → uploadIds de ce compte.
+     * Une référence inconnue est gardée telle quelle : le contrôle (claim) la refusera avec un message clair.
+     *
+     * @param list<mixed> $refs
+     * @return list<string>
+     */
+    public static function uids(array $refs, int $userId): array
+    {
+        $out = [];
+        foreach ($refs as $ref) {
+            if (!is_string($ref) || $ref === '') {
+                continue;
+            }
+            if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $ref)) {
+                $out[] = strtolower($ref);
+            } elseif (preg_match('#/uploads/([0-9a-f-]{36})/document$#i', $ref, $m)) {
+                $out[] = strtolower($m[1]);
+            } else {
+                $row = Database::fetch('SELECT uid FROM uploads WHERE url = :u AND user_id = :usr', ['u' => $ref, 'usr' => $userId]);
+                $out[] = $row['uid'] ?? $ref;
+            }
+        }
+
+        return $out;
     }
 
     private static function present(array $u): array
     {
         $m = Database::fetch('SELECT kind, width, height FROM media WHERE uid = :u', ['u' => $u['uid']]);
 
-        return ['upload_id' => $u['uid'], 'kind' => $m['kind'] ?? 'document', 'url' => $u['url'],
+        return ['id' => $u['uid'], 'upload_id' => $u['uid'], 'kind' => $m['kind'] ?? 'document', 'url' => $u['url'] ?? ($u['purpose'] === 'cv' ? self::documentRef($u['uid']) : null),
                 'width' => isset($m['width']) ? (int) $m['width'] : null, 'height' => isset($m['height']) ? (int) $m['height'] : null];
     }
 
