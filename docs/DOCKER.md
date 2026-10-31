@@ -18,7 +18,7 @@ docker compose logs web                # clés iOS / Android générées au prem
 - API : http://localhost:8080/v1/health
 - Back-office : http://localhost:8080/admin. Le compte vient de `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 - Autre port : `HTTP_PORT=8088 docker compose up -d`.
-- Données de démo : `DEMO_DATA=true` dans `.env.docker`, avant le premier démarrage.
+- Données de démo : `DEMO_DATA=true` et `APP_ENV=local` dans `.env.docker`, avant le premier démarrage. Les seeders refusent de tourner hors environnement local. Pour les retirer : `php bin/console demo:purge` (`--dry-run` pour compter avant).
 
 ## Au démarrage du conteneur `web`
 

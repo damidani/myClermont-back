@@ -45,6 +45,13 @@ $fail = static function (string $message): never {
     exit(1);
 };
 
+// Brief §7 : les données de démo ne s'installent qu'en environnement local
+$localOnly = static function () use ($fail): void {
+    if (Config::get('app.env') !== 'local') {
+        $fail('Données de démo refusées hors environnement local (APP_ENV=' . Config::get('app.env') . ').');
+    }
+};
+
 /** Remplace (ou ajoute) une variable dans .env */
 $setEnv = static function (string $file, string $key, string $value): void {
     $content = is_file($file) ? (string) file_get_contents($file) : '';
@@ -219,6 +226,54 @@ switch ($command) {
             }
         }
         exit($failed > 0 ? 1 : 0);
+
+    case 'demo:purge':
+        // Brief §7 : retire les données de démo et de test de la base (événements demo-…, lieux « … démo », offres « · Démo »,
+        // services / annonces / posts badgés DÉMO, comptes de démo et de test, images picsum.photos).
+        //   php bin/console demo:purge [--dry-run]
+        $dry = isset($options['dry-run']);
+        $steps = [
+            'événements demo-… et de test'  => "DELETE FROM events WHERE slug LIKE 'demo-%' OR notice LIKE '%fictif%' OR (status = 'pending' AND author_user_id IN (SELECT id FROM users WHERE email LIKE '%.invalid' OR email LIKE '%@exemple.fr'))",
+            'lieux de démo'                => "DELETE FROM places WHERE (source_id = 1 AND external_id LIKE 'demo-%') OR name LIKE '%démo%'",
+            'offres d\'emploi de démo'     => "DELETE FROM job_offers WHERE (source_id = 1 AND external_id LIKE 'demo-%') OR company_name LIKE '%· Démo'",
+            'logements de démo'            => "DELETE FROM housing_listings WHERE source_id = 1 AND external_id LIKE 'demo-%'",
+            'services de démo'             => "DELETE FROM service_providers WHERE (source_id = 1 AND external_id LIKE 'demo-%') OR badge_label = 'DÉMO'",
+            'annonces de démo'             => "DELETE FROM classifieds WHERE badge_label = 'DÉMO'",
+            'publications de démo'         => "DELETE FROM community_posts WHERE badge_label = 'DÉMO'",
+            'Explorer de démo'             => "DELETE FROM explore_stories WHERE subtitle LIKE '%démo%' OR cover_url LIKE '%picsum.photos%'",
+            'exclusivités de démo'         => "DELETE FROM offers WHERE subtitle LIKE '%démonstration%' OR notice LIKE '%démonstration%'",
+            'mises en avant de démo'       => "DELETE FROM explore_highlights WHERE subtitle LIKE '%démo%' OR image_url LIKE '%picsum.photos%'",
+            'images picsum.photos'         => ['DELETE FROM housing_images WHERE url LIKE \'%picsum.photos%\'', 'DELETE FROM job_images WHERE url LIKE \'%picsum.photos%\''],
+            // Comptes de démo (*.invalid) et de test (@exemple.fr) : leurs posts, avis et commentaires partent avec eux (ON DELETE CASCADE)
+            'comptes de démo et de test'   => "DELETE FROM users WHERE (email LIKE '%.invalid' OR email LIKE '%@exemple.fr' OR username LIKE 'Habitant\\_%') AND role = 'user'",
+        ];
+        $total = 0;
+        foreach ($steps as $label => $sqls) {
+            $n = 0;
+            foreach ((array) $sqls as $sql) {
+                try {
+                    if ($dry) {
+                        $count = preg_replace('/^DELETE FROM/', 'SELECT COUNT(*) AS n FROM', $sql);
+                        $n += (int) (Database::fetch($count)['n'] ?? 0);
+                    } else {
+                        $n += Database::execute($sql);
+                    }
+                } catch (\PDOException $e) {
+                    $out("  ! {$label} : " . $e->getMessage());
+                }
+            }
+            $total += $n;
+            $out(sprintf('%-32s %d', $label, $n));
+        }
+        if (!$dry) {
+            // Notes et compteurs recalculés après la suppression des avis
+            foreach (Database::fetchAll('SELECT id FROM places') as $p) {
+                \App\Modules\Places\ReviewController::recompute((int) $p['id']);
+            }
+            \App\Admin\CacheInvalidator::all();
+        }
+        $out(($dry ? 'À supprimer : ' : 'Supprimé : ') . $total . ' ligne(s).');
+        break;
 
     case 'push:topics':
         $r = (new \App\Modules\Notifications\TopicScheduler())->run();
@@ -441,6 +496,7 @@ switch ($command) {
         break;
 
     case 'jobs:seed-demo':
+        $localOnly();
         $cat = array_column(Database::fetchAll('SELECT id, slug FROM job_categories'), 'id', 'slug');
         $demo = [
             ['tech', 'cdi', 'hybrid', 'Développeur·se iOS SwiftUI', 'Studio Volcan · Démo', 'Clermont-Ferrand', 3800000, 4500000, 'year',
@@ -480,6 +536,7 @@ switch ($command) {
         break;
 
     case 'explore:seed-demo':
+        $localOnly();
         // Reprend l'écran Explorer des maquettes : 4 stories, 1 événement flash, 2 exclusivités, « À découvrir »
         $sec = array_column(Database::fetchAll('SELECT id, slug FROM explore_sections'), 'id', 'slug');
         $now = gmdate('Y-m-d H:i:s');
@@ -539,6 +596,7 @@ switch ($command) {
         break;
 
     case 'places:seed-demo':
+        $localOnly();
         $cat = array_column(Database::fetchAll('SELECT id, slug FROM place_categories'), 'id', 'slug');
         Database::execute("DELETE FROM places WHERE source_id = 1 AND external_id LIKE 'demo-%'");
         $now = gmdate('Y-m-d H:i:s');
@@ -599,6 +657,7 @@ switch ($command) {
         break;
 
     case 'classifieds:seed-demo':
+        $localOnly();
         $seller = Database::fetch("SELECT id FROM users WHERE email = 'habitant.demo@myclermont.invalid'")['id'] ?? Database::insert(
             "INSERT INTO users (uid, email, password_hash, username, status, created_at, updated_at) VALUES (:uid, 'habitant.demo@myclermont.invalid', :h, 'Habitant_11', 'active', :c, :u)",
             ['uid' => \App\Security\Crypto::uuid4(), 'h' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), 'c' => gmdate('Y-m-d H:i:s'), 'u' => gmdate('Y-m-d H:i:s')],
@@ -653,6 +712,7 @@ switch ($command) {
         break;
 
     case 'community:seed-demo':
+        $localOnly();
         $user = static function (string $name, string $hood) {
             $email = strtolower($name) . '.demo@myclermont.invalid';
             $existing = Database::fetch('SELECT id FROM users WHERE email = :e', ['e' => $email]);
@@ -676,6 +736,7 @@ switch ($command) {
         break;
 
     case 'services:seed-demo':
+        $localOnly();
         $cat = array_column(Database::fetchAll('SELECT id, slug FROM service_categories'), 'id', 'slug');
         $demo = [
             ['maison-travaux', 'Atelier Plomberie des Puys', 'Dépannage et entretien des installations sanitaires. Fiche et entreprise fictives.', ['Plomberie', 'Dépannage', 'Installation'], 'plombier plomberie fuite chauffe-eau', 'Lun–Ven · 8h–18h (démo)', 'Sur devis', 4.8, 45.7772, 3.0870, 8],
@@ -706,6 +767,7 @@ switch ($command) {
         break;
 
     case 'housing:seed-demo':
+        $localOnly();
         $hood = static fn (string $slug) => Database::fetch('SELECT id FROM neighborhoods WHERE slug = :s', ['s' => $slug])['id'] ?? null;
         $demo = [
             ['rent', 'apartment', 'T2 lumineux proche Jaude', 69000, 44, 2, 1, 0, 'Centre-ville', 'centre-jaude', 45.7775, 3.0815, 'balcony,equipped_kitchen,near_tram,double_glazing',
@@ -746,6 +808,7 @@ switch ($command) {
         break;
 
     case 'events:seed-demo':
+        $localOnly();
         // Crée des événements fictifs relatifs à aujourd'hui (pour développer l'app)
         $tz = new DateTimeZone('Europe/Paris');
         $cat = array_column(Database::fetchAll('SELECT id, slug FROM event_categories'), 'id', 'slug');
@@ -865,6 +928,7 @@ switch ($command) {
           source:add <slug> <nom> <partner|import> [--contact=…] [--auto-publish]   Déclare une source de contenu
           import:run <slug> | import:all [--force]   Lance un import (import:all : seulement les sources dues)
           api:call <METHODE> <chemin> [json] [--base=URL] [--token=…]   Appel signé de l'API (outil de développement)
+          demo:purge [--dry-run]                       Retire les données de démo et de test (événements demo-…, picsum, comptes de test)
           schema:check [--base=URL]                    Vérifie les réponses réelles contre les schémas de l'app iOS
           events:maintenance               Archive les événements terminés depuis 90 jours
           account:purge                    Efface les comptes supprimés depuis plus de 30 jours (cron quotidien)
