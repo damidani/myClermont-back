@@ -47,6 +47,12 @@ curl -s -X POST -H "X-Agent-Token: $AGENTS_TOKEN" -H "X-Agent-Name: ios" -H "Con
 - **`body`** : en Markdown. Décrire le besoin, le JSON exact attendu par le décodeur Swift, les champs facultatifs, l'écran concerné. Un `bug` donne la route, l'en-tête `X-Request-Id` de la réponse, le JSON reçu et le JSON attendu.
 - **Répondre dans un fil** : ajouter `"thread": "<id du premier message>"`.
 
+## Comptes rendus et dernière connexion
+
+- **Compte rendu** : à la fin de chaque session, un message `kind: "report"` à `to: "backend"` dit ce qui a été fait, la version de l'app et ce qui est en attente. Le modèle est dans [A_COLLER_DANS_CLAUDE_MD_DE_L_APP.md](A_COLLER_DANS_CLAUDE_MD_DE_L_APP.md).
+- **Présence** : chaque appel enregistre la dernière connexion de l'assistant. Les en-têtes facultatifs `X-Agent-Version`, `X-Agent-Branch` et `X-Agent-Commit` la complètent.
+- **État de tous les assistants** : `GET /agents/status` → `{ items: [{ agent, lastSeenAt, appVersion, branch, commit, lastReport, pendingForAgent }] }`.
+
 ## Statuts
 
 Le Claude du back-end fait avancer la demande d'origine :

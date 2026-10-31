@@ -13,6 +13,7 @@ Il sert à brancher l'app sur le back-end PHP/MySQL, qui implémente la « Spéc
 | [SIGNATURE.md](SIGNATURE.md) | Protocole de signature, code Swift et Kotlin prêts à copier, vecteur de test |
 | [ETAT_SPEC_V1.md](ETAT_SPEC_V1.md) | Ce qui est livré, les écarts avec la spec, les questions ouvertes |
 | `fixtures/*.json` | Vraies réponses du serveur, une par route : à utiliser comme tests de décodage |
+| [A_COLLER_DANS_CLAUDE_MD_DE_L_APP.md](A_COLLER_DANS_CLAUDE_MD_DE_L_APP.md) | **Bloc à coller dans le CLAUDE.md du projet de l'app** : règles permanentes du canal (lecture en début de session, compte rendu en fin) |
 | [CANAL_AGENTS.md](CANAL_AGENTS.md) | **À lire à chaque session** : boîte de messages avec le Claude du back-end (demandes de routes, bugs, réponses) |
 | `test-instance.local.md` | Adresse et clé application de l'instance de test. **Secret, non versionné** : fourni à part |
 

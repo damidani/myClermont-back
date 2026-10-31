@@ -21,6 +21,10 @@ use App\Security\Crypto;
  *   GET   /agents/messages?to=&status=&thread=&since=                       → { items }
  *   GET   /agents/messages/{id}                                              → message + messages du fil
  *   PATCH /agents/messages/{id}         { status }                           → message
+ *   GET   /agents/status                                                     → dernière connexion de chaque assistant
+ *
+ * kind = report : compte rendu de session (ce qui a été fait, fichiers, build, questions) pour que l'autre côté reste au courant.
+ * Chaque appel met à jour la présence ; les en-têtes facultatifs X-Agent-Version, X-Agent-Branch, X-Agent-Commit la complètent.
  */
 final class AgentsModule
 {
@@ -38,8 +42,8 @@ final class AgentsModule
         if (!in_array($to, self::AGENTS, true)) {
             $errors['to'] = 'Destinataire : ' . implode(', ', self::AGENTS) . '.';
         }
-        if (!in_array($kind, ['request', 'reply', 'note', 'bug'], true)) {
-            $errors['kind'] = 'Type : request, reply, note ou bug.';
+        if (!in_array($kind, ['request', 'reply', 'note', 'bug', 'report'], true)) {
+            $errors['kind'] = 'Type : request, reply, note, bug ou report.';
         }
         if ($title === '' || mb_strlen($title) > 200) {
             $errors['title'] = 'Titre requis (200 caractères au plus).';
@@ -61,6 +65,9 @@ final class AgentsModule
             'INSERT INTO agent_messages (uid, thread_uid, sender, recipient, kind, title, body, created_at, updated_at) VALUES (:u, :t, :f, :to, :k, :ti, :b, :c, :up)',
             ['u' => $uid, 't' => $thread ?? $uid, 'f' => $from, 'to' => $to, 'k' => $kind, 'ti' => $title, 'b' => $body, 'c' => $now, 'up' => $now],
         );
+        if ($kind === 'report') {
+            Database::execute('UPDATE agent_presence SET last_report = :t WHERE agent = :a', ['t' => mb_substr($title, 0, 200), 'a' => $from]);
+        }
         // Une réponse fait avancer la demande d'origine
         if ($thread !== null && $kind === 'reply' && in_array($j['status'] ?? null, ['in_progress', 'done', 'rejected'], true)) {
             Database::execute('UPDATE agent_messages SET status = :s, updated_at = :d WHERE uid = :t', ['s' => $j['status'], 'd' => $now, 't' => $thread]);
@@ -112,6 +119,20 @@ final class AgentsModule
         return Response::json(self::present($this->find($m['uid'])));
     }
 
+    public function status(Request $request): Response
+    {
+        $this->agent($request);
+        $iso = static fn (?string $d) => $d === null ? null : gmdate('Y-m-d\TH:i:s\Z', (int) strtotime($d . ' UTC'));
+        $items = [];
+        foreach (Database::fetchAll('SELECT * FROM agent_presence ORDER BY last_seen_at DESC') as $p) {
+            $open = Database::fetch("SELECT COUNT(*) AS n FROM agent_messages WHERE recipient = :a AND status IN ('open', 'in_progress')", ['a' => $p['agent']]);
+            $items[] = ['agent' => $p['agent'], 'lastSeenAt' => $iso($p['last_seen_at']), 'appVersion' => $p['app_version'], 'branch' => $p['branch'],
+                        'commit' => $p['commit_sha'], 'lastReport' => $p['last_report'], 'pendingForAgent' => (int) $open['n']];
+        }
+
+        return Response::json(['items' => $items, 'serverTime' => gmdate('Y-m-d\TH:i:s\Z')]);
+    }
+
     public static function present(array $m): array
     {
         $iso = static fn (string $d) => gmdate('Y-m-d\TH:i:s\Z', (int) strtotime($d . ' UTC'));
@@ -134,6 +155,13 @@ final class AgentsModule
         if (!in_array($name, self::AGENTS, true)) {
             throw new ValidationException(['X-Agent-Name' => 'En-tête X-Agent-Name : ' . implode(', ', self::AGENTS) . '.']);
         }
+        $h = static fn (string $k, int $max) => ($v = trim((string) $request->header($k, ''))) === '' ? null : mb_substr($v, 0, $max);
+        Database::execute(
+            'INSERT INTO agent_presence (agent, last_seen_at, last_ip, app_version, branch, commit_sha) VALUES (:a, :d, :ip, :v, :b, :c)
+             ON DUPLICATE KEY UPDATE last_seen_at = VALUES(last_seen_at), last_ip = VALUES(last_ip),
+                 app_version = COALESCE(VALUES(app_version), app_version), branch = COALESCE(VALUES(branch), branch), commit_sha = COALESCE(VALUES(commit_sha), commit_sha)',
+            ['a' => $name, 'd' => gmdate('Y-m-d H:i:s'), 'ip' => $request->ip, 'v' => $h('X-Agent-Version', 40), 'b' => $h('X-Agent-Branch', 120), 'c' => $h('X-Agent-Commit', 64)],
+        );
 
         return $name;
     }
