@@ -15,9 +15,9 @@ return [
     'max_tokens' => 600,
     'max_steps'  => 4,                                       // appels d'outils maximum par question
 
-    // Quotas (à valider) : 1 question découverte sans My Clermont+, 100 par jour avec
+    // Décision du 30/10/2026 : 1 question découverte sans compte (par appareil), puis compte gratuit ; aucun plafond quotidien
+    // pour les comptes, seulement l'anti-abus de 10 questions par minute (security.php › rate_limits.ai)
     'free_questions'  => (int) Env::get('ASSISTANT_FREE_QUESTIONS', 1),
-    'plus_daily'      => (int) Env::get('ASSISTANT_PLUS_DAILY', 100),
     'cache_ttl'       => 600,    // même question dans la même zone : réponse en cache 10 min
     'retention_days'  => 30,     // questions gardées pour le débogage, sans la position
 ];

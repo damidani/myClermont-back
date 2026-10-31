@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Assistant;
 
 /**
- * Cartes AssistantCard de l'app, construites par le serveur à partir des résultats des outils
- * (jamais rédigées par le modèle) : { icon, tone, kicker, title, detail, badge, isPartner, link }.
- * tone remplace les couleurs : l'app garde sa palette (catégorie de lieu, type d'événement, module de Ma Ville).
+ * Cartes AssistantCard de l'app (brief §8), construites par le serveur à partir des résultats des outils
+ * (jamais rédigées par le modèle) : { icon, colors: [2 hex], kicker, title, detail, badge?, isPartner, link }.
+ * link.type : place, fuelStation (spot = MapSpot complet), event (id), city (destination), mapFilter, nature, explore, weather.
  */
 final class CardBuilder
 {
@@ -20,6 +20,18 @@ final class CardBuilder
         'incontournable' => 'INCONTOURNABLE', 'spot' => 'SPOT NATURE', 'restaurant' => 'RESTAURANT', 'fastFood' => 'SUR LE POUCE', 'cafe' => 'CAFÉ',
         'boulangerie' => 'BOULANGERIE', 'culture' => 'CULTURE', 'nature' => 'NATURE', 'sport' => 'SPORT', 'carburant' => 'CARBURANT', 'lieu' => 'LIEU', 'evenement' => 'ÉVÉNEMENT',
     ];
+    /** Dégradé de la carte (2 couleurs) par catégorie de lieu, type d'événement ou rubrique de Ma Ville */
+    private const COLORS = [
+        'incontournable' => ['#FFB547', '#FF6A3D'], 'evenement' => ['#FF4F8B', '#7B5CFF'], 'spot' => ['#3DBE8B', '#1E8A6E'],
+        'restaurant' => ['#FF4F8B', '#7B5CFF'], 'fastFood' => ['#FF8A3D', '#FF4F5E'], 'cafe' => ['#C98B5A', '#8A5A3C'],
+        'boulangerie' => ['#F2B45A', '#D9822B'], 'culture' => ['#7B5CFF', '#4A3DDB'], 'nature' => ['#3DBE8B', '#1E8A6E'],
+        'sport' => ['#2FA8FF', '#2563EB'], 'carburant' => ['#FFB020', '#F06A2A'], 'lieu' => ['#6B7AFF', '#4A5BDB'],
+        'soiree' => ['#B5427A', '#6B2C91'], 'concert' => ['#FF4F8B', '#7B5CFF'], 'spectacle' => ['#E0457B', '#9B3DDB'],
+        'expo' => ['#7B5CFF', '#4A3DDB'], 'famille' => ['#FFB547', '#FF7A59'], 'marche' => ['#3DBE8B', '#C9852B'],
+        'festival' => ['#FF6A3D', '#FF4F8B'], 'deals' => ['#FF4F8B', '#FF8A3D'], 'jobs' => ['#2FA8FF', '#6B7AFF'],
+        'housing' => ['#3DBE8B', '#2FA8FF'], 'services' => ['#7B5CFF', '#2FA8FF'],
+    ];
+
     private const FUELS = ['gazole' => 'Gazole', 'e10' => 'SP95-E10', 'sp95' => 'SP95', 'sp98' => 'SP98', 'e85' => 'E85', 'gplc' => 'GPL'];
 
     /**
@@ -45,34 +57,33 @@ final class CardBuilder
     private static function card(array $r): ?array
     {
         $base = ['badge' => null, 'is_partner' => false];
-
-        return match ($r['type']) {
+        $card = match ($r['type']) {
             'event' => $base + [
                 'icon' => 'calendar', 'tone' => $r['kind'] ?? 'soiree', 'kicker' => self::when($r['starts_at']),
-                'title' => $r['title'], 'detail' => $r['venue_name'], 'link' => ['type' => 'event', 'event_id' => $r['slug']],
+                'title' => $r['title'], 'detail' => (string) ($r['venue_name'] ?? ''), 'link' => ['type' => 'event', 'id' => $r['slug']],
             ],
             'place' => [
                 'icon' => self::PLACE_ICONS[$r['spot']['category']] ?? 'mappin.circle.fill', 'tone' => $r['spot']['category'],
                 'kicker' => (self::PLACE_LABELS[$r['spot']['category']] ?? 'LIEU') . ' · ' . self::distance($r['distance']),
-                'title' => $r['spot']['name'], 'detail' => $r['spot']['subtitle'], 'badge' => $r['spot']['is_partner'] ? 'PARTENAIRE' : null,
-                'is_partner' => $r['spot']['is_partner'], 'link' => ['type' => 'place', 'place' => $r['spot']],
+                'title' => $r['spot']['name'], 'detail' => (string) ($r['spot']['subtitle'] ?? ''), 'badge' => $r['spot']['is_partner'] ? 'Partenaire' : null,
+                'is_partner' => $r['spot']['is_partner'], 'link' => ['type' => 'place', 'spot' => ['subtitle' => (string) ($r['spot']['subtitle'] ?? '')] + $r['spot']],
             ],
             'fuel' => $base + [
                 'icon' => 'fuelpump.fill', 'tone' => 'carburant',
                 'kicker' => mb_strtoupper(self::FUELS[$r['fuel']] ?? $r['fuel']) . ' · ' . number_format((float) ($r['prices'][$r['fuel']]['price'] ?? 0), 3, ',', '') . ' €',
                 'title' => $r['address'] ?: 'Station', 'detail' => trim($r['city'] . ' · ' . self::distance($r['distance']), ' ·'),
-                'link' => ['type' => 'fuel_station', 'place' => [
+                'link' => ['type' => 'fuelStation', 'spot' => [
                     'id' => 'fuel-' . $r['id'], 'name' => $r['address'] ?: 'Station', 'category' => 'carburant', 'latitude' => $r['latitude'], 'longitude' => $r['longitude'],
-                    'subtitle' => $r['city'], 'phone' => null, 'website' => null, 'is_partner' => false, 'demo_name' => $r['address'], 'nature_kind' => null,
+                    'subtitle' => (string) $r['city'], 'phone' => null, 'website' => null, 'is_partner' => false, 'demo_name' => $r['address'], 'nature_kind' => null,
                 ]],
             ],
             'deal' => $base + [
                 'icon' => 'tag.fill', 'tone' => 'deals', 'kicker' => $r['exclusive_plus'] ? 'BON PLAN · MY CLERMONT+' : 'BON PLAN',
-                'title' => $r['title'], 'detail' => $r['merchant'], 'badge' => $r['discount_label'], 'link' => ['type' => 'city', 'destination' => 'deals'],
+                'title' => $r['title'], 'detail' => (string) $r['merchant'], 'badge' => $r['discount_label'], 'link' => ['type' => 'city', 'destination' => 'deals'],
             ],
             'job' => $base + [
                 'icon' => 'briefcase.fill', 'tone' => 'jobs', 'kicker' => mb_strtoupper((string) $r['contract']) . ' · ' . $r['city'],
-                'title' => $r['title'], 'detail' => $r['company_name'], 'link' => ['type' => 'city', 'destination' => 'jobs'],
+                'title' => $r['title'], 'detail' => (string) $r['company_name'], 'link' => ['type' => 'city', 'destination' => 'jobs'],
             ],
             'housing' => $base + [
                 'icon' => 'house.fill', 'tone' => 'housing',
@@ -82,10 +93,17 @@ final class CardBuilder
             ],
             'service' => $base + [
                 'icon' => 'wrench.and.screwdriver.fill', 'tone' => 'services', 'kicker' => mb_strtoupper((string) $r['category']),
-                'title' => $r['name'], 'detail' => $r['price_label'], 'link' => ['type' => 'city', 'destination' => 'services'],
+                'title' => $r['name'], 'detail' => (string) ($r['price_label'] ?? ''), 'link' => ['type' => 'city', 'destination' => 'services'],
             ],
             default => null,
         };
+        if ($card === null) {
+            return null;
+        }
+        $card['colors'] = self::COLORS[$card['tone']] ?? self::COLORS['lieu'];
+        unset($card['tone']);
+
+        return $card;
     }
 
     /** « CE SOIR · 19 H 30 », « DEMAIN · 20 H », « SAM. 1 NOV. · 18 H », « EN COURS » */

@@ -133,7 +133,7 @@ return [
                  'venue_name' => 'La Coopé', 'starts_at' => gmdate('Y-m-d H:i:s', time() + 3 * 86400)]];
         $cards = App\Modules\Assistant\CardBuilder::cards(['event:concert-2026-11-07', 'place:inventé', 42], $seen);
         assert_same(1, count($cards), 'référence inventée ignorée');
-        assert_same(['type' => 'event', 'event_id' => 'concert-2026-11-07'], $cards[0]['link']);
+        assert_same(['#FF4F8B', '#7B5CFF'], $cards[0]['colors'], 'couleurs du type concert');
         assert_same('concert', $cards[0]['tone']);
     },
 
@@ -219,5 +219,25 @@ return [
         foreach (['court1', 'motdepasse', '12345678', null] as $bad) {
             assert_throws(fn () => $P::checkPassword($bad), 'validation_failed');
         }
+    },
+
+    'brief §8 : cartes Clermont IA au format de l\'app (2 couleurs, link typé, MapSpot complet)' => function () {
+        $spot = ['id' => 'spot-1', 'name' => 'Le Bouchon', 'category' => 'restaurant', 'latitude' => 45.778, 'longitude' => 3.084, 'subtitle' => null,
+                 'phone' => null, 'website' => null, 'is_partner' => true, 'demo_name' => null, 'nature_kind' => null];
+        $seen = [
+            'place:1' => ['type' => 'place', 'spot' => $spot, 'distance' => 350],
+            'event:x' => ['type' => 'event', 'slug' => 'concert-2026-11-21', 'title' => 'Concert', 'kind' => 'concert', 'venue_name' => null, 'starts_at' => '2026-11-21 19:00:00'],
+            'fuel:1'  => ['type' => 'fuel', 'id' => '63000019', 'fuel' => 'gazole', 'prices' => ['gazole' => ['price' => 1.79]], 'address' => '2 Avenue Marx Dormoy',
+                          'city' => 'Clermont-Ferrand', 'latitude' => 45.77, 'longitude' => 3.08, 'distance' => 749],
+        ];
+        $answer = App\Core\Contract::camel(['text' => 'Voici :', 'follow_ups' => ['Que faire ce soir ?'],
+            'cards' => App\Modules\Assistant\CardBuilder::cards(['place:1', 'event:x', 'fuel:1', 'invente:9'], $seen)]);
+        assert_same([], App\Support\AppSchemas::validate($answer, App\Support\AppSchemas::assistantAnswer()));
+        assert_same(3, count($answer['cards']), 'référence inventée ignorée');
+        assert_same(['#FF4F8B', '#7B5CFF'], $answer['cards'][0]['colors']);
+        assert_same([], App\Support\AppSchemas::validate($answer['cards'][0]['link']['spot'], App\Support\AppSchemas::mapSpot()));
+        assert_same('concert-2026-11-21', $answer['cards'][1]['link']['id']);
+        assert_same('fuelStation', $answer['cards'][2]['link']['type']);
+        assert_same([], App\Support\AppSchemas::validate($answer['cards'][2]['link']['spot'], App\Support\AppSchemas::mapSpot()));
     },
 ];

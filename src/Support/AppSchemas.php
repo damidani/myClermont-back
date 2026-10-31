@@ -23,7 +23,7 @@ final class AppSchemas
         'person.2.fill', 'figure.run', 'dumbbell.fill', 'sportscourt.fill', 'pawprint.fill', 'car.fill', 'bicycle',
         'bus.fill', 'tram.fill', 'fuelpump.fill', 'scissors', 'sparkles', 'leaf.fill', 'tree.fill', 'mountain.2.fill',
         'music.note', 'theatermasks.fill', 'paintpalette.fill', 'camera.fill', 'ticket.fill', 'star.fill',
-        'calendar', 'party.popper.fill', 'gift.fill', 'tag.fill', 'mappin.and.ellipse', 'map.fill', 'binoculars.fill',
+        'calendar', 'mappin.circle.fill', 'party.popper.fill', 'gift.fill', 'tag.fill', 'mappin.and.ellipse', 'map.fill', 'binoculars.fill',
         'sun.max.fill', 'cloud.sun.fill', 'drop.fill', 'fish.fill', 'basket.fill', 'truck.box.fill', 'shippingbox.fill',
         'chart.bar.fill', 'banknote.fill', 'globe', 'gearshape.fill', 'lightbulb.fill', 'bolt.fill', 'flame.fill',
         'building.columns.fill', 'figure.walk', 'figure.and.child.holdinghands', 'tshirt.fill', 'washer.fill',
@@ -74,7 +74,8 @@ final class AppSchemas
             'text' => 'string', 'followUps' => 'string[]',
             'cards' => 'list:' . json_encode([
                 'icon' => 'icon', 'colors' => 'string[]', 'kicker' => 'string', 'title' => 'string', 'detail' => 'string',
-                'badge' => '?string', 'isPartner' => 'bool', 'link' => 'array',
+                'badge' => '?string', 'isPartner' => 'bool',
+                'link' => ['type' => 'enum:place|fuelStation|mapFilter|nature|event|city|explore|weather'],
             ]),
         ];
     }

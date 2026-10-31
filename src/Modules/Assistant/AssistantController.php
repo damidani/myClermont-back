@@ -13,7 +13,6 @@ use App\Core\Logger;
 use App\Core\Request;
 use App\Core\Response;
 use App\Exceptions\HttpException;
-use App\Modules\Premium\PremiumService;
 use App\Security\Crypto;
 use App\Support\Validator;
 
@@ -24,7 +23,7 @@ use App\Support\Validator;
  *  1. Claude (API Anthropic) répond en s'appuyant sur des outils qui lisent la base de My Clermont ;
  *  2. il termine par l'outil « reply » qui cite des références de résultats ; les cartes sont construites par le serveur
  *     à partir de ces résultats : un lien pointe toujours vers un objet qui existe ;
- *  3. quotas : 1 question découverte sans My Clermont+, 100 par jour avec ; 10 par minute dans tous les cas (throttle:ai) ;
+ *  3. quotas : 1 question découverte sans compte (par appareil), puis compte gratuit requis ; 10 par minute dans tous les cas (throttle:ai) ;
  *  4. même question dans la même zone : réponse en cache 10 min ; questions gardées 30 jours sans la position.
  */
 final class AssistantController
@@ -48,15 +47,17 @@ TXT;
             'question'        => 'required|string|min:1|max:500',
             'conversation_id' => 'nullable|uuid',
             'screen'          => 'nullable|in:chat,map',
+            'context'         => 'nullable|in:chat,map',
         ]);
         if (!Config::get('assistant.api_key')) {
             throw new HttpException(503, 'not_configured', 'Clermont IA n\'est pas encore disponible.');
         }
-        $loc = $request->json()['location'] ?? null;
-        // Position arrondie à ~500 m par l'app ; place de Jaude par défaut. Jamais enregistrée.
-        $lat = is_array($loc) && is_numeric($loc['lat'] ?? null) ? round((float) $loc['lat'], 3) : 45.7772;
-        $lon = is_array($loc) && is_numeric($loc['lon'] ?? null) ? round((float) $loc['lon'], 3) : 3.0870;
-        $screen = $data['screen'] ?? 'chat';
+        // Position : { latitude, longitude } (brief §8) ou location { lat, lon } ; absente si refusée. Jamais enregistrée.
+        $json = $request->json();
+        $loc = is_array($json['location'] ?? null) ? $json['location'] : ['lat' => $json['latitude'] ?? null, 'lon' => $json['longitude'] ?? null];
+        $lat = is_numeric($loc['lat'] ?? null) ? round((float) $loc['lat'], 3) : 45.7772;
+        $lon = is_numeric($loc['lon'] ?? null) ? round((float) $loc['lon'], 3) : 3.0870;
+        $screen = $data['context'] ?? $data['screen'] ?? 'chat';
         $conversationId = $data['conversation_id'] ?? Crypto::uuid4();
         $userId = isset($request->attributes['user_id']) ? (int) $request->attributes['user_id'] : null;
         $deviceId = (int) $request->attributes['device']['id'];
@@ -159,33 +160,25 @@ TXT;
         return [['text' => 'Je n\'ai pas réussi à finaliser la réponse, réessaie.', 'cards' => [], 'follow_ups' => []], $used, $in, $out, 'failed'];
     }
 
-    /** 1 question découverte sans My Clermont+ ; 100 par jour avec. Compté par compte, sinon par appareil. */
+    /**
+     * Décision du 30/10 (brief §8) : un compte gratuit suffit. Sans compte, 1 question découverte par appareil (X-Device-Id),
+     * puis 401 account_required. Avec un compte, seul le plafond anti-abus de 10 questions par minute s'applique (throttle:ai).
+     */
     private function checkQuota(?int $userId, int $deviceId): void
     {
-        if ($userId !== null && PremiumService::isActiveById($userId)) {
-            $today = (int) (Database::fetch('SELECT questions FROM ai_usage WHERE day = UTC_DATE() AND scope_key = :k', ['k' => 'u:' . $userId])['questions'] ?? 0);
-            if ($today >= (int) Config::get('assistant.plus_daily', 100)) {
-                throw new HttpException(429, 'rate_limited', 'Tu as posé beaucoup de questions aujourd\'hui, reviens demain.');
-            }
+        if ($userId !== null) {
             return;
         }
-        // Sans abonnement : la découverte est comptée à la fois pour le compte et pour l'appareil
-        $total = (int) (Database::fetch(
-            'SELECT COALESCE(SUM(questions), 0) AS n FROM ai_usage WHERE scope_key IN (:d, :u)',
-            ['d' => 'd:' . $deviceId, 'u' => 'u:' . ($userId ?? 0)],
-        )['n'] ?? 0);
+        $total = (int) (Database::fetch('SELECT COALESCE(SUM(questions), 0) AS n FROM ai_usage WHERE scope_key = :d', ['d' => 'd:' . $deviceId])['n'] ?? 0);
         if ($total >= (int) Config::get('assistant.free_questions', 1)) {
-            throw new HttpException(403, 'plus_required', 'Clermont IA en illimité, c\'est avec My Clermont+.');
+            throw HttpException::unauthorized('account_required', 'Crée ton compte gratuit pour continuer avec Clermont IA.');
         }
     }
 
     private function record(?int $userId, int $deviceId, string $conversationId, string $screen, string $question, string $answer, string $status, array $used, int $in, int $out): void
     {
-        // Compteur : par compte (abonnés) et par appareil (découverte)
-        foreach ([[$userId, null], [null, $deviceId]] as [$u, $d]) {
-            if ($u === null && $d === null) {
-                continue;
-            }
+        // Compteur : par compte si connecté, sinon par appareil (question découverte)
+        foreach ([$userId !== null ? [$userId, null] : [null, $deviceId]] as [$u, $d]) {
             Database::execute(
                 'INSERT INTO ai_usage (day, scope_key, user_id, device_id, questions, tokens_in, tokens_out) VALUES (UTC_DATE(), :k, :u, :d, 1, :i, :o)
                  ON DUPLICATE KEY UPDATE questions = questions + 1, tokens_in = tokens_in + :i2, tokens_out = tokens_out + :o2',
