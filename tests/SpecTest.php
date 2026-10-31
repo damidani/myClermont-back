@@ -156,4 +156,20 @@ return [
             assert_same(400, $e->getCode());
         }
     },
+
+    'trafic : incident TomTom Orbis v2 => format de l\'app' => function () {
+        $i = App\Modules\Mobility\TrafficController::map([
+            'geometry'   => ['type' => 'LineString', 'coordinates' => [[3.0535675173, 45.8258669645], [3.0532389467, 45.8255786007]]],
+            'properties' => ['id' => 'TTI-1', 'iconCategory' => 'roadClosed', 'magnitudeOfDelay' => 'undefined', 'startTime' => '2026-03-02T13:16:00Z',
+                             'endTime' => null, 'from' => 'Avenue de Clermont', 'to' => 'Rue de l\'Étrade', 'lengthInMeters' => 41.32,
+                             'delayInSeconds' => null, 'roadNumbers' => [], 'events' => [['code' => 401, 'description' => 'Route fermée']]],
+        ]);
+        assert_same('closure', $i['kind']);
+        assert_same('Route fermée', $i['title']);
+        assert_same(4, $i['magnitude']);
+        assert_same(41, $i['length']);
+        assert_same([45.82587, 3.05357], $i['path'][0]);
+        assert_same('2026-03-02T13:16:00Z', $i['start']);
+        assert_same('other', App\Modules\Mobility\TrafficController::map(['geometry' => ['type' => 'Point', 'coordinates' => [3.08, 45.77]], 'properties' => ['id' => 'x', 'iconCategory' => 'unknown']])['kind']);
+    },
 ];

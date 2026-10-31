@@ -89,7 +89,7 @@ Un refresh token déjà utilisé révoque toute la session. Deux refresh en para
 - **`Job.contract`** : peut valoir « Intérim » ou « Saisonnier » en plus des 5 valeurs de la spec. Décoder avec un cas inconnu de secours.
 - **Icônes** : `Job.icon` et `Service.icon` sont des clés de catégorie (`briefcase`, `phone`…) à faire correspondre à des SF Symbols côté app. Les cartes de Clermont IA donnent directement des SF Symbols.
 - **Sondages** : voter avec `POST /community/posts/{id}/vote { "optionIndex": 1 }`. `myVote` vaut l'index du choix ou `null`.
-- **Features non disponibles** : sur l'instance de test, Clermont IA, le trafic et la connexion Google répondent `503 not_configured`, faute de clés. L'app doit afficher un état « indisponible », sans planter.
+- **Features non disponibles** : sur l'instance de test, Clermont IA et la connexion Google répondent `503 not_configured`, faute de clés. L'app doit afficher un état « indisponible », sans planter.
 
 ## Tests à écrire côté app
 

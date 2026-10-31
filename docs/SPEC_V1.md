@@ -42,7 +42,7 @@ Côté contrat JSON :
 | `GET /places`, `/places/{id}`, `/places/{id}/photos`, `/partners` | ✅ Format MapSpot et PlaceDetail. Liste filtrable par `bbox`, `category`, `partner`, `updatedSince`, mise en cache |
 | `GET /events`, `/events/{id}` · `POST /events/submissions` · `POST / PATCH / DELETE /events` | ✅ Détail ci-dessous |
 | `/evenements.json`, `/photos/manifest.json`, `/api/trafic` | ✅ Compatibilité build 16 |
-| `GET /traffic/incidents` | ✅ TomTom : un appel pour toute la métropole, cache 300 s, données anciennes servies 30 min en cas de panne, `503 not_configured` sans clé |
+| `GET /traffic/incidents` | ✅ TomTom Orbis Maps Traffic API v2 : un appel pour toute la métropole, cache 300 s, données anciennes servies 30 min en cas de panne. Paramètres `lat`, `lon`, `r` (2 500 m par défaut). `kind` : `accident`, `jam`, `roadworks`, `closure`, `laneClosed`, `hazard`, `weather`, `breakdown`, `other` ; `magnitude` 0 à 4. Clé en service, `features.traffic: true` dans `/meta` |
 | `GET / PUT / DELETE /me/favorites…`, `POST /me/favorites/import` | ✅ Clés locales `spot-…`, `place-<nom>`, `event-<slug>` converties |
 
 Événements :

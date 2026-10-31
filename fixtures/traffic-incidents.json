@@ -1,0 +1,106 @@
+{
+    "source": "tomtom",
+    "updatedAt": "2026-10-31T09:43:25Z",
+    "radius": 2500,
+    "incidents": [
+        {
+            "id": "TTI-4c4fbe57-0627-4454-9919-f8788d6696ef-TTR41016275568015000",
+            "kind": "closure",
+            "title": "Route fermée",
+            "detail": "Route fermée",
+            "from": "Boulevard Léon Malfreyt / Rue Meyrand des Pradeaux",
+            "to": "Boulevard Desaix / Rue de la Préfecture",
+            "roads": [],
+            "delay": null,
+            "length": 183,
+            "magnitude": 4,
+            "start": "2026-10-30T23:27:00Z",
+            "end": null,
+            "path": [
+                [
+                    45.77696,
+                    3.08538
+                ],
+                [
+                    45.77699,
+                    3.08538
+                ],
+                [
+                    45.777,
+                    3.08538
+                ],
+                [
+                    45.77719,
+                    3.08538
+                ]
+            ],
+            "distance": 124
+        },
+        {
+            "id": "TTI-4c4fbe57-0627-4454-9919-f8788d6696ef-TTR41016275604015000",
+            "kind": "closure",
+            "title": "Route fermée",
+            "detail": "Route fermée",
+            "from": "Boulevard Desaix / Rue de la Préfecture",
+            "to": "Place Royale / Rue Terrasse",
+            "roads": [],
+            "delay": null,
+            "length": 112,
+            "magnitude": 4,
+            "start": "2026-10-31T09:05:30Z",
+            "end": null,
+            "path": [
+                [
+                    45.77743,
+                    3.08374
+                ],
+                [
+                    45.77743,
+                    3.08382
+                ],
+                [
+                    45.77743,
+                    3.08383
+                ],
+                [
+                    45.77746,
+                    3.08484
+                ]
+            ],
+            "distance": 144
+        },
+        {
+            "id": "TTI-4c4fbe57-0627-4454-9919-f8788d6696ef-TTL41016275636015000",
+            "kind": "jam",
+            "title": "Bouchon",
+            "detail": "Bouchon",
+            "from": "Rue Gabriel Péri / Rue Lamartine",
+            "to": "Avenue Franklin Roosevelt (M943) / Rue Blatin",
+            "roads": [],
+            "delay": 110,
+            "length": 57,
+            "magnitude": 3,
+            "start": "2026-10-31T09:32:00Z",
+            "end": "2026-10-31T10:02:00Z",
+            "path": [
+                [
+                    45.77737,
+                    3.07914
+                ],
+                [
+                    45.77732,
+                    3.07915
+                ],
+                [
+                    45.77713,
+                    3.07919
+                ],
+                [
+                    45.77712,
+                    3.07919
+                ]
+            ],
+            "distance": 603
+        }
+    ]
+}

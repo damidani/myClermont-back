@@ -14,23 +14,28 @@ use App\Exceptions\HttpException;
 use App\Exceptions\ValidationException;
 
 /**
- * Incidents de circulation (spec v1 › Trafic) : un seul appel TomTom Incident Details v5 pour toute la métropole,
+ * Incidents de circulation (spec v1 › Trafic) : un seul appel TomTom Orbis Maps Traffic API v2 (Incident Details)
+ * pour toute la métropole,
  * gardé en cache TRAFFIC_CACHE_SECONDS ; anciennes données servies 30 min si TomTom ne répond plus.
  * Le filtre par distance se fait ensuite sur le serveur.
  *
- *   GET /traffic/incidents?lat=&lon=&r=   (r : 300 à 6 000 m)
+ *   GET /traffic/incidents?lat=&lon=&r=   (r : 300 à 6 000 m, 2 500 par défaut)
  *   GET /api/trafic                       même contrat, route historique de l'app build 16 (non signée)
  */
 final class TrafficController
 {
     private const BBOX = '2.94,45.68,3.24,45.86';
-    private const URL = 'https://api.tomtom.com/traffic/services/5/incidentDetails';
+    private const URL = 'https://api.tomtom.com/maps/orbis/traffic/incidents/details';
 
-    /** iconCategory TomTom → type affiché par l'app */
-    private const KINDS = [1 => 'accident', 2 => 'weather', 3 => 'danger', 4 => 'weather', 5 => 'weather', 6 => 'jam', 7 => 'lane',
-                           8 => 'closed', 9 => 'roadworks', 10 => 'weather', 11 => 'weather', 14 => 'breakdown'];
-    private const TITLES = ['accident' => 'Accident', 'weather' => 'Conditions météo', 'danger' => 'Danger', 'jam' => 'Bouchon',
-                            'lane' => 'Voie fermée', 'closed' => 'Route fermée', 'roadworks' => 'Travaux', 'breakdown' => 'Véhicule en panne', 'other' => 'Incident'];
+    /** iconCategory TomTom (Orbis v2) → kind attendu par l'app (brief §10.2) */
+    private const KINDS = ['accident' => 'accident', 'jam' => 'jam', 'roadWorks' => 'roadworks', 'roadClosed' => 'closure',
+                           'laneClosed' => 'laneClosed', 'dangerousConditions' => 'hazard', 'brokenDownVehicle' => 'breakdown',
+                           'fog' => 'weather', 'rain' => 'weather', 'ice' => 'weather', 'wind' => 'weather', 'flooding' => 'weather'];
+    private const TITLES = ['accident' => 'Accident', 'jam' => 'Bouchon', 'roadworks' => 'Travaux', 'closure' => 'Route fermée',
+                            'laneClosed' => 'Voie fermée', 'hazard' => 'Danger', 'weather' => 'Conditions météo',
+                            'breakdown' => 'Véhicule en panne', 'other' => 'Incident'];
+    /** magnitudeOfDelay → 0 (inconnu) à 4 (route fermée) */
+    private const MAGNITUDES = ['unknown' => 0, 'minor' => 1, 'moderate' => 2, 'major' => 3, 'undefined' => 4];
 
     public function incidents(Request $request): Response
     {
@@ -46,7 +51,7 @@ final class TrafficController
     {
         $lat = isset($q['lat']) && is_numeric($q['lat']) ? (float) $q['lat'] : 45.7772;
         $lon = isset($q['lon']) && is_numeric($q['lon']) ? (float) $q['lon'] : 3.0870;
-        $radius = isset($q['r']) && is_numeric($q['r']) ? (int) $q['r'] : 3000;
+        $radius = isset($q['r']) && is_numeric($q['r']) ? (int) $q['r'] : 2500;
         if ($radius < 300 || $radius > 6000) {
             throw new ValidationException(['r' => 'Le rayon doit être compris entre 300 et 6 000 m.']);
         }
@@ -85,10 +90,14 @@ final class TrafficController
         }
 
         try {
-            $fields = '{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to,length,delay,roadNumbers}}}';
             $r = (new HttpClient(timeout: 8, retries: 0))->getJson(self::URL . '?' . http_build_query([
-                'key' => $key, 'bbox' => self::BBOX, 'fields' => $fields, 'language' => 'fr-FR', 'timeValidityFilter' => 'present',
-            ]));
+                'apiVersion' => 2, 'bbox' => self::BBOX, 'timeValidity' => 'present',
+            ]), [
+                'TomTom-Api-Key: ' . $key,
+                'TomTom-Api-Version: 2',
+                'Accept-Language: fr-FR',
+                'Attributes: incidents(type,geometry(type,coordinates),properties(id,iconCategory,magnitudeOfDelay,events(description,code),startTime,endTime,from,to,lengthInMeters,delayInSeconds,roadNumbers))',
+            ]);
             $data = ['fetched' => time(), 'updated_at' => gmdate('Y-m-d\TH:i:s\Z'), 'incidents' => array_values(array_filter(array_map([self::class, 'map'], (array) ($r['incidents'] ?? []))))];
             Cache::store()->set('traffic:tomtom', $data, 1800);
             Cache::store()->delete('traffic:tomtom:lock');
@@ -114,7 +123,7 @@ final class TrafficController
         if ($path === [] || empty($p['id'])) {
             return null;
         }
-        $kind = self::KINDS[(int) ($p['iconCategory'] ?? 0)] ?? 'other';
+        $kind = self::KINDS[(string) ($p['iconCategory'] ?? '')] ?? 'other';
         $iso = static fn (?string $d) => $d ? gmdate('Y-m-d\TH:i:s\Z', (int) strtotime($d)) : null;
 
         return [
@@ -125,9 +134,9 @@ final class TrafficController
             'from'      => $p['from'] ?? null,
             'to'        => $p['to'] ?? null,
             'roads'     => array_values((array) ($p['roadNumbers'] ?? [])),
-            'delay'     => isset($p['delay']) ? (int) $p['delay'] : null,
-            'length'    => isset($p['length']) ? (int) round((float) $p['length']) : null,
-            'magnitude' => (int) ($p['magnitudeOfDelay'] ?? 0),
+            'delay'     => isset($p['delayInSeconds']) ? (int) $p['delayInSeconds'] : null,
+            'length'    => isset($p['lengthInMeters']) ? (int) round((float) $p['lengthInMeters']) : null,
+            'magnitude' => self::MAGNITUDES[(string) ($p['magnitudeOfDelay'] ?? '')] ?? 0,
             'start'     => $iso($p['startTime'] ?? null),
             'end'       => $iso($p['endTime'] ?? null),
             'path'      => $path,
