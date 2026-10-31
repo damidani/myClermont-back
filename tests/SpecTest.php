@@ -240,4 +240,13 @@ return [
         assert_same('fuelStation', $answer['cards'][2]['link']['type']);
         assert_same([], App\Support\AppSchemas::validate($answer['cards'][2]['link']['spot'], App\Support\AppSchemas::mapSpot()));
     },
+
+    'brief §9 : clé de l\'app décodée de l\'URL sans altération, 200 caractères au plus' => function () {
+        $F = App\Modules\Favorites\SpecFavoriteController::class;
+        $key = "place-Cathédrale Notre-Dame-de-l'Assomption";
+        assert_same($key, $F::key(rawurlencode($key)));
+        assert_same('spot-apple-48213', $F::key('spot-apple-48213'));
+        assert_throws(fn () => $F::key(str_repeat('a', 201)), 'validation_failed');
+        assert_throws(fn () => $F::key(''), 'validation_failed');
+    },
 ];

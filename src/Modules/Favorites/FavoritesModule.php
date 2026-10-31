@@ -23,6 +23,9 @@ final class FavoritesModule implements Module
             // Spec v1
             $r->get('/me/favorites', [SpecFavoriteController::class, 'index']);
             $r->post('/me/favorites/import', [SpecFavoriteController::class, 'import']);
+            // Brief iOS §9 : clé de l'app, encodée dans l'URL
+            $r->put('/me/favorites/{key}', [SpecFavoriteController::class, 'putKey']);
+            $r->delete('/me/favorites/{key}', [SpecFavoriteController::class, 'deleteKey']);
             $r->put('/me/favorites/{targetType:[a-z]+}/{targetId:[A-Za-z0-9_-]+}', [SpecFavoriteController::class, 'put']);
             $r->delete('/me/favorites/{targetType:[a-z]+}/{targetId:[A-Za-z0-9_-]+}', [SpecFavoriteController::class, 'delete']);
 
