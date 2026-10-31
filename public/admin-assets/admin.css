@@ -100,3 +100,24 @@ pre.secret { font-size: 18px; letter-spacing: .08em; background: var(--bg); padd
   .who a, .who .pill { display: none; }
   .fields { grid-template-columns: 1fr; }
 }
+
+/* Navigation par usage, file de modération, accueil */
+.ico { display: inline-block; width: 22px; }
+.nav-item .badge { float: right; font-size: 12px; }
+.nav-details summary { cursor: pointer; list-style: none; } .nav-details summary::-webkit-details-marker { display: none; }
+.nav-details[open] summary { color: var(--text); }
+.callout { display: flex; align-items: center; gap: 16px; color: var(--text); } .callout:hover { text-decoration: none; border-color: var(--brand); }
+.callout .btn { margin-left: auto; } .callout-warn { border-left: 4px solid var(--warn); } .callout-ok { border-left: 4px solid var(--ok); }
+.big { font-size: 28px; } .small { font-size: 12px; }
+.quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+.section-title { margin: 8px 0 12px; color: var(--muted); font-weight: 600; }
+.hint-bar { background: var(--surface); border-left: 4px solid var(--info); padding: 10px 14px; border-radius: 8px; margin: 0 0 12px; color: var(--muted); }
+.empty-state { text-align: center; padding: 40px 16px; }
+.mod-list { display: flex; flex-direction: column; gap: 10px; }
+.mod-item { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.mod-body { flex: 1; min-width: 0; } .mod-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; min-width: 170px; }
+.mod-actions .btn { width: 100%; }
+blockquote { margin: 8px 0; padding: 8px 12px; background: var(--bg); border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
+.btn.danger { color: var(--danger); border-color: var(--danger); } .btn.link.danger { border: 0; background: none; }
+.thumb-sm { width: 48px; height: 36px; object-fit: cover; border-radius: 4px; vertical-align: middle; }
+@media (max-width: 720px) { .mod-item { flex-direction: column; } .mod-actions { width: 100%; flex-direction: row; flex-wrap: wrap; } .mod-actions .btn { width: auto; } }

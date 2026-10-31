@@ -20,12 +20,17 @@
   </div>
 </header>
 <nav class="sidebar" id="sidebar">
-  <a class="nav-item<?= $path === '/admin' ? ' active' : '' ?>" href="/admin">Tableau de bord</a>
-  <?php foreach ($menu as $group => $resources): ?>
-    <div class="nav-group"><?= Html::e($group) ?></div>
+  <a class="nav-item<?= $path === '/admin' ? ' active' : '' ?>" href="/admin"><span class="ico">🏠</span>Accueil</a>
+  <a class="nav-item<?= $path === '/admin/moderation' ? ' active' : '' ?>" href="/admin/moderation"><span class="ico">✅</span>À modérer<?php if ($pending > 0): ?> <span class="badge"><?= $pending ?></span><?php endif; ?></a>
+  <?php foreach ($menu as $group => $resources):
+    $isActive = false;
+    foreach ($resources as $table => $r) { $isActive = $isActive || $path === '/admin/r/' . $table || str_starts_with($path, '/admin/r/' . $table . '/'); }
+    $collapsible = $group === 'Réglages'; ?>
+    <?php if ($collapsible): ?><details class="nav-details"<?= $isActive ? ' open' : '' ?>><summary class="nav-group">⚙️ <?= Html::e($group) ?></summary><?php else: ?><div class="nav-group"><?= Html::e($group) ?></div><?php endif; ?>
     <?php foreach ($resources as $table => $r): ?>
-      <a class="nav-item<?= str_starts_with($path, '/admin/r/' . $table) && ($path === '/admin/r/' . $table || str_starts_with($path, '/admin/r/' . $table . '/')) ? ' active' : '' ?>" href="/admin/r/<?= Html::e($table) ?>"><?= Html::e($r->label) ?></a>
+      <a class="nav-item<?= $path === '/admin/r/' . $table || str_starts_with($path, '/admin/r/' . $table . '/') ? ' active' : '' ?>" href="/admin/r/<?= Html::e($table) ?>"><?php if (!empty($r->config['icon'])): ?><span class="ico"><?= Html::e($r->config['icon']) ?></span><?php endif; ?><?= Html::e($r->label) ?></a>
     <?php endforeach; ?>
+    <?php if ($collapsible): ?></details><?php endif; ?>
   <?php endforeach; ?>
 </nav>
 <?php endif; ?>

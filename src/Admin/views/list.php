@@ -11,9 +11,10 @@ $state = ['q' => $q, 'f' => $filters, 'sort' => $sort, 'dir' => $dir];
   </div>
 </div>
 
+<?php if (!empty($r->config['hint'])): ?><p class="hint-bar"><?= Html::e($r->config['hint']) ?></p><?php endif; ?>
 <form class="filters card" method="get" action="<?= Html::e(Html::url($base)) ?>">
   <?php if ($r->searchColumns() !== []): ?>
-    <input type="search" name="q" value="<?= Html::e($q) ?>" placeholder="Rechercher (<?= Html::e(implode(', ', $r->searchColumns())) ?>, ou un ID)">
+    <input type="search" name="q" value="<?= Html::e($q) ?>" placeholder="Rechercher par <?= Html::e(mb_strtolower(implode(', ', array_map([Html::class, 'columnLabel'], $r->searchColumns())))) ?>…">
   <?php endif; ?>
   <?php foreach ($filterOptions as $name => $options): ?>
     <select name="f[<?= Html::e($name) ?>]" data-autosubmit aria-label="<?= Html::e(Html::columnLabel($name)) ?>">
@@ -39,7 +40,7 @@ $state = ['q' => $q, 'f' => $filters, 'sort' => $sort, 'dir' => $dir];
     <th></th>
   </tr></thead>
   <tbody>
-  <?php if (!$result['rows']): ?><tr><td colspan="<?= count($columns) + 1 ?>" class="empty">Aucun résultat.</td></tr><?php endif; ?>
+  <?php if (!$result['rows']): ?><tr><td colspan="<?= count($columns) + 1 ?>" class="empty"><?= $q !== '' || $filters ? 'Aucun résultat pour cette recherche.' : 'Rien pour l\'instant.' ?><?php if ($r->canCreate() && $q === '' && !$filters): ?> <a href="<?= Html::e(Html::url($base . '/new')) ?>">Ajouter le premier →</a><?php endif; ?></td></tr><?php endif; ?>
   <?php foreach ($result['rows'] as $row): $editUrl = Html::url($base . '/edit', ['key' => $r->keyOf($row)]); ?>
     <tr data-href="<?= Html::e($editUrl) ?>">
       <?php foreach ($columns as $c): ?><td><?= Html::display($r->fields[$c], $row[$c] ?? null, $labels[$c] ?? []) ?></td><?php endforeach; ?>

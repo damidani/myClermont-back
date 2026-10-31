@@ -205,7 +205,7 @@ final class Crud
         $out = [];
         foreach ($this->r->fields as $name => $f) {
             $options = match ($f['kind']) {
-                'select'   => array_combine($f['enum'], $f['enum']),
+                'select'   => array_combine($f['enum'], array_map([Html::class, 'valueLabel'], $f['enum'])),
                 'bool'     => ['1' => 'Oui', '0' => 'Non'],
                 'relation' => in_array($name, $this->r->listColumns(), true) ? self::relationOptions($f['fk']) : null,
                 default    => null,

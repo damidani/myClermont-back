@@ -50,9 +50,50 @@ final class Html
             'last_synced_at' => 'Dernière synchro', 'tags' => 'Tags', 'keywords' => 'Mots-clés', 'notice' => 'Avertissement', 'badge_label' => 'Badge',
             'message' => 'Message', 'reason' => 'Motif', 'details' => 'Détails', 'tagline' => 'Accroche', 'is_partner' => 'Partenaire',
             'is_must_see' => 'Incontournable', 'is_featured' => 'À la une', 'reports_count' => 'Signalements', 'last_login_at' => 'Dernière connexion',
+            'first_name' => 'Prénom', 'display_name' => 'Nom affiché', 'kind' => 'Type', 'venue_name' => 'Lieu', 'app_category' => 'Catégorie (app)',
+            'rating_avg' => 'Note moyenne', 'rating_count' => 'Nombre d\'avis', 'merchant' => 'Commerçant', 'category' => 'Catégorie',
+            'original_cents' => 'Prix normal', 'reduced_cents' => 'Prix bon plan', 'discount_label' => 'Réduction affichée', 'exclusive_plus' => 'Réservé My Clermont+',
+            'conditions' => 'Conditions', 'area' => 'Quartier', 'company_name' => 'Entreprise', 'contract' => 'Contrat', 'work_mode' => 'Rythme',
+            'transaction' => 'Type d\'annonce', 'district_label' => 'Quartier', 'surface_m2' => 'Surface (m²)', 'rooms' => 'Pièces', 'bedrooms' => 'Chambres',
+            'furnished' => 'Meublé', 'summary' => 'Résumé', 'type' => 'Type', 'likes_count' => 'J\'aime', 'comments_count' => 'Commentaires',
+            'post_id' => 'Publication', 'place_id' => 'Lieu', 'place_key' => 'Clé du lieu (app)', 'target_type' => 'Contenu signalé', 'target_id' => 'Identifiant',
+            'resolution' => 'Décision', 'platform' => 'Plateforme', 'model' => 'Modèle', 'app_version' => 'Version de l\'app', 'last_seen_at' => 'Vu le',
+            'sender' => 'De', 'recipient' => 'À', 'offer_id' => 'Offre', 'listing_id' => 'Logement', 'provider_id' => 'Professionnel',
+            'price_label' => 'Prix affiché', 'schedule_label' => 'Horaires', 'age_limit' => 'Âge', 'link_url' => 'Lien', 'ticket_url' => 'Billetterie',
+            'all_day' => 'Toute la journée', 'subtitle' => 'Sous-titre', 'postal_code' => 'Code postal', 'gender' => 'Genre', 'pronouns' => 'Pronoms',
+            'city_served' => 'Dans la métropole', 'marketing_opt_in' => 'Accepte les actualités', 'consent_version' => 'CGU acceptées',
+            'notifications_enabled' => 'Notifications', 'item_condition' => 'État', 'location_label' => 'Lieu', 'is_free' => 'Gratuit',
+            'max_redemptions' => 'Utilisations max.', 'redemptions_count' => 'Utilisations', 'deleted_at' => 'Supprimé le', 'starts_at_label' => 'Début',
+            'claims_count' => 'Utilisations', 'partner_name' => 'Partenaire', 'code' => 'Code', 'author_user_id' => 'Proposé par', 'nature' => 'Type de nature',
+            'demo_name' => 'Nom affiché', 'manager_user_id' => 'Gérant (compte)', 'partner_since' => 'Partenaire depuis', 'partner_until' => 'Partenaire jusqu\'au',
+            'last_report' => 'Dernier compte rendu', 'agent' => 'Assistant', 'branch' => 'Branche', 'commit_sha' => 'Commit',
         ];
 
         return $labels[$name] ?? ucfirst(str_replace('_', ' ', preg_replace('/_(id|cents)$/', '', $name)));
+    }
+
+    /** Valeurs ENUM affichées en français (la valeur stockée reste inchangée). */
+    public const VALUE_LABELS = [
+        'published' => 'Publié', 'draft' => 'Brouillon', 'pending' => 'En attente', 'archived' => 'Archivé', 'cancelled' => 'Annulé',
+        'visible' => 'Visible', 'hidden' => 'Masqué', 'deleted' => 'Supprimé', 'active' => 'Actif', 'disabled' => 'Désactivé', 'banned' => 'Banni',
+        'blocked' => 'Bloqué', 'reserved' => 'Réservé', 'sold' => 'Vendu', 'expired' => 'Expiré', 'open' => 'Ouvert', 'in_progress' => 'En cours',
+        'done' => 'Fait', 'rejected' => 'Refusé', 'sent' => 'Envoyé', 'failed' => 'En échec', 'queued' => 'En file', 'removed' => 'Contenu retiré',
+        'dismissed' => 'Rejeté', 'user_banned' => 'Auteur banni', 'user' => 'Utilisateur', 'partner' => 'Partenaire', 'moderator' => 'Modérateur',
+        'admin' => 'Administrateur', 'editor' => 'Éditeur', 'rent' => 'Location', 'sale' => 'Vente', 'colocation' => 'Colocation',
+        'cdi' => 'CDI', 'cdd' => 'CDD', 'alternance' => 'Alternance', 'stage' => 'Stage', 'freelance' => 'Freelance', 'interim' => 'Intérim',
+        'saisonnier' => 'Saisonnier', 'onsite' => 'Sur site', 'hybrid' => 'Hybride', 'remote' => 'Télétravail', 'text' => 'Texte', 'poll' => 'Sondage',
+        'photos' => 'Photos', 'photo' => 'Photo', 'video' => 'Vidéo', 'request' => 'Demande', 'reply' => 'Réponse', 'note' => 'Note', 'bug' => 'Bug',
+        'report' => 'Compte rendu', 'soiree' => 'Soirée', 'concert' => 'Concert', 'spectacle' => 'Spectacle', 'expo' => 'Expo', 'famille' => 'Famille',
+        'sport' => 'Sport', 'marche' => 'Marché', 'festival' => 'Festival', 'spam' => 'Spam', 'scam' => 'Arnaque', 'offensive' => 'Injurieux',
+        'harassment' => 'Harcèlement', 'inappropriate' => 'Inapproprié', 'other' => 'Autre', 'post' => 'Publication', 'comment' => 'Commentaire',
+        'review' => 'Avis', 'classified' => 'Annonce', 'event' => 'Événement', 'message' => 'Message', 'new' => 'Neuf', 'like_new' => 'Comme neuf',
+        'very_good' => 'Très bon état', 'good' => 'Bon état', 'fair' => 'État correct', 'for_parts' => 'À réparer', 'ios' => 'iOS', 'android' => 'Android',
+        'apple' => 'Apple', 'google' => 'Google', 'grace' => 'Délai de grâce', 'refunded' => 'Remboursé', 'revoked' => 'Révoqué',
+    ];
+
+    public static function valueLabel(string $value): string
+    {
+        return self::VALUE_LABELS[$value] ?? $value;
     }
 
     /** Valeur courte pour un tableau de liste. */
@@ -67,10 +108,12 @@ final class Html
             'money'    => self::e(number_format((int) $value / 100, 2, ',', "\u{202F}") . "\u{00A0}€"),
             'datetime' => self::e(self::localDate((string) $value, 'd/m/Y H:i')),
             'date'     => self::e(self::localDate((string) $value, 'd/m/Y', false)),
-            'select'   => '<span class="pill pill-' . self::e($value) . '">' . self::e($value) . '</span>',
+            'select'   => '<span class="pill pill-' . self::e($value) . '">' . self::e(self::valueLabel((string) $value)) . '</span>',
             'relation' => isset($labels[(string) $value]) ? self::e(mb_strimwidth($labels[(string) $value], 0, 40, '…')) . ' <span class="muted">#' . self::e($value) . '</span>' : '#' . self::e($value),
             'color'    => '<span class="swatch" data-color="' . self::e($value) . '"></span>' . self::e($value),
-            'url'      => self::e(mb_strimwidth((string) $value, 0, 40, '…')),
+            'url'      => self::isImage($f['name']) && str_starts_with((string) $value, 'http')
+                ? '<img class="thumb-sm" src="' . self::e($value) . '" alt="" loading="lazy">'
+                : self::e(mb_strimwidth((string) $value, 0, 40, '…')),
             default    => self::e(mb_strimwidth(preg_replace('/\s+/', ' ', (string) $value), 0, 80, '…')),
         };
     }
@@ -102,7 +145,7 @@ final class Html
             'bool'     => $f['nullable']
                 ? self::select($attrs, ['1' => 'Oui', '0' => 'Non'], $value === null || $value === '' ? '' : ((bool) $value ? '1' : '0'), true)
                 : '<label class="switch"><input type="checkbox" value="1"' . $attrs . ($value ? ' checked' : '') . '><span></span></label>',
-            'select'   => self::select($attrs, array_combine($f['enum'], $f['enum']), $v, $f['nullable'] || $value === null),
+            'select'   => self::select($attrs, array_combine($f['enum'], array_map([self::class, 'valueLabel'], $f['enum'])), $v, $f['nullable'] || $value === null),
             'relation' => $options !== null
                 ? self::select($attrs, $options, $v, $f['nullable'] || $value === null)
                 : '<input type="number" min="1"' . $attrs . ' value="' . self::e($v) . '">'
@@ -125,8 +168,8 @@ final class Html
 
         $hint = trim(($f['comment'] ?? '') . ($f['kind'] === 'datetime' ? ' (heure de Paris)' : ''));
 
-        return '<div class="field' . ($error ? ' has-error' : '') . '"><label for="' . $id . '">' . self::e(self::columnLabel($name))
-            . ($required && !$f['readonly'] ? ' <span class="req">*</span>' : '') . ' <code>' . self::e($name) . '</code></label>'
+        return '<div class="field' . ($error ? ' has-error' : '') . '"><label for="' . $id . '" title="' . self::e($name) . '">' . self::e(self::columnLabel($name))
+            . ($required && !$f['readonly'] ? ' <span class="req">*</span>' : '') . '</label>'
             . $input . ($error ? '<p class="error">' . self::e($error) . '</p>' : '') . ($hint !== '' ? '<p class="hint">' . self::e($hint) . '</p>' : '') . '</div>';
     }
 

@@ -128,31 +128,56 @@ final class AdminController
         $week = gmdate('Y-m-d H:i:s', time() - 7 * 86400);
         $now = gmdate('Y-m-d H:i:s');
 
+        // Ce que l'app affiche en ce moment, par rubrique
         $stats = [];
-        if ($can('users')) {
-            $stats[] = ['Utilisateurs', $count('SELECT COUNT(*) n FROM users'), 'users', []];
-            $stats[] = ['Inscrits sur 7 jours', $count('SELECT COUNT(*) n FROM users WHERE created_at > :d', ['d' => $week]), 'users', []];
-            $stats[] = ['Premium actifs', $count('SELECT COUNT(*) n FROM users WHERE premium_until > :d', ['d' => $now]), 'users', []];
+        foreach ([
+            ['events', '🎉', 'Événements à venir', "SELECT COUNT(*) n FROM events WHERE status = 'published' AND deleted_at IS NULL AND ends_at >= UTC_TIMESTAMP()"],
+            ['places', '📍', 'Lieux sur la carte', "SELECT COUNT(*) n FROM places WHERE status = 'published' AND deleted_at IS NULL"],
+            ['deals', '🏷️', 'Bons plans en cours', "SELECT COUNT(*) n FROM deals WHERE status = 'published' AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())"],
+            ['job_offers', '💼', 'Offres d\'emploi', "SELECT COUNT(*) n FROM job_offers WHERE status = 'published'"],
+            ['housing_listings', '🏠', 'Logements', "SELECT COUNT(*) n FROM housing_listings WHERE status = 'published'"],
+            ['service_providers', '🛠️', 'Professionnels', "SELECT COUNT(*) n FROM service_providers WHERE status = 'published'"],
+            ['community_posts', '💬', 'Publications', "SELECT COUNT(*) n FROM community_posts WHERE status = 'visible'"],
+            ['users', '👤', 'Comptes', "SELECT COUNT(*) n FROM users WHERE status = 'active'"],
+            ['users', '🆕', 'Inscrits sur 7 jours', 'SELECT COUNT(*) n FROM users WHERE created_at > :d'],
+        ] as [$table, $icon, $label, $sql]) {
+            if ($can($table)) {
+                $stats[] = [$icon . ' ' . $label, $count($sql, str_contains($sql, ':d') ? ['d' => $week] : []), $table];
+            }
+        }
+
+        // Raccourcis de création
+        $quick = [];
+        foreach ([['events', 'Un événement'], ['deals', 'Un bon plan'], ['places', 'Un lieu'], ['job_offers', 'Une offre d\'emploi'], ['housing_listings', 'Un logement']] as [$table, $label]) {
+            if ($can($table) && Resource::get($table)?->canCreate()) {
+                $quick[] = [$label, $table];
+            }
         }
 
         $todo = [];
+        $pending = Moderation::count((string) $role);
         foreach ([
-            ['community_reports', 'Signalements communauté', 'SELECT COUNT(*) n FROM community_reports', []],
-            ['classified_reports', 'Signalements petites annonces', 'SELECT COUNT(*) n FROM classified_reports', []],
-            ['conversation_reports', 'Signalements messagerie', 'SELECT COUNT(*) n FROM conversation_reports', []],
-            ['events', 'Événements à valider', "SELECT COUNT(*) n FROM events WHERE status = 'draft'", ['status' => 'draft']],
-            ['places', 'Lieux à valider', "SELECT COUNT(*) n FROM places WHERE status = 'draft'", ['status' => 'draft']],
-            ['housing_listings', 'Logements à valider', "SELECT COUNT(*) n FROM housing_listings WHERE status = 'draft'", ['status' => 'draft']],
-            ['job_offers', 'Offres d\'emploi à valider', "SELECT COUNT(*) n FROM job_offers WHERE status = 'draft'", ['status' => 'draft']],
-            ['service_providers', 'Professionnels à valider', "SELECT COUNT(*) n FROM service_providers WHERE status = 'draft'", ['status' => 'draft']],
-            ['housing_contact_requests', 'Emails de contact en échec', "SELECT COUNT(*) n FROM housing_contact_requests WHERE status = 'failed'", ['status' => 'failed']],
-            ['job_applications', 'Candidatures en échec', "SELECT COUNT(*) n FROM job_applications WHERE status = 'failed'", ['status' => 'failed']],
-            ['service_quote_requests', 'Demandes de devis en échec', "SELECT COUNT(*) n FROM service_quote_requests WHERE status = 'failed'", ['status' => 'failed']],
+            ['housing_contact_requests', 'Emails de contact logement en échec', "SELECT COUNT(*) n FROM housing_contact_requests WHERE status = 'failed'", ['status' => 'failed']],
+            ['job_applications', 'Candidatures en échec d\'envoi', "SELECT COUNT(*) n FROM job_applications WHERE status = 'failed'", ['status' => 'failed']],
+            ['service_quote_requests', 'Demandes de devis en échec d\'envoi', "SELECT COUNT(*) n FROM service_quote_requests WHERE status = 'failed'", ['status' => 'failed']],
+            ['events', 'Événements en brouillon', "SELECT COUNT(*) n FROM events WHERE status = 'draft' AND deleted_at IS NULL", ['status' => 'draft']],
+            ['agent_messages', 'Demandes du Claude de l\'app à traiter', "SELECT COUNT(*) n FROM agent_messages WHERE recipient = 'backend' AND status IN ('open', 'in_progress') AND kind IN ('request', 'bug')", ['status' => 'open']],
         ] as [$table, $label, $sql, $filter]) {
             if ($can($table) && ($n = $count($sql)) > 0) {
                 $todo[] = [$label, $n, $table, $filter];
             }
         }
+
+        // Services externes : configurés ou non (les fonctions de l'app correspondantes répondent « indisponible » sinon)
+        $services = $role === 'admin' ? [
+            ['Info trafic (TomTom)', Config::get('mobility.tomtom_key') !== ''],
+            ['Clermont IA (Anthropic)', Config::get('assistant.api_key') !== ''],
+            ['Notifications iOS (APNs)', (string) Config::get('push.apns.key_id', '') !== ''],
+            ['Notifications Android (Firebase)', (string) Config::get('push.fcm.service_account', '') !== ''],
+            ['Connexion Google', (array) Config::get('auth.google.client_ids', []) !== []],
+            ['Envoi d\'e-mails (SMTP)', is_file('/etc/msmtprc') || is_file((string) ini_get('sendmail_path'))],
+        ] : [];
+        $agents = $can('agent_presence') ? Database::fetchAll('SELECT agent, last_seen_at, app_version, last_report FROM agent_presence ORDER BY last_seen_at DESC') : [];
 
         $imports = $can('import_runs') ? Database::fetchAll(
             'SELECT r.target, r.status, r.started_at, r.created, r.updated, r.errors, s.name FROM import_runs r JOIN content_sources s ON s.id = r.source_id ORDER BY r.id DESC LIMIT 6',
@@ -161,7 +186,28 @@ final class AdminController
             'SELECT l.action, l.resource, l.record_key, l.created_at, a.name FROM admin_audit_log l LEFT JOIN admin_users a ON a.id = l.admin_id ORDER BY l.id DESC LIMIT 10',
         ) : [];
 
-        return [200, [], self::page('Tableau de bord', Html::render('dashboard', compact('stats', 'todo', 'imports', 'audit', 'role') + ['csrf' => $this->req->session['csrf']]), $this->req)];
+        return [200, [], self::page('Tableau de bord', Html::render('dashboard', compact('stats', 'todo', 'imports', 'audit', 'role', 'quick', 'pending', 'services', 'agents') + ['csrf' => $this->req->session['csrf']]), $this->req)];
+    }
+
+    /** GET /admin/moderation — tout ce qui attend une décision, avec un bouton par décision */
+    public function moderation(): array
+    {
+        $queue = Moderation::queue((string) $this->req->admin['role']);
+
+        return [200, [], self::page('À modérer', Html::render('moderation', ['queue' => $queue, 'csrf' => $this->req->session['csrf']]), $this->req)];
+    }
+
+    /** POST /admin/moderation {type, id, action} */
+    public function moderate(): array
+    {
+        try {
+            $this->flash('success', Moderation::decide((string) $this->req->input('type'), (string) $this->req->input('id'), (string) $this->req->input('action'),
+                $this->req->admin, $this->req->ip));
+        } catch (\DomainException $e) {
+            $this->flash('error', $e->getMessage());
+        }
+
+        return self::redirect('/moderation');
     }
 
     public function clearCache(): array
@@ -481,6 +527,7 @@ final class AdminController
         return Html::render('layout', [
             'title' => $title, 'content' => $content, 'bare' => $bare || $req->admin === null, 'admin' => $req->admin, 'flash' => $flash,
             'menu' => $req->admin !== null ? Resource::menu($req->admin['role']) : [], 'csrf' => $req->session['csrf'] ?? '', 'path' => $req->path,
+            'pending' => $req->admin !== null && !$bare ? Moderation::count((string) $req->admin['role']) : 0,
         ]);
     }
 

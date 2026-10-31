@@ -159,4 +159,6 @@ Le dossier `fixtures/` contient des réponses réelles de la base de test, une p
 
 Elles servent aux tests de décodage Swift demandés par la spec : dates sans millisecondes, champs optionnels à `null`, aucune adresse e-mail. Elles contiennent des données de démonstration.
 
+Le back-office `/admin` est organisé par usage : accueil (ce que l’app affiche, raccourcis, services branchés), page « À modérer » avec un bouton par décision, contenus de l’app, demandes reçues, comptes, canal agents, réglages.
+
 Le fichier `openapi.yaml` n'est pas encore régénéré pour ce contrat : c'est la prochaine étape de la documentation.

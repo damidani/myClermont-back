@@ -98,6 +98,8 @@ final class AdminKernel
             $path === '/account/sessions' && $m === 'POST'   => $c->revokeSessions(),
             $path === '/upload' && $m === 'POST'             => $c->upload(),
             $path === '/cache/clear' && $m === 'POST'        => $c->clearCache(),
+            $path === '/moderation' && $m === 'GET'          => $c->moderation(),
+            $path === '/moderation' && $m === 'POST'         => $c->moderate(),
             (bool) preg_match('#^/r/(\w+)(?:/(new|edit|delete|export\.csv))?$#', $path, $p) => $c->resource($p[1], $p[2] ?? 'list'),
             default => [404, [], AdminController::page('Introuvable', '<div class="card"><p>Page introuvable.</p></div>', $req)],
         };

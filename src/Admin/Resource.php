@@ -106,7 +106,7 @@ final class Resource
     /** Colonne qui « nomme » une ligne (titre de la page, libellé des listes déroulantes). */
     public function titleColumn(): string
     {
-        foreach (['name', 'title', 'username', 'label', 'email', 'slug', 'uid'] as $c) {
+        foreach (['name', 'title', 'first_name', 'username', 'label', 'email', 'slug', 'uid'] as $c) {
             if (isset($this->schema['columns'][$c])) {
                 return $c;
             }
