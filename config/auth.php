@@ -17,7 +17,7 @@ return [
 
     'google' => [
         // Identifiants client OAuth acceptés comme audience (Android, iOS, web), séparés par des virgules
-        'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('GOOGLE_CLIENT_ID', ''))))),
+        'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) (Env::get('GOOGLE_CLIENT_IDS', '') ?: Env::get('GOOGLE_CLIENT_ID', '')))))),
     ],
 
     'email_code' => [

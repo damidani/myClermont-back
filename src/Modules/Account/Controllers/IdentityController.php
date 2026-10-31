@@ -65,17 +65,18 @@ final class IdentityController
             if ($user !== null) {
                 $this->users->linkSub((int) $user['id'], 'apple_sub', (string) $claims['sub']);
             } else {
-                // Apple ne donne le nom qu'à la toute première connexion : il n'est utilisé qu'à la création
                 $user = $this->users->createFromIdentity(['email' => $email, 'apple_sub' => (string) $claims['sub'], 'display_name' => $data['full_name'] ?? null]);
                 $created = true;
             }
         }
+        // Apple ne donne le prénom qu'à la toute première autorisation : on le garde
+        $this->keepFirstName($user, $data['full_name'] ?? null);
         // Jeton Apple gardé chiffré : il sert à révoquer l'accès quand le compte est supprimé (règle de l'App Store)
         if (!empty($data['authorization_code']) && ($appleToken = (new AppleClient())->exchangeCode($data['authorization_code'])) !== null) {
             Database::execute('UPDATE users SET apple_refresh_encrypted = :t WHERE id = :id', ['t' => Crypto::encrypt($appleToken), 'id' => $user['id']]);
         }
 
-        return $this->session($user, $request, $created);
+        return $this->socialSession($user, $request, $created, isset($claims['email']) ? (string) $claims['email'] : null);
     }
 
     public function google(Request $request): Response
@@ -95,12 +96,13 @@ final class IdentityController
             if ($user !== null) {
                 $this->users->linkSub((int) $user['id'], 'google_sub', (string) $claims['sub']);
             } else {
-                $user = $this->users->createFromIdentity(['email' => $email, 'google_sub' => (string) $claims['sub'], 'display_name' => $claims['name'] ?? null]);
+                $user = $this->users->createFromIdentity(['email' => $email, 'google_sub' => (string) $claims['sub'], 'display_name' => $claims['given_name'] ?? $claims['name'] ?? null]);
                 $created = true;
             }
         }
+        $this->keepFirstName($user, isset($claims['given_name']) ? (string) $claims['given_name'] : (isset($claims['name']) ? (string) $claims['name'] : null));
 
-        return $this->session($user, $request, $created);
+        return $this->socialSession($user, $request, $created, isset($claims['email']) ? (string) $claims['email'] : null);
     }
 
     /** Toujours 204 (même pour une adresse inconnue) : on ne révèle pas qui a un compte. */
@@ -210,8 +212,8 @@ final class IdentityController
             $name = trim((string) preg_replace('/\s+/u', ' ', $data['display_name']));
             if (mb_strlen($name) < 2) {
                 $errors['display_name'] = 'Ton nom doit faire au moins 2 caractères.';
-            } elseif (in_array(mb_strtolower($name), UserRepository::RESERVED_USERNAMES, true) || $this->users->displayNameTaken($name, (int) $user['id'])) {
-                throw new HttpException(409, 'conflict', 'Ce nom est déjà pris, essaie une variante.', ['field' => 'displayName']);
+            } elseif (in_array(mb_strtolower($name), UserRepository::RESERVED_USERNAMES, true)) {
+                throw new ValidationException(['display_name' => 'Ce nom n\'est pas disponible, essaie une variante.']);
             } else {
                 $fields['display_name'] = $name;
             }
@@ -247,6 +249,25 @@ final class IdentityController
             throw new ValidationException($errors);
         }
 
+        // Profil du brief §6 : complétion après Apple / Google (tout est obligatoire), ou modification depuis les Réglages
+        $profileKeys = ['first_name', 'phone', 'gender', 'gender_detail', 'pronouns', 'pronouns_detail', 'city', 'postal_code',
+                        'city_served', 'notify_city_launch', 'marketing_opt_in', 'consent_version', 'age_confirmed'];
+        $profile = [];
+        if (array_intersect_key($input, array_flip($profileKeys)) !== []) {
+            $completing = !\App\Modules\Account\UserProfile::isComplete($user);
+            $profile = \App\Modules\Account\UserProfile::columns($input, $completing);
+            if ($completing || (isset($profile['consent_version']) && $profile['consent_version'] !== $user['consent_version'])) {
+                $profile['consented_at'] = gmdate('Y-m-d H:i:s');
+            }
+            if (!$completing) {
+                unset($profile['age_confirmed_at']);
+            }
+            // Le nom affiché suit le prénom tant qu'il n'a pas été choisi à part
+            if (isset($profile['first_name']) && !isset($fields['display_name']) && ($user['display_name'] === null || $user['display_name'] === $user['first_name'])) {
+                $fields['display_name'] = $profile['first_name'];
+            }
+        }
+        $this->users->saveProfile((int) $user['id'], $profile);
         $user = $this->users->update((int) $user['id'], $fields);
         Events::dispatch('account.profile_updated', ['user_id' => (int) $user['id'], 'user' => $user]);
 
@@ -289,6 +310,34 @@ final class IdentityController
         $user = $this->users->findById((int) $user['id']) ?? $user;
 
         return Response::success(self::authSession((new TokenService())->issue((int) $user['id'], $device, null, (string) $user['role']), $user), $created ? 201 : 200);
+    }
+
+    /**
+     * SocialSession du brief §6 : jetons émis dans tous les cas ; tant que le profil n'est pas complet (pas de consentVersion),
+     * isNewUser = true, user = null, avec l'e-mail et le prénom connus pour préremplir l'inscription (PATCH /me ensuite).
+     */
+    private function socialSession(array $user, Request $request, bool $created, ?string $tokenEmail): Response
+    {
+        $session = $this->session($user, $request, $created)->payload['data'];
+        $user = $this->users->findById((int) $user['id']) ?? $user;
+        if (\App\Modules\Account\UserProfile::isComplete($user)) {
+            return Response::success($session + ['is_new_user' => false]);
+        }
+        $session['user'] = null;
+
+        return Response::success($session + [
+            'is_new_user' => true,
+            'email'       => (string) ($user['email'] ?? $tokenEmail ?? ''),
+            'first_name'  => (string) ($user['first_name'] ?? ''),
+        ]);
+    }
+
+    private function keepFirstName(array $user, ?string $name): void
+    {
+        $name = trim((string) preg_replace('/\s+/u', ' ', (string) $name));
+        if (empty($user['first_name']) && mb_strlen($name) >= 2) {
+            $this->users->saveProfile((int) $user['id'], ['first_name' => mb_substr($name, 0, 40)]);
+        }
     }
 
     /** AuthSession de la spec : { accessToken, refreshToken, expiresIn, user } */

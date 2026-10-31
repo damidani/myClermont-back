@@ -188,4 +188,36 @@ return [
             assert_same(false, $F::hasLink($t), (string) $t);
         }
     },
+
+    'brief §6 : ProfileBody => colonnes ; UserProfile valide le schéma' => function () {
+        $P = App\Modules\Account\UserProfile::class;
+        $body = App\Core\Request::snake(['firstName' => 'Camille', 'email' => 'camille@exemple.fr', 'password' => 'motdepasse1', 'phone' => '+33612345678',
+            'gender' => 'nonBinary', 'genderDetail' => null, 'pronouns' => 'iel', 'pronounsDetail' => null, 'city' => 'Chamalières', 'postalCode' => '63400',
+            'cityServed' => true, 'notifyCityLaunch' => false, 'marketingOptIn' => false, 'consentVersion' => '2026-11-01', 'ageConfirmed' => true]);
+        $cols = $P::columns($body, true);
+        assert_same('Camille', $cols['first_name']);
+        assert_same(1, $cols['city_served']);
+        $user = $cols + ['uid' => 'b278efc6-943a-4c36-a827-d09e71f2f75a', 'email' => 'camille@exemple.fr', 'password_hash' => 'x',
+                         'consented_at' => '2026-11-15 09:12:00', 'created_at' => '2026-11-15 09:12:00'];
+        $out = App\Core\Contract::camel($P::present($user));
+        assert_same([], App\Support\AppSchemas::validate($out, App\Support\AppSchemas::userProfile()));
+        assert_same('email', $out['provider']);
+        assert_same(true, $P::present(['uid' => 'x', 'email' => 'abc@privaterelay.appleid.com', 'apple_sub' => 's', 'created_at' => '2026-01-01 00:00:00'])['email_is_private']);
+
+        try {
+            $P::columns(['age_confirmed' => false] + $body, true);
+            throw new RuntimeException('ageConfirmed false accepté');
+        } catch (App\Exceptions\ValidationException $e) {
+            assert_same(422, $e->getCode());
+            assert_true(str_contains($e->getMessage(), 'âge'));
+        }
+    },
+
+    'brief §6 : mot de passe = 8 caractères, une lettre, un chiffre' => function () {
+        $P = App\Modules\Account\UserProfile::class;
+        assert_same('motdepasse1', $P::checkPassword('motdepasse1'));
+        foreach (['court1', 'motdepasse', '12345678', null] as $bad) {
+            assert_throws(fn () => $P::checkPassword($bad), 'validation_failed');
+        }
+    },
 ];

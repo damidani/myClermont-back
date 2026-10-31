@@ -31,9 +31,10 @@ final class AccountModule implements Module
         $r->post('/auth/refresh', [IdentityController::class, 'refresh'], ['throttle:login,ip']);
         $r->post('/auth/logout', [IdentityController::class, 'logout'], ['auth:optional']);
 
-        // Connexion par mot de passe (comptes créés avant la spec, tests) : conservée
+        // Inscription e-mail + mot de passe de l'app iOS (brief §6)
         $r->post('/auth/register', [AuthController::class, 'register'], ['throttle:login,ip']);
         $r->post('/auth/login', [AuthController::class, 'login'], ['throttle:login,ip']);
+        $r->post('/auth/password/forgot', [AuthController::class, 'forgot'], ['throttle:login,ip']);
 
         $r->get('/neighborhoods', [ProfileController::class, 'neighborhoods']);
         $r->get('/users/username-available', [ProfileController::class, 'usernameAvailable']);

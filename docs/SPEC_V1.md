@@ -125,7 +125,7 @@ Ce sont les points où l'implémentation a dû choisir :
 | Variable | Pour |
 |---|---|
 | `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (.p8 « Sign in with Apple ») | Révoquer l'accès Apple à la suppression d'un compte. La connexion fonctionne sans |
-| `GOOGLE_CLIENT_ID` | Connexion Google (Android) |
+| `GOOGLE_CLIENT_IDS` | Connexion Google : identifiants client iOS et Android, séparés par des virgules |
 | `APNS_KEY_ID`, `APNS_KEY` (.p8 APNs), `APNS_SANDBOX` | Notifications iOS |
 | `FCM_SERVICE_ACCOUNT` (chemin du JSON Firebase) | Notifications Android |
 | `TOMTOM_API_KEY` | Info trafic |

@@ -28,4 +28,10 @@ if ($path === '/admin' || str_starts_with($path, '/admin/')) {
     return;
 }
 
+// Page web du lien « mot de passe oublié » (envoyé par e-mail)
+if ($path === '/password/reset') {
+    (new \App\Modules\Account\PasswordResetPage())->run();
+    return;
+}
+
 $app->run();

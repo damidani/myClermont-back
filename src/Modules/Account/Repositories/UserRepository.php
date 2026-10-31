@@ -12,7 +12,8 @@ final class UserRepository
 {
     private const COLUMNS = 'u.id, u.uid, u.email, u.password_hash, u.username, u.display_name, u.bio, u.neighborhood_id, u.points,
                              u.avatar_kind, u.avatar_value, u.notifications_enabled, u.role, u.apple_sub, u.google_sub,
-                             u.apple_refresh_encrypted, u.deleted_at,
+                             u.apple_refresh_encrypted, u.deleted_at, u.first_name, u.phone, u.gender, u.gender_detail, u.pronouns, u.pronouns_detail,
+                             u.city, u.postal_code, u.city_served, u.notify_city_launch, u.marketing_opt_in, u.consent_version, u.consented_at,
                              u.premium_until, u.referral_code, u.referred_by, u.status, u.created_at, u.updated_at,
                              n.slug AS neighborhood_slug, n.name AS neighborhood_name';
 
@@ -132,6 +133,19 @@ final class UserRepository
         return $this->findById($id) ?? throw new \RuntimeException('Création utilisateur échouée.');
     }
 
+    /** Colonnes du profil d'inscription (UserProfile::columns) et mot de passe éventuel. */
+    public function saveProfile(int $id, array $cols, ?string $password = null): void
+    {
+        if ($password !== null) {
+            $cols['password_hash'] = self::hashPassword($password);
+        }
+        if ($cols === []) {
+            return;
+        }
+        $sets = implode(', ', array_map(static fn (string $c) => "{$c} = :{$c}", array_keys($cols)));
+        Database::execute("UPDATE users SET {$sets}, updated_at = :updated_at WHERE id = :id", $cols + ['updated_at' => gmdate('Y-m-d H:i:s'), 'id' => $id]);
+    }
+
     /** @param array<string, mixed> $fields */
     public function update(int $id, array $fields): array
     {
@@ -174,13 +188,12 @@ final class UserRepository
         return $code;
     }
 
-    /** Objet « User » de la spec v1 (AuthSession.user, GET /me). Jamais d'e-mail ni d'identifiant Apple / Google. */
+    /** UserProfile du brief iOS §6, plus les champs de la spec v1 (displayName, avatar, role, plus, points…). */
     public static function presentSpec(array $user): array
     {
         $plusActive = PremiumService::isActive($user);
 
-        return [
-            'id'                    => $user['uid'],
+        return \App\Modules\Account\UserProfile::present($user) + [
             'display_name'          => $user['display_name'] ?? $user['username'],
             'bio'                   => $user['bio'],
             'neighborhood'          => $user['neighborhood_name'] ?? null,
