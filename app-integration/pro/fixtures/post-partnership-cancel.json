@@ -1,0 +1,22 @@
+{
+  "id": "b740622b-e993-4fb0-b52f-6192ebd25334",
+  "legalName": "SAS Comptoir",
+  "siret": "",
+  "nafCode": null,
+  "nafLabel": null,
+  "activity": "restaurant",
+  "modules": [
+    "bonsPlans",
+    "evenements",
+    "emplois",
+    "devis"
+  ],
+  "goals": [
+    "visibilite",
+    "devis"
+  ],
+  "plan": "gratuit",
+  "planSince": "2026-10-31T18:59:22Z",
+  "verification": "a_verifier",
+  "createdAt": "2026-10-31T18:59:21Z"
+}

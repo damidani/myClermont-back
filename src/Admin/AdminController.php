@@ -202,7 +202,7 @@ final class AdminController
     {
         try {
             $this->flash('success', Moderation::decide((string) $this->req->input('type'), (string) $this->req->input('id'), (string) $this->req->input('action'),
-                $this->req->admin, $this->req->ip));
+                $this->req->admin, $this->req->ip, (string) $this->req->input('reason', '')));
         } catch (\DomainException $e) {
             $this->flash('error', $e->getMessage());
         }

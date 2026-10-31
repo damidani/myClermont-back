@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "conflict",
+    "message": "Ce code a déjà été utilisé.",
+    "details": {
+      "reason": "already_used",
+      "usedAt": "2026-10-31T18:59:21Z"
+    }
+  }
+}

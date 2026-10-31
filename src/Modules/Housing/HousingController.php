@@ -154,6 +154,7 @@ final class HousingController
             ],
         );
 
+        \App\Modules\Pro\Pro::notifyOwner('housing_listings', (int) $listing['id'], 'message', 'Demande de visite : ' . $data['name'], (string) $data['message'], '/logements?onglet=visites', 'new_message');
         Events::dispatch('housing.contact_requested', [
             'user_id' => $request->attributes['user_id'] ?? null, 'listing_uid' => $listing['uid'], 'request_uid' => $uid,
         ]);

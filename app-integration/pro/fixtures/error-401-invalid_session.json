@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "unauthenticated",
+    "message": "Ta session a expiré, reconnecte-toi.",
+    "details": {
+      "reason": "invalid_session"
+    }
+  }
+}

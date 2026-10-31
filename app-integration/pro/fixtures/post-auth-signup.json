@@ -1,0 +1,45 @@
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.…",
+  "expiresIn": 900,
+  "merchant": {
+    "id": "ac8a2407-1b06-4bcf-ace2-3ca803db97b7",
+    "firstName": "Camille",
+    "lastName": "Roux",
+    "email": "camille@comptoir.test",
+    "phone": "0473000000",
+    "jobTitle": "Gérante",
+    "createdAt": "2026-10-31T18:59:21Z",
+    "twoFactor": false,
+    "notifications": {
+      "newReview": true,
+      "newMessage": true,
+      "newApplication": true,
+      "dealCodes": false,
+      "weeklyReport": true,
+      "channel": "email"
+    }
+  },
+  "business": {
+    "id": "b740622b-e993-4fb0-b52f-6192ebd25334",
+    "legalName": "SAS Comptoir",
+    "siret": "",
+    "nafCode": null,
+    "nafLabel": null,
+    "activity": "restaurant",
+    "modules": [
+      "bonsPlans",
+      "evenements",
+      "emplois",
+      "devis"
+    ],
+    "goals": [
+      "visibilite",
+      "devis"
+    ],
+    "plan": "gratuit",
+    "planSince": null,
+    "verification": "a_verifier",
+    "createdAt": "2026-10-31T18:59:21Z"
+  },
+  "role": "proprietaire"
+}

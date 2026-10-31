@@ -1,0 +1,26 @@
+{
+  "id": "c910bd49-e695-4c75-9ee7-dd2a1ebda304",
+  "title": "T2 Jaude",
+  "district": "",
+  "price": 650,
+  "surface": 42,
+  "rooms": 2,
+  "bedrooms": 1,
+  "type": "Location",
+  "furnished": false,
+  "images": [],
+  "features": [
+    "Balcon",
+    "Proche tram"
+  ],
+  "description": "",
+  "latitude": null,
+  "longitude": null,
+  "energyClass": "C",
+  "climateClass": "B",
+  "charges": 50,
+  "deposit": 600,
+  "fees": "300 €",
+  "status": "publiee",
+  "createdAt": "2026-10-31T18:59:22Z"
+}

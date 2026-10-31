@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "id": "7fc10256-52f0-48bd-ba7d-2d7aee400f1c",
+      "kind": "moderation",
+      "title": "Ta fiche est en ligne",
+      "body": "Elle apparaît maintenant sur la carte de l'app My Clermont.",
+      "href": "/fiche",
+      "createdAt": "2026-10-31T18:59:21Z",
+      "read": false
+    },
+    {
+      "id": "747fd33f-04ad-4987-9b45-d02734d1628c",
+      "kind": "moderation",
+      "title": "Ta fiche est en ligne",
+      "body": "Elle apparaît maintenant sur la carte de l'app My Clermont.",
+      "href": "/fiche",
+      "createdAt": "2026-10-31T18:59:21Z",
+      "read": false
+    }
+  ],
+  "nextCursor": null
+}

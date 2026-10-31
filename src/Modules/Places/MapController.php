@@ -183,6 +183,16 @@ final class MapController
              . "JSON_UNQUOTE(JSON_EXTRACT(p.nature, '$.kinds[0]')) AS nature_kind";
     }
 
+    /** Lieu en ligne désigné par son id de l'app, son uid ou son slug (null si inconnu). */
+    public static function findPublished(string $id): ?array
+    {
+        try {
+            return (new self())->find($id);
+        } catch (HttpException) {
+            return null;
+        }
+    }
+
     private function find(string $id): array
     {
         $id = rawurldecode($id);

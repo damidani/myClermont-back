@@ -30,5 +30,6 @@ return [
         'throttle'      => App\Http\Middleware\RateLimitMiddleware::class,
         'premium'       => App\Modules\Premium\PremiumMiddleware::class,
         'role'          => App\Http\Middleware\RoleMiddleware::class,
+        'pro'           => App\Modules\Pro\ProAuthMiddleware::class,   // session de l'espace commerçant
     ],
 ];

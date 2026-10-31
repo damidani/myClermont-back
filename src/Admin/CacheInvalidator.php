@@ -30,6 +30,10 @@ final class CacheInvalidator
 
     public static function afterWrite(string $table, ?array $before, ?array $after): void
     {
+        // Formule d'un établissement changée à la main : étoile Partenaire, bons plans et Flash suivent
+        if ($table === 'pro_businesses' && $after !== null && isset($after['plan']) && ($before['plan'] ?? null) !== $after['plan'] && isset($after['id'])) {
+            \App\Modules\Pro\AccountController::setPlan(Database::fetch('SELECT * FROM pro_businesses WHERE id = :id', ['id' => $after['id']]) ?? $after, (string) $after['plan']);
+        }
         $store = Cache::store();
         foreach (self::KEYS[$table] ?? [] as $key) {
             $store->delete($key);

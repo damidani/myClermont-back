@@ -64,6 +64,10 @@ final class App
         $clientId = (string) $request->header('X-Request-Id', '');
         Context::$requestId = preg_match('/^[A-Za-z0-9._-]{8,64}$/', $clientId) ? $clientId : bin2hex(random_bytes(8));
         try {
+            // Espace commerçant : requête de vérification CORS du navigateur
+            if ($request->method === 'OPTIONS' && \App\Modules\Pro\ProModule::isProPath($request->path)) {
+                return \App\Modules\Pro\ProModule::cors($request, $this->finalize(Response::noContent()));
+            }
             $router = new Router();
             (require $this->root . '/routes/api.php')($router, $this->modules);
 
@@ -75,7 +79,12 @@ final class App
             $response = $this->renderException($e);
         }
 
-        return $this->conditional($request, $this->finalize($response))
+        $response = $this->conditional($request, $this->finalize($response));
+        if (\App\Modules\Pro\ProModule::isProPath($request->path)) {
+            \App\Modules\Pro\ProModule::cors($request, $response);
+        }
+
+        return $response
             ->withHeader('X-Request-Id', Context::$requestId)
             ->withHeader('Server-Timing', 'app;dur=' . round((microtime(true) - $started) * 1000, 1));
     }

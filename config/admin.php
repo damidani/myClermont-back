@@ -34,7 +34,7 @@ return [
     'max_image_size'   => 8 * 1024 * 1024,
 
     // Colonnes jamais affichées ni modifiables (secrets, données techniques)
-    'hidden_columns'   => ['password_hash', 'token_hash', 'secret_encrypted', 'totp_secret', 'content_hash', 'pair_key', 'storage_path', 'csrf_token', 'id_hash'],
+    'hidden_columns'   => ['password_hash', 'token_hash', 'secret_encrypted', 'totp_secret', 'content_hash', 'pair_key', 'storage_path', 'csrf_token', 'id_hash', 'invite_token_hash', 'previous_hash'],
     // Colonnes gérées automatiquement
     'auto_columns'     => ['created_at', 'updated_at', 'deleted_at'],
 
@@ -81,6 +81,16 @@ return [
             'subscriptions' => ['label' => 'Abonnements My Clermont+', 'icon' => '💎', 'roles' => $moderator, 'readonly' => true],
             'devices'       => ['label' => 'Appareils', 'icon' => '📱', 'roles' => $moderator, 'list' => ['id', 'platform', 'model', 'app_version', 'user_id', 'status', 'last_seen_at'],
                                 'search' => ['uid', 'model'], 'can_create' => false],
+        ],
+        'Espace commerçant' => [
+            'pro_businesses' => ['label' => 'Établissements', 'icon' => '🏪', 'roles' => $editor, 'list' => ['id', 'trade_name', 'activity', 'plan', 'verification', 'siret', 'created_at'],
+                                 'search' => ['trade_name', 'legal_name', 'siret'], 'can_create' => false,
+                                 'hint' => 'Comptes de commercant.myclermont.app. Les fiches, événements et SIRET à valider sont dans « À modérer ». Passer « plan » à partenaire donne l\'étoile sur la carte.'],
+            'pro_members'    => ['label' => 'Comptes commerçants', 'icon' => '🧑‍💼', 'roles' => $moderator, 'list' => ['id', 'business_id', 'first_name', 'email', 'role', 'status', 'created_at'],
+                                 'search' => ['email', 'first_name', 'last_name'], 'can_create' => false, 'readonly_columns' => ['totp_secret']],
+            'pro_threads'    => ['label' => 'Messages clients', 'icon' => '✉️', 'roles' => $moderator, 'readonly' => true, 'list' => ['id', 'business_id', 'subject', 'source', 'contact_name', 'updated_at']],
+            'pro_contact_requests' => ['label' => 'Demandes de rappel', 'icon' => '📞', 'list' => ['id', 'business_id', 'slot', 'message', 'handled_at', 'created_at']],
+            'pro_invoices'   => ['label' => 'Factures', 'icon' => '🧾'],
         ],
         'Canal agents' => [
             'agent_messages' => ['label' => 'Messages entre Claude', 'icon' => '🤖', 'list' => ['id', 'sender', 'recipient', 'kind', 'title', 'status', 'created_at'], 'search' => ['title', 'body'],

@@ -10,7 +10,8 @@ use App\Core\Database;
  * File « À modérer » : tout ce qui attend une décision humaine, sur une seule page, avec un bouton par décision.
  *   - publications, commentaires et avis retenus par le filtre automatique (status = pending) ;
  *   - événements proposés par les utilisateurs ;
- *   - signalements ouverts (table reports).
+ *   - signalements ouverts (table reports) ;
+ *   - espace commerçant : fiches et événements à valider, avis signalés par un commerçant, SIRET à vérifier.
  */
 final class Moderation
 {
@@ -22,9 +23,12 @@ final class Moderation
         'event'   => ['events', 'slug', 'published', 'rejected', ['editor']],
     ];
 
+    /** Files de l'espace commerçant => rôles autorisés en plus d'admin */
+    private const PRO = ['pro_place' => ['editor'], 'pro_review' => ['moderator'], 'pro_siret' => []];
+
     public static function allows(string $type, string $role): bool
     {
-        return $role === 'admin' || in_array($role, self::TYPES[$type][4] ?? ($type === 'report' ? ['moderator'] : []), true);
+        return $role === 'admin' || in_array($role, self::TYPES[$type][4] ?? self::PRO[$type] ?? ($type === 'report' ? ['moderator'] : []), true);
     }
 
     /** Nombre total d'éléments en attente visibles pour ce rôle (badge du menu). */
@@ -65,12 +69,27 @@ final class Moderation
         }
         if (self::allows('event', $role)) {
             $out['event'] = $q("SELECT e.slug AS id, e.title, e.summary AS text, e.venue_name, e.address, e.starts_at, e.created_at, {$who} AS author, u.id AS user_id
-                                FROM events e LEFT JOIN users u ON u.id = e.author_user_id WHERE e.status = 'pending' AND e.deleted_at IS NULL ORDER BY e.id LIMIT 100");
+                                FROM events e LEFT JOIN users u ON u.id = e.author_user_id
+                                WHERE (e.status = 'pending' OR e.pro_status = 'en_revue') AND e.deleted_at IS NULL ORDER BY e.id LIMIT 100");
         }
         if (self::allows('report', $role)) {
             $out['report'] = $q("SELECT r.uid AS id, r.target_type, r.target_id, r.reason, r.details, r.created_at,
                                         COUNT(*) OVER (PARTITION BY r.target_type, r.target_id) AS reports_on_target
                                  FROM reports r WHERE r.resolved_at IS NULL ORDER BY r.created_at LIMIT 100");
+        }
+
+        if (self::allows('pro_place', $role)) {
+            $out['pro_place'] = $q("SELECT p.uid AS id, p.name AS title, p.pro, p.pro_pending, p.status AS live, p.created_at, b.trade_name AS author, NULL AS user_id
+                                    FROM places p JOIN pro_businesses b ON b.id = p.business_id WHERE p.pro_status = 'en_revue' ORDER BY p.updated_at LIMIT 100");
+        }
+        if (self::allows('pro_review', $role)) {
+            $out['pro_review'] = $q("SELECT r.uid AS id, r.comment AS text, r.rating, r.reported_reason, r.reported_details, r.reported_at AS created_at, pl.name AS place, b.trade_name AS author
+                                     FROM place_reviews r JOIN places pl ON pl.id = r.place_id JOIN pro_businesses b ON b.place_id = pl.id
+                                     WHERE r.reported_at IS NOT NULL AND r.status <> 'hidden' ORDER BY r.reported_at LIMIT 100");
+        }
+        if (self::allows('pro_siret', $role)) {
+            $out['pro_siret'] = $q("SELECT uid AS id, trade_name AS title, legal_name, siret, naf_code, created_at, trade_name AS author FROM pro_businesses
+                                    WHERE verification = 'en_cours' AND deleted_at IS NULL ORDER BY id LIMIT 100");
         }
 
         return $out;
@@ -80,7 +99,7 @@ final class Moderation
      * Applique une décision. $action : publish | refuse | ban (refuse + bannit l'auteur) ; pour un signalement : remove | dismiss | ban.
      * @return string message de confirmation
      */
-    public static function decide(string $type, string $id, string $action, array $admin, string $ip): string
+    public static function decide(string $type, string $id, string $action, array $admin, string $ip, string $reason = ''): string
     {
         if (!self::allows($type, (string) $admin['role'])) {
             throw new \DomainException('Action non autorisée pour ton rôle.');
@@ -88,6 +107,20 @@ final class Moderation
         $now = gmdate('Y-m-d H:i:s');
         if ($type === 'report') {
             return self::resolveReport($id, $action, $admin, $now, $ip);
+        }
+        if (isset(self::PRO[$type])) {
+            $message = self::decidePro($type, $id, $action, trim($reason));
+            Audit::log((int) $admin['id'], 'moderation.' . $type . '.' . $action, $ip, $type, $id, $reason !== '' ? ['reason' => $reason] : []);
+
+            return $message;
+        }
+        // Événement d'un commerçant : son espace pro suit la décision (notification, motif de refus)
+        if ($type === 'event' && ($e = Database::fetch('SELECT id, business_id FROM events WHERE slug = :s', ['s' => $id])) && $e['business_id'] !== null && $action !== 'ban') {
+            $action === 'publish' ? \App\Modules\Pro\EventController::approve((int) $e['id']) : \App\Modules\Pro\EventController::reject((int) $e['id'], trim($reason));
+            Audit::log((int) $admin['id'], 'moderation.' . $action, $ip, 'events', $id, $reason !== '' ? ['reason' => $reason] : []);
+            CacheInvalidator::afterWrite('events', ['id' => $e['id']], null);
+
+            return $action === 'publish' ? 'Publié : c\'est maintenant visible dans l\'app.' : 'Refusé : le commerçant est prévenu.';
         }
         [$table, $key, $published, $refused] = self::TYPES[$type] ?? throw new \DomainException('Type inconnu.');
         $row = Database::fetch("SELECT * FROM {$table} WHERE {$key} = :k", ['k' => $id]) ?? throw new \DomainException('Élément introuvable (déjà traité ?).');
@@ -117,6 +150,43 @@ final class Moderation
             'refuse'  => 'Refusé : le contenu reste invisible.',
             'ban'     => 'Refusé et auteur banni (ses sessions sont fermées).',
         };
+    }
+
+    private static function decidePro(string $type, string $id, string $action, string $reason): string
+    {
+        $notify = static fn (?array $b, string $title, string $body, string $href) => $b ? \App\Modules\Pro\Pro::notify((int) $b['id'], 'moderation', $title, $body, $href) : null;
+        if ($type === 'pro_place') {
+            $p = Database::fetch('SELECT id, name, business_id FROM places WHERE uid = :u', ['u' => $id]) ?? throw new \DomainException('Fiche introuvable.');
+            $b = Database::fetch('SELECT id FROM pro_businesses WHERE id = :b', ['b' => $p['business_id']]);
+            if ($action === 'publish') {
+                \App\Modules\Pro\PlaceController::approve((int) $p['id']);
+                $notify($b, 'Ta fiche est en ligne', 'Elle apparaît maintenant sur la carte de l\'app My Clermont.', '/fiche');
+
+                return 'Fiche publiée sur la carte.';
+            }
+            \App\Modules\Pro\PlaceController::reject((int) $p['id']);
+            $notify($b, 'Ta fiche n\'a pas été validée', $reason ?: 'Elle ne respecte pas les règles de publication : corrige-la puis renvoie-la.', '/fiche');
+
+            return 'Fiche refusée : le commerçant est prévenu.';
+        }
+        if ($type === 'pro_review') {
+            $r = Database::fetch('SELECT r.id, r.place_id, b.id AS b_id FROM place_reviews r JOIN pro_businesses b ON b.place_id = r.place_id WHERE r.uid = :u', ['u' => $id])
+                ?? throw new \DomainException('Avis introuvable.');
+            $remove = $action === 'remove';
+            Database::execute('UPDATE place_reviews SET status = IF(:rm = 1, \'hidden\', status), reported_at = NULL, reported_reason = NULL, reported_details = NULL WHERE id = :id',
+                ['rm' => (int) $remove, 'id' => $r['id']]);
+            \App\Modules\Places\ReviewController::recompute((int) $r['place_id']);
+            $notify(['id' => $r['b_id']], $remove ? 'Avis retiré' : 'Avis maintenu', $remove ? 'L\'avis que tu as signalé a été retiré.'
+                : ($reason ?: 'Après vérification, l\'avis que tu as signalé respecte les règles : il reste en ligne.'), '/avis');
+
+            return $remove ? 'Avis retiré : le commerçant est prévenu.' : 'Avis maintenu : le commerçant est prévenu.';
+        }
+        // pro_siret
+        $b = Database::fetch('SELECT id FROM pro_businesses WHERE uid = :u', ['u' => $id]) ?? throw new \DomainException('Établissement introuvable.');
+        Database::execute('UPDATE pro_businesses SET verification = :v WHERE id = :id', ['v' => $action === 'publish' ? 'verifie' : 'a_verifier', 'id' => $b['id']]);
+        $notify($b, $action === 'publish' ? 'SIRET vérifié' : 'SIRET à corriger', $action === 'publish' ? 'Ton établissement est vérifié.' : ($reason ?: 'Nous n\'avons pas pu vérifier ton SIRET : corrige-le dans les paramètres.'), '/parametres');
+
+        return $action === 'publish' ? 'SIRET marqué comme vérifié.' : 'SIRET à corriger : le commerçant est prévenu.';
     }
 
     private static function resolveReport(string $id, string $action, array $admin, string $now, string $ip): string

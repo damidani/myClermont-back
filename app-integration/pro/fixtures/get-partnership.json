@@ -1,0 +1,12 @@
+{
+  "plan": "partenaire",
+  "planSince": "2026-10-31T18:59:22Z",
+  "limits": {
+    "activeDeals": null,
+    "team": 5,
+    "photos": 30,
+    "statsDays": 180,
+    "csvExport": true,
+    "flash": true
+  }
+}

@@ -170,6 +170,7 @@ final class ServiceController
             ],
         );
         Events::dispatch('services.quote_requested', ['user_id' => $request->attributes['user_id'] ?? null, 'provider_uid' => $provider['uid']]);
+        \App\Modules\Pro\Pro::notifyOwner('service_providers', (int) $provider['id'], 'devis', 'Nouvelle demande de devis : ' . $data['name'], (string) $data['message'], '/devis', 'new_message');
 
         return Response::success(['id' => $uid, 'status' => 'pending', 'message' => 'Ta demande de devis a été transmise.'], 201);
     }

@@ -57,6 +57,7 @@ return [
         'device'   => [$deviceMax, $deviceWindow],
         'register' => [$registerMax, $registerWindow],
         'login'    => [$loginMax, $loginWindow],
+        'pro_auth' => [(int) Env::get('RATE_LIMIT_PRO_AUTH', 10), 300],   // connexion, inscription, mot de passe oublié de l'espace pro (par IP)
         'contact'  => [$contactMax, $contactWindow],
         'upload'   => [$uploadMax, $uploadWindow],
         'post'     => [$postMax, $postWindow],

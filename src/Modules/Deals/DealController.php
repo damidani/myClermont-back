@@ -24,7 +24,7 @@ final class DealController
     private const COLUMNS = 'd.*, p.uid AS place_uid, p.manager_user_id';
     private const FROM = 'deals d LEFT JOIN places p ON p.id = d.place_id';
     private const LIVE = "d.status = 'published' AND d.deleted_at IS NULL AND (d.starts_at IS NULL OR d.starts_at <= UTC_TIMESTAMP())
-                          AND (d.expires_at IS NULL OR d.expires_at > UTC_TIMESTAMP())";
+                          AND (d.expires_at IS NULL OR d.expires_at > UTC_TIMESTAMP()) AND (d.max_redemptions IS NULL OR d.redemptions_count < d.max_redemptions)";
 
     public function index(Request $request): Response
     {
@@ -106,6 +106,11 @@ final class DealController
             throw new \RuntimeException('Génération du code impossible.');
         });
 
+        // Notification « code » à l'espace commerçant
+        if (($business = \App\Modules\Pro\Pro::businessOfPlace($deal['place_id'] !== null ? (int) $deal['place_id'] : null)) !== null) {
+            \App\Modules\Pro\Pro::notify((int) $business['id'], 'code', 'Nouveau code : ' . $deal['title'], 'Un client vient d\'obtenir le code ' . $code . '.', '/bons-plans?onglet=codes', 'deal_codes');
+        }
+
         return Response::success(self::redemption($deal, $code), 201);
     }
 
@@ -123,7 +128,7 @@ final class DealController
     public function validateCode(Request $request): Response
     {
         $code = strtoupper((string) $request->param('code'));
-        $row = preg_match('/^[A-Z0-9]{8}$/', $code) ? Database::fetch(
+        $row = preg_match('/^([A-Z0-9]{8}|MC-[A-Z0-9]{4}-[A-Z0-9]{3})$/', $code) ? Database::fetch(
             'SELECT r.*, d.uid AS deal_uid, d.title, p.manager_user_id FROM deal_redemptions r JOIN deals d ON d.id = r.deal_id LEFT JOIN places p ON p.id = d.place_id WHERE r.code = :c',
             ['c' => $code],
         ) : null;
@@ -153,6 +158,8 @@ final class DealController
         'bien-etre' => 'Bien-être', 'beaute' => 'Bien-être', 'spa' => 'Bien-être', 'sante' => 'Bien-être',
         'sorties' => 'Sorties', 'culture' => 'Sorties', 'loisirs' => 'Sorties', 'spectacle' => 'Sorties', 'shopping' => 'Sorties',
         'sport' => 'Sport', 'autre' => 'Sorties',
+        // Libellés de l'espace commerçant
+        'Gastronomie' => 'Restaurants', 'Culture' => 'Sorties', 'Shopping' => 'Sorties', 'Services' => 'Sorties', 'Famille' => 'Sorties',
     ];
 
     public static function present(array $d): array
@@ -198,15 +205,15 @@ final class DealController
         return $d ?? throw new HttpException(404, 'deal_not_found', 'Ce bon plan n\'existe pas ou a expiré.');
     }
 
-    /** 8 caractères sans ambiguïté (pas de 0/O, 1/I/L), faciles à dicter en caisse. */
+    /** MC-XXXX-XXX : caractères sans ambiguïté (pas de 0/O, 1/I/L), faciles à dicter en caisse. */
     private static function newCode(): string
     {
         $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
         $code = '';
-        for ($i = 0; $i < 8; $i++) {
+        for ($i = 0; $i < 7; $i++) {
             $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
         }
 
-        return $code;
+        return 'MC-' . substr($code, 0, 4) . '-' . substr($code, 4);
     }
 }

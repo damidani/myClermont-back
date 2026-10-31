@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Origine non autorisée.",
+    "details": {
+      "reason": "origin"
+    }
+  }
+}

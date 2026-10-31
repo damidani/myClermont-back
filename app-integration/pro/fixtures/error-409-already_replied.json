@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "conflict",
+    "message": "Tu as déjà répondu à cet avis : modifie ta réponse.",
+    "details": {
+      "reason": "already_replied"
+    }
+  }
+}

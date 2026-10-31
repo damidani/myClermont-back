@@ -28,4 +28,5 @@ return [
     App\Modules\Assistant\AssistantModule::class,
     App\Modules\Subscriptions\SubscriptionsModule::class,
     App\Modules\Games\GamesModule::class,
+    App\Modules\Pro\ProModule::class,
 ];

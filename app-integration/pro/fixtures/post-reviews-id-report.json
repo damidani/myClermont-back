@@ -1,0 +1,15 @@
+{
+  "id": "2ea1d2f5-d55d-11f1-bbe9-5a85ab32aa77",
+  "author": "Léa",
+  "rating": 2,
+  "text": "Service lent",
+  "createdAt": "2026-10-31T18:59:21Z",
+  "reply": {
+    "text": "Merci, nous renforçons l'équipe.",
+    "createdAt": "2026-10-31T18:59:21Z"
+  },
+  "reported": {
+    "reason": "Hors sujet",
+    "createdAt": "2026-10-31T18:59:21Z"
+  }
+}

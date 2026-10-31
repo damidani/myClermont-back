@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Ta formule permet 6 photos.",
+    "details": {
+      "reason": "plan_limit",
+      "limit": "photos"
+    }
+  }
+}

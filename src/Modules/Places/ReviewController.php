@@ -37,7 +37,7 @@ final class ReviewController
         $before = is_string($cursor) && ctype_digit($cursor) ? (int) $cursor : PHP_INT_MAX;
         [$where, $params] = self::scope($place);
         $rows = Database::fetchAll(
-            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, u.uid AS user_uid, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
+            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
              FROM place_reviews r JOIN users u ON u.id = r.user_id
              WHERE {$where} AND r.status IN ('visible', 'pending') AND r.id < :b ORDER BY r.id DESC LIMIT 21",
             $params + ['b' => $before],
@@ -63,10 +63,14 @@ final class ReviewController
         $isNew = self::save($place, $userId, $data['rating'], $text, $status);
         if ($isNew && $place['id'] !== null) {
             Events::dispatch('place.reviewed', ['user_id' => $userId, 'place_id' => (int) $place['id']]);
+            // Espace commerçant : notification « avis »
+            if (($business = \App\Modules\Pro\Pro::businessOfPlace((int) $place['id'])) !== null) {
+                \App\Modules\Pro\Pro::notify((int) $business['id'], 'avis', 'Nouvel avis ' . str_repeat('★', (int) $data['rating']), (string) ($text ?? ''), '/avis', 'new_review');
+            }
         }
         [$where, $params] = self::scope($place);
         $row = Database::fetch(
-            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, u.uid AS user_uid, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
+            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
              FROM place_reviews r JOIN users u ON u.id = r.user_id WHERE {$where} AND r.user_id = :u",
             $params + ['u' => $userId],
         );
@@ -133,6 +137,8 @@ final class ReviewController
                 'avatar_kind' => $r['avatar_kind'], 'avatar_value' => $r['avatar_value'], 'status' => $r['user_status'],
             ]),
             'created_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($r['created_at'] . ' UTC')),
+            // Réponse publique du commerçant (espace pro)
+            'reply'      => ($r['reply_text'] ?? null) !== null ? ['text' => $r['reply_text'], 'created_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($r['reply_at'] . ' UTC'))] : null,
         ];
     }
 
@@ -155,13 +161,13 @@ final class ReviewController
         });
     }
 
-    /** La note compte tout de suite, même si le texte attend la modération. */
+    /** La note compte tout de suite, même si le texte attend la modération ; un avis signalé par le commerçant en sort jusqu'à la décision. */
     public static function recompute(int $placeId): void
     {
         Database::execute(
             "UPDATE places p SET
-                rating_count = (SELECT COUNT(*) FROM place_reviews r WHERE r.place_id = p.id AND r.status IN ('visible', 'pending')),
-                rating_avg   = (SELECT ROUND(AVG(rating), 1) FROM place_reviews r WHERE r.place_id = p.id AND r.status IN ('visible', 'pending'))
+                rating_count = (SELECT COUNT(*) FROM place_reviews r WHERE r.place_id = p.id AND r.status IN ('visible', 'pending') AND r.reported_at IS NULL),
+                rating_avg   = (SELECT ROUND(AVG(rating), 1) FROM place_reviews r WHERE r.place_id = p.id AND r.status IN ('visible', 'pending') AND r.reported_at IS NULL)
              WHERE p.id = :p",
             ['p' => $placeId],
         );
@@ -174,6 +180,10 @@ final class ReviewController
     private function place(string $raw): array
     {
         $key = \App\Modules\Favorites\SpecFavoriteController::key($raw);
+        // Identifiant de l'app (« le comptoir des puys@45.7765,3.0821 », place.id de MapSpot) : avis rattaché à la fiche
+        if (mb_strlen($key) <= 120 && ($p = Database::fetch("SELECT id, rating_avg, rating_count FROM places WHERE app_id = :a AND status = 'published' AND deleted_at IS NULL", ['a' => $key]))) {
+            return ['id' => (int) $p['id'], 'key' => $key] + $p;
+        }
         $uid = preg_match('/^[0-9a-f-]{36}$/i', $key) ? strtolower($key) : null;
         if ($uid === null && ($target = SpecFavoriteController::resolve($key)) !== null && $target[0] === 'place') {
             $uid = $target[1];

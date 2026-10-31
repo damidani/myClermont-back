@@ -154,6 +154,7 @@ final class JobController
             }
         });
 
+        \App\Modules\Pro\Pro::notifyOwner('job_offers', (int) $offer['id'], 'candidature', 'Nouvelle candidature : ' . $data['name'], (string) ($data['message'] ?? ''), '/emplois?onglet=candidatures', 'new_application');
         Events::dispatch('jobs.application_submitted', ['user_id' => $userId, 'offer_uid' => $offer['uid'], 'application_uid' => $uid]);
 
         return Response::success([

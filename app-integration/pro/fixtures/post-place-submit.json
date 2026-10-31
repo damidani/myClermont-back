@@ -1,0 +1,63 @@
+{
+  "id": "le comptoir des puys@45.7765,3.0821",
+  "name": "Le Comptoir des Puys",
+  "category": "restaurant",
+  "subtitle": "",
+  "tagline": "Le goût du terroir",
+  "description": "Bistrot auvergnat au cœur de Clermont : truffade, pounti et vins des Côtes d'Auvergne, en terrasse dès les beaux jours.",
+  "address": "12 rue des Gras",
+  "postalCode": "63000",
+  "city": "Clermont-Ferrand",
+  "latitude": 45.7765,
+  "longitude": 3.0821,
+  "phone": "0473000000",
+  "email": "",
+  "website": "https://comptoir.test",
+  "instagram": "",
+  "facebook": "",
+  "bookingUrl": "",
+  "menuUrl": "",
+  "priceLevel": 2,
+  "attributes": [
+    "terrasse",
+    "cb"
+  ],
+  "hours": {
+    "lun": [],
+    "mar": [
+      {
+        "open": "12:00",
+        "close": "14:00"
+      },
+      {
+        "open": "19:00",
+        "close": "23:00"
+      }
+    ],
+    "mer": [],
+    "jeu": [],
+    "ven": [],
+    "sam": [],
+    "dim": []
+  },
+  "exceptional": [],
+  "photos": [
+    {
+      "id": "p1",
+      "src": "https://api.myclermont.app/media/x.jpg",
+      "caption": "Salle"
+    }
+  ],
+  "coverId": "p1",
+  "highlights": [
+    {
+      "id": "h1",
+      "icon": "fork",
+      "title": "Truffade maison",
+      "text": "Le vendredi"
+    }
+  ],
+  "tip": "",
+  "status": "en_revue",
+  "updatedAt": "2026-10-31T18:59:21Z"
+}

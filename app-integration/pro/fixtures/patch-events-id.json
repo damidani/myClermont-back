@@ -1,0 +1,22 @@
+{
+  "id": "soiree-bourree-2026-12-12",
+  "title": "Grande soirée bourrée",
+  "kind": "concert",
+  "venue": "Comptoir des Puys",
+  "address": "12 rue des Gras, 63000 Clermont-Ferrand",
+  "latitude": 45.7765,
+  "longitude": 3.0821,
+  "start": "2026-12-12T20:00:00+01:00",
+  "end": "2026-12-12T23:30:00+01:00",
+  "schedule": null,
+  "price": "Gratuit",
+  "ageLimit": null,
+  "url": null,
+  "allDay": false,
+  "summary": "Musique trad et truffade",
+  "imageUrl": null,
+  "status": "en_revue",
+  "flash": false,
+  "interested": 0,
+  "createdAt": "2026-10-31T18:59:21Z"
+}

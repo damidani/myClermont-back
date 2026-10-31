@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "id": "2eed486f-d55d-11f1-bbe9-5a85ab32aa77",
+      "subject": "Réservation",
+      "source": "fiche",
+      "sourceId": null,
+      "contactName": "Léa",
+      "contactEmail": "u@test.fr",
+      "contactPhone": "",
+      "unread": true,
+      "archived": false,
+      "messages": [
+        {
+          "id": "2ef8074d-d55d-11f1-bbe9-5a85ab32aa77",
+          "from": "client",
+          "text": "Avez-vous une table samedi ?",
+          "createdAt": "2026-10-31T18:59:22Z"
+        }
+      ],
+      "updatedAt": "2026-10-31T18:59:22Z"
+    }
+  ],
+  "nextCursor": null
+}

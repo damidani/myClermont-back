@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "not_found",
+    "message": "Code inconnu pour ton établissement.",
+    "details": null
+  }
+}

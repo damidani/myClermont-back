@@ -1,0 +1,27 @@
+{
+  "code": "MC-ABCD-EFG",
+  "status": "utilise",
+  "holder": "Léa",
+  "deal": {
+    "id": "bd21a87e-11b6-40fe-acf2-00ca704f20b1",
+    "title": "Truffade -20 %",
+    "category": "Gastronomie",
+    "area": "Jaude",
+    "original": "18 €",
+    "reduced": "14,40 €",
+    "discount": "-20 %",
+    "exclusive": false,
+    "image": null,
+    "description": "Truffade maison",
+    "conditions": "Sur place, midi",
+    "startsAt": null,
+    "expiresAt": null,
+    "quantity": 50,
+    "perPerson": 1,
+    "status": "actif",
+    "createdAt": "2026-10-31T18:59:21Z"
+  },
+  "issuedAt": "2026-10-31T18:59:21Z",
+  "expiresAt": null,
+  "usedAt": "2026-10-31T18:59:21Z"
+}

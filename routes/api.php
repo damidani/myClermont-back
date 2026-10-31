@@ -52,6 +52,9 @@ return static function (Router $router, array $modules): void {
             $r->patch('/agents/messages/{id}', [App\Modules\Agents\AgentsModule::class, 'update']);
         });
 
+        // --- Espace commerçant MyClermont Pro (site web : session, sans signature d'appareil) ---
+        App\Modules\Pro\ProModule::proRoutes($r);
+
         // --- Envoi direct d'un fichier sur l'URL signée (jeton dans l'URL, valable 10 min) ---
         $r->put('/uploads/{id}/blob', [App\Content\Uploads\UploadController::class, 'receive'], ['throttle:upload,ip']);
 

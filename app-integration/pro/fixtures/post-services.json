@@ -1,0 +1,17 @@
+{
+  "id": "39a91aae-13df-4a44-a4d2-d2f4f05f5b99",
+  "name": "Traiteur",
+  "category": "Événementiel",
+  "district": "",
+  "icon": "wrench",
+  "description": "Buffets auvergnats",
+  "specialties": [
+    "Mariages"
+  ],
+  "hours": "",
+  "price": "",
+  "contactMode": "app",
+  "contactUrl": "",
+  "active": true,
+  "createdAt": "2026-10-31T18:59:22Z"
+}

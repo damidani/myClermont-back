@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "conflict",
+    "message": "Un compte commerçant existe déjà avec cet e-mail.",
+    "details": {
+      "reason": "email_taken"
+    }
+  }
+}
