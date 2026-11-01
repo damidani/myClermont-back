@@ -41,7 +41,7 @@ final class NotificationsModule implements Module
         if (empty($e['post_author_id']) || (int) $e['post_author_id'] === (int) $e['user_id']) {
             return;
         }
-        $name = Database::fetch('SELECT COALESCE(display_name, username) AS n FROM users WHERE id = :u', ['u' => $e['user_id']])['n'] ?? 'Quelqu\'un';
+        $name = Database::fetch('SELECT CONCAT(\'@\', COALESCE(handle, first_name, display_name)) AS n FROM users WHERE id = :u', ['u' => $e['user_id']])['n'] ?? 'Quelqu\'un';
         Push::toUser((int) $e['post_author_id'], 'community.replies', 'Nouvelle réponse', "{$name} a commenté ta publication.", [
             'deeplink' => 'myclermont://community/post/' . $e['post_uid'], 'thread_id' => 'community:' . $e['post_uid'], 'delay' => 900,
         ]);

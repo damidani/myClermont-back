@@ -9,14 +9,15 @@
             "district": "Clermont-Ferrand",
             "description": "Bureau en bois massif, quelques traces d'usage.",
             "condition": "Bon état",
-            "seller": "Camille",
+            "seller": "camille.r",
             "images": [],
             "created": "2026-10-28T09:31:09Z",
             "isDemo": false,
             "categorySlug": "maison-deco",
             "sellerInfo": {
                 "id": "22222222-aaaa-4bbb-8ccc-ddddeeeeffff",
-                "displayName": "Habitant_11",
+                "displayName": "camille.r",
+                "handle": "camille.r",
                 "avatar": {
                     "kind": "symbol",
                     "value": "person.crop.circle.fill"

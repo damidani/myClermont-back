@@ -140,6 +140,9 @@ switch ($command) {
             $count++;
         }
         \App\Admin\Schema::forget(); // le back-office relit le schéma
+        if (($n = \App\Modules\Account\Handles::backfill()) > 0) {
+            $out("Pseudos attribués : {$n}");
+        }
         $out($count ? "{$count} migration(s) exécutée(s)." : 'Base déjà à jour.');
         break;
 

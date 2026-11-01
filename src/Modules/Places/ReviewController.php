@@ -37,7 +37,7 @@ final class ReviewController
         $before = is_string($cursor) && ctype_digit($cursor) ? (int) $cursor : PHP_INT_MAX;
         [$where, $params] = self::scope($place);
         $rows = Database::fetchAll(
-            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
+            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.handle, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
              FROM place_reviews r JOIN users u ON u.id = r.user_id
              WHERE {$where} AND r.status IN ('visible', 'pending') AND r.id < :b ORDER BY r.id DESC LIMIT 21",
             $params + ['b' => $before],
@@ -65,12 +65,14 @@ final class ReviewController
             Events::dispatch('place.reviewed', ['user_id' => $userId, 'place_id' => (int) $place['id']]);
             // Espace commerçant : notification « avis »
             if (($business = \App\Modules\Pro\Pro::businessOfPlace((int) $place['id'])) !== null) {
-                \App\Modules\Pro\Pro::notify((int) $business['id'], 'avis', 'Nouvel avis ' . str_repeat('★', (int) $data['rating']), (string) ($text ?? ''), '/avis', 'new_review');
+                // Pseudo de l'auteur, jamais son nom ni son e-mail (baaff3eb §5)
+                $who = \App\Modules\Account\Handles::display(Database::fetch('SELECT handle FROM users WHERE id = :u', ['u' => $userId])['handle'] ?? null);
+                \App\Modules\Pro\Pro::notify((int) $business['id'], 'avis', 'Nouvel avis ' . str_repeat('★', (int) $data['rating']), $who . ($text !== null ? ' : « ' . $text . ' »' : ''), '/avis', 'new_review');
             }
         }
         [$where, $params] = self::scope($place);
         $row = Database::fetch(
-            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
+            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.handle, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
              FROM place_reviews r JOIN users u ON u.id = r.user_id WHERE {$where} AND r.user_id = :u",
             $params + ['u' => $userId],
         );
@@ -133,7 +135,7 @@ final class ReviewController
             // Texte en attente de modération : visible seulement par son auteur
             'text'       => $r['status'] === 'visible' || $mine ? $r['comment'] : null,
             'author'     => UserRepository::presentAuthor([
-                'uid' => $r['user_uid'], 'display_name' => $r['first_name'] ?? $r['display_name'], 'username' => $r['username'],
+                'uid' => $r['user_uid'], 'handle' => $r['handle'] ?? null, 'display_name' => $r['first_name'] ?? $r['display_name'], 'username' => $r['username'],
                 'avatar_kind' => $r['avatar_kind'], 'avatar_value' => $r['avatar_value'], 'status' => $r['user_status'],
             ]),
             'created_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($r['created_at'] . ' UTC')),

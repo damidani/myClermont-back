@@ -182,6 +182,9 @@ final class CommunityController
         if ($pollDescription !== null) {
             Database::execute('UPDATE community_posts SET media_caption = :c WHERE id = :id', ['c' => $pollDescription, 'id' => $postId]);
         }
+        if ($status === 'visible') {
+            self::notifyMentions(trim(($body ?? '') . ' ' . ($pollDescription ?? '')), (int) $userId, (int) $postId, $post['uid'], null, null);
+        }
         $created = $this->posts->find($post['uid'], true);
 
         return Response::success(PostPresenter::post($created, $this->posts->related([$created], $userId), $userId), 201);
@@ -278,6 +281,7 @@ final class CommunityController
         $comment = $this->posts->addComment((int) $post['id'], $userId, $data['body'], $status);
         if ($status === 'visible') {
             Events::dispatch('community.comment_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'post_author_id' => (int) $post['user_id']]);
+            self::notifyMentions($data['body'], (int) $userId, (int) $post['id'], $post['uid'], (int) $comment['id'], $comment['uid']);
         }
 
         return Response::success(PostPresenter::comment($comment, $userId), 201);
@@ -313,6 +317,27 @@ final class CommunityController
         $count = Database::fetch('SELECT likes_count FROM community_posts WHERE uid = :u', ['u' => $uid]);
 
         return Response::success(['id' => $uid, 'is_liked' => $liked, 'likes_count' => (int) ($count['likes_count'] ?? 0)]);
+    }
+
+    /** « @auteur t'a mentionné·e : “début du message…” » à chaque personne mentionnée (10 au plus, une fois par message) */
+    public static function notifyMentions(string $text, int $authorId, int $postId, string $postUid, ?int $commentId, ?string $commentUid): void
+    {
+        $mentions = \App\Modules\Account\Handles::mentions($text, $authorId);
+        if ($mentions === []) {
+            return;
+        }
+        $author = \App\Modules\Account\Handles::display(Database::fetch('SELECT handle FROM users WHERE id = :u', ['u' => $authorId])['handle'] ?? null);
+        $excerpt = mb_strlen($text) > 80 ? rtrim(mb_substr($text, 0, 80)) . '…' : $text;
+        foreach ($mentions as $m) {
+            $new = Database::execute('INSERT IGNORE INTO community_mentions (post_id, comment_id, user_id, created_at) VALUES (:p, :c, :u, :d)',
+                ['p' => $postId, 'c' => $commentId, 'u' => $m['id'], 'd' => gmdate('Y-m-d H:i:s')]);
+            if ($new > 0) {
+                \App\Modules\Messaging\Push\Push::toUser($m['id'], 'community.replies', 'Nouvelle mention', "@{$author} t'a mentionné·e : “{$excerpt}”", [
+                    'deeplink' => 'myclermont://community/post/' . $postUid, 'thread_id' => 'community:' . $postUid,
+                    'data' => array_filter(['postId' => $postUid, 'commentId' => $commentUid]),
+                ]);
+            }
+        }
     }
 
     private function findOrFail(string $id): array

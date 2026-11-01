@@ -84,10 +84,10 @@ final class DealController
             default   => '1 = 1',
         };
         if (is_string($q['q'] ?? null) && trim($q['q']) !== '') {
-            $where[] = '(r.code LIKE :q OR u.first_name LIKE :q2)';
+            $where[] = '(r.code LIKE :q OR u.handle LIKE :q2)';
             $params['q'] = $params['q2'] = '%' . addcslashes(strtoupper(trim($q['q'])), '%_\\') . '%';
         }
-        $rows = Database::fetchAll('SELECT r.*, d.uid AS deal_uid, u.first_name, u.display_name FROM deal_redemptions r JOIN deals d ON d.id = r.deal_id LEFT JOIN users u ON u.id = r.user_id
+        $rows = Database::fetchAll('SELECT r.*, d.uid AS deal_uid, u.handle, u.first_name, u.display_name FROM deal_redemptions r JOIN deals d ON d.id = r.deal_id LEFT JOIN users u ON u.id = r.user_id
              WHERE ' . implode(' AND ', $where) . ' ORDER BY r.id DESC LIMIT ' . ($limit + 1) . " OFFSET {$offset}", $params);
 
         return Response::success(array_map([self::class, 'code'], array_slice($rows, 0, $limit)), 200,
@@ -129,7 +129,7 @@ final class DealController
 
     private static function code(array $r): array
     {
-        return ['code' => $r['code'], 'deal_id' => $r['deal_uid'], 'holder' => Pro::shortName($r['first_name'] ?? null, null, $r['display_name'] ?? null),
+        return ['code' => $r['code'], 'deal_id' => $r['deal_uid'], 'holder' => \App\Modules\Account\Handles::display($r['handle'] ?? null, Pro::shortName($r['first_name'] ?? null, null, $r['display_name'] ?? null)),
                 'issued_at' => Pro::iso($r['redeemed_at']), 'expires_at' => Pro::iso($r['expires_at']), 'used_at' => Pro::iso($r['validated_at'])];
     }
 
@@ -155,7 +155,7 @@ final class DealController
         $code = preg_match('/MC-[A-Z0-9]{4}-[A-Z0-9]{3}/', $raw, $m) ? $m[0] : (preg_match('#(?:^|/)([A-Z0-9]{8})$#', $raw, $m) ? $m[1] : null);
 
         return ($code === null ? null : Database::fetch(
-            'SELECT r.*, u.first_name, u.display_name FROM deal_redemptions r JOIN deals d ON d.id = r.deal_id LEFT JOIN users u ON u.id = r.user_id WHERE r.code = :c AND d.business_id = :b',
+            'SELECT r.*, u.handle, u.first_name, u.display_name FROM deal_redemptions r JOIN deals d ON d.id = r.deal_id LEFT JOIN users u ON u.id = r.user_id WHERE r.code = :c AND d.business_id = :b',
             ['c' => $code, 'b' => Pro::business($request)['id']],
         )) ?? throw new HttpException(404, 'not_found', 'Code inconnu pour ton établissement.');
     }

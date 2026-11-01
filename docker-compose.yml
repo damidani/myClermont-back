@@ -22,6 +22,7 @@ services:
     volumes:
       - storage:/var/www/myclermont/storage        # .env (clés générées), logs, CV/documents privés
       - media:/var/www/myclermont/public/media     # photos / vidéos publiées
+      - ${COMMERCANT_DIR:-./commercant}:/var/www/commercant:ro   # site statique de commercant.myclermont.app (out/)
     depends_on:
       db:
         condition: service_healthy

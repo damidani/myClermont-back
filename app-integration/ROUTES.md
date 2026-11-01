@@ -128,6 +128,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | PUT | `/v1/me/favorites/{targetType}/{targetId}` | compte |  |
 | POST | `/v1/me/reviews/import` | compte |  |
 | GET | `/v1/me/subscription` | compte |  |
+| GET | `/v1/me/threads` | compte |  |
+| POST | `/v1/me/threads/{id}/messages` | compte | message |
 | POST | `/v1/media` | compte | upload |
 | GET | `/v1/meta` | signé |  |
 | GET | `/v1/mobility/destinations` | signé |  |
@@ -142,6 +144,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | GET | `/v1/places/pins/stream` | compte optionnel |  |
 | GET | `/v1/places/search` | compte optionnel |  |
 | GET | `/v1/places/{id}` | compte optionnel |  |
+| POST | `/v1/places/{id}/events` | signé |  |
+| POST | `/v1/places/{id}/messages` | compte | contact |
 | GET | `/v1/places/{id}/photos` | compte optionnel |  |
 | PUT | `/v1/places/{id}/review` | compte |  |
 | GET | `/v1/places/{id}/reviews` | signé |  |
@@ -155,11 +159,15 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | POST | `/v1/services/{id}/quote` | compte optionnel | contact |
 | POST | `/v1/services/{id}/requests` | compte optionnel | contact |
 | PUT | `/v1/services/{id}/review` | compte |  |
+| GET | `/v1/stories` | compte optionnel |  |
+| POST | `/v1/stories/{id}/cta` | signé |  |
+| POST | `/v1/stories/{id}/view` | signé |  |
 | POST | `/v1/subscriptions/apple/verify` | compte |  |
 | GET | `/v1/traffic/incidents` | signé |  |
 | POST | `/v1/uploads` | compte | upload |
 | PUT | `/v1/uploads/{id}/blob` | jeton `t` dans l’URL | upload |
 | POST | `/v1/uploads/{id}/confirm` | compte |  |
+| GET | `/v1/users/handle-availability` | compte | user_search (30 / min) |
 | GET | `/v1/users/me` | compte |  |
 | PATCH | `/v1/users/me` | compte |  |
 | GET | `/v1/users/me/applications` | compte |  |
@@ -171,8 +179,11 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | PUT | `/v1/users/me/password` | compte | login |
 | GET | `/v1/users/me/points` | compte |  |
 | GET | `/v1/users/me/premium` | compte |  |
+| GET | `/v1/users/search` | compte | user_search (30 / min) |
 | GET | `/v1/users/username-available` | signé |  |
 | DELETE | `/v1/users/{id}/block` | compte |  |
 | PUT | `/v1/users/{id}/block` | compte |  |
 | GET | `/v1/users/{username}` | signé |  |
 | POST | `/v1/webhooks/apple/app-store` | Apple (JWS) | public |
+
+Routes de l'espace commerçant (`/v1/pro/…`, session web) : voir [pro/PRO_API.md](pro/PRO_API.md).

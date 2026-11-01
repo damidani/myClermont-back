@@ -1,0 +1,14 @@
+{
+    "error": {
+        "code": "handle_taken",
+        "message": "Ce pseudo est déjà pris.",
+        "details": {
+            "suggestions": [
+                "sam.clauzon-2-2",
+                "sam.clauzon-263",
+                "sam.clauzon-2-3"
+            ],
+            "reason": "handle_taken"
+        }
+    }
+}

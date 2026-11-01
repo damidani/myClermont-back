@@ -32,12 +32,12 @@ final class ReviewController
             default      => '1 = 1',
         };
         if (is_string($q['q'] ?? null) && trim($q['q']) !== '') {
-            $where[] = '(r.comment LIKE :q OR u.first_name LIKE :q2)';
+            $where[] = '(r.comment LIKE :q OR u.handle LIKE :q2)';
             $params['q'] = $params['q2'] = '%' . addcslashes(trim($q['q']), '%_\\') . '%';
         }
         $order = match ($q['sort'] ?? 'recent') { 'best' => 'r.rating DESC, r.id DESC', 'worst' => 'r.rating ASC, r.id DESC', default => 'r.id DESC' };
         $rows = Database::fetchAll(
-            'SELECT r.*, u.first_name, NULL AS last_name, u.display_name FROM place_reviews r LEFT JOIN users u ON u.id = r.user_id
+            'SELECT r.*, u.handle, u.first_name, NULL AS last_name, u.display_name FROM place_reviews r LEFT JOIN users u ON u.id = r.user_id
              WHERE ' . implode(' AND ', $where) . " ORDER BY {$order} LIMIT " . ($limit + 1) . " OFFSET {$offset}", $params);
 
         return Response::success(array_map([self::class, 'present'], array_slice($rows, 0, $limit)), 200, [
@@ -99,7 +99,7 @@ final class ReviewController
     public static function present(array $r): array
     {
         return [
-            'id' => $r['uid'], 'author' => Pro::shortName($r['first_name'] ?? null, $r['last_name'] ?? null, $r['display_name'] ?? null), 'rating' => (int) $r['rating'],
+            'id' => $r['uid'], 'author' => \App\Modules\Account\Handles::display($r['handle'] ?? null, Pro::shortName($r['first_name'] ?? null, $r['last_name'] ?? null, $r['display_name'] ?? null)), 'rating' => (int) $r['rating'],
             'text' => (string) $r['comment'], 'created_at' => Pro::iso($r['created_at']),
             'reply' => $r['reply_text'] !== null ? ['text' => $r['reply_text'], 'created_at' => Pro::iso($r['reply_at'])] : null,
             'reported' => $r['reported_at'] !== null ? ['reason' => $r['reported_reason'], 'created_at' => Pro::iso($r['reported_at'])] : null,
@@ -125,7 +125,7 @@ final class ReviewController
     private function find(Request $request): array
     {
         return Database::fetch(
-            "SELECT r.*, u.first_name, NULL AS last_name, u.display_name FROM place_reviews r LEFT JOIN users u ON u.id = r.user_id
+            "SELECT r.*, u.handle, u.first_name, NULL AS last_name, u.display_name FROM place_reviews r LEFT JOIN users u ON u.id = r.user_id
              WHERE r.uid = :u AND r.place_id = :p AND r.status IN ('visible', 'pending')",
             ['u' => (string) $request->param('id'), 'p' => Pro::business($request)['place_id']],
         ) ?? throw new HttpException(404, 'not_found', 'Avis introuvable.');

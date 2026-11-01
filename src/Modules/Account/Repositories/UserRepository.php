@@ -10,7 +10,7 @@ use App\Security\Crypto;
 
 final class UserRepository
 {
-    private const COLUMNS = 'u.id, u.uid, u.email, u.password_hash, u.username, u.display_name, u.bio, u.neighborhood_id, u.points,
+    private const COLUMNS = 'u.id, u.uid, u.email, u.password_hash, u.username, u.handle, u.handle_changed_at, u.display_name, u.bio, u.neighborhood_id, u.points,
                              u.avatar_kind, u.avatar_value, u.notifications_enabled, u.role, u.apple_sub, u.google_sub,
                              u.apple_refresh_encrypted, u.deleted_at, u.first_name, u.phone, u.gender, u.gender_detail, u.pronouns, u.pronouns_detail,
                              u.city, u.postal_code, u.city_served, u.notify_city_launch, u.marketing_opt_in, u.consent_version, u.consented_at,
@@ -49,10 +49,11 @@ final class UserRepository
     {
         $now = gmdate('Y-m-d H:i:s');
         $id = Database::insert(
-            'INSERT INTO users (uid, email, username, display_name, apple_sub, google_sub, referral_code, status, created_at, updated_at)
-             VALUES (:uid, :email, :username, :display, :apple, :google, :ref, \'active\', :created, :updated)',
+            'INSERT INTO users (uid, email, username, handle, display_name, apple_sub, google_sub, referral_code, status, created_at, updated_at)
+             VALUES (:uid, :email, :username, :handle, :display, :apple, :google, :ref, \'active\', :created, :updated)',
             [
                 'uid' => Crypto::uuid4(), 'email' => isset($identity['email']) ? mb_strtolower($identity['email']) : null,
+                'handle' => \App\Modules\Account\Handles::generate($identity['email'] ?? null, $identity['display_name'] ?? null),
                 'username' => 'u' . bin2hex(random_bytes(7)), // identifiant technique (ancien pseudo), jamais affiché
                 'display' => $this->availableDisplayName($identity['display_name'] ?? null),
                 'apple' => $identity['apple_sub'] ?? null, 'google' => $identity['google_sub'] ?? null,
@@ -121,9 +122,10 @@ final class UserRepository
     {
         $now = gmdate('Y-m-d H:i:s');
         $id = Database::insert(
-            'INSERT INTO users (uid, email, password_hash, username, neighborhood_id, referral_code, referred_by, status, created_at, updated_at)
-             VALUES (:uid, :email, :hash, :username, :hood, :ref, :by, \'active\', :created, :updated)',
+            'INSERT INTO users (uid, email, password_hash, username, handle, neighborhood_id, referral_code, referred_by, status, created_at, updated_at)
+             VALUES (:uid, :email, :hash, :username, :handle, :hood, :ref, :by, \'active\', :created, :updated)',
             [
+                'handle' => \App\Modules\Account\Handles::generate($email, null),
                 'uid' => Crypto::uuid4(), 'email' => mb_strtolower($email), 'hash' => self::hashPassword($password),
                 'username' => $username, 'hood' => $neighborhoodId, 'ref' => self::newReferralCode(), 'by' => $referredBy,
                 'created' => $now, 'updated' => $now,
@@ -220,7 +222,9 @@ final class UserRepository
 
         return [
             'id'           => $user['uid'],
-            'display_name' => $user['display_name'] ?? $user['username'],
+            // Pseudo public (demande 1a584b24) : jamais l'e-mail ni le nom
+            'display_name' => \App\Modules\Account\Handles::display($user['handle'] ?? null, $user['display_name'] ?? $user['username'] ?? null),
+            'handle'       => $user['handle'] ?? null,
             'avatar'       => ($user['avatar_kind'] ?? 'symbol') === 'photo'
                 ? ['kind' => 'photo', 'url' => $user['avatar_value']]
                 : ['kind' => 'symbol', 'value' => $user['avatar_value'] ?? 'person.crop.circle.fill'],

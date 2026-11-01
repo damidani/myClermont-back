@@ -25,7 +25,9 @@ final class Contract
 
     /** Codes déjà conformes à la spec, gardés tels quels. */
     private const SPEC_CODES = ['validation_failed', 'unauthenticated', 'forbidden', 'plus_required', 'not_found', 'conflict',
-                                'rate_limited', 'upstream_unavailable', 'not_configured', 'server_error'];
+                                'rate_limited', 'upstream_unavailable', 'not_configured', 'server_error',
+                                // Codes explicites demandés par l'app et le dashboard (pseudos 8417181e, stories b5b4c116), aussi dans details.reason
+                                'handle_taken', 'handle_invalid', 'handle_reserved', 'handle_change_too_soon', 'story_daily_limit'];
 
     public static function apply(Response $response): Response
     {
@@ -89,7 +91,7 @@ final class Contract
         } elseif (is_array($details)) {
             $details = self::camel($details);
         }
-        if ($internal !== $code) {
+        if ($internal !== $code || str_starts_with($code, 'handle_')) {
             $details = (is_array($details) ? $details : ($details === null ? [] : ['value' => $details])) + ['reason' => $internal];
         }
 

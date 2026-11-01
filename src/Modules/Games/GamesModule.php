@@ -112,7 +112,7 @@ final class GamesModule implements Module
             $params['d'] = (new \DateTimeImmutable($today))->modify('-6 days')->format('Y-m-d');
         }
         $rows = Database::fetchAll(
-            "SELECT t.user_id, t.score, t.played_at, u.first_name, u.display_name, u.username, u.status FROM (
+            "SELECT t.user_id, t.score, t.played_at, u.first_name, u.display_name, u.username, u.handle, u.status FROM (
                 SELECT g.user_id, g.score, g.played_at, ROW_NUMBER() OVER (PARTITION BY g.user_id ORDER BY g.score DESC, g.played_at) AS rn
                 FROM game_scores g WHERE {$where}
              ) t JOIN users u ON u.id = t.user_id
@@ -127,9 +127,12 @@ final class GamesModule implements Module
         return $board;
     }
 
-    /** Prénom + initiale du nom (« Camille R. »), jamais l'e-mail ; « Joueur MyClermont » à défaut */
+    /** Pseudo public (1a584b24), jamais l'e-mail ; à défaut prénom + initiale (« Camille R. »), puis « Joueur MyClermont » */
     public static function name(array $u): string
     {
+        if (!empty($u['handle'])) {
+            return (string) $u['handle'];
+        }
         $parts = preg_split('/\s+/u', trim((string) ($u['first_name'] ?: $u['display_name'] ?: '')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if ($parts === []) {
             return 'Joueur MyClermont';

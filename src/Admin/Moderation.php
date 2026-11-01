@@ -24,7 +24,7 @@ final class Moderation
     ];
 
     /** Files de l'espace commerçant => rôles autorisés en plus d'admin */
-    private const PRO = ['pro_place' => ['editor'], 'pro_review' => ['moderator'], 'pro_siret' => []];
+    private const PRO = ['pro_place' => ['editor'], 'pro_review' => ['moderator'], 'pro_story' => ['moderator'], 'pro_siret' => []];
 
     public static function allows(string $type, string $role): bool
     {
@@ -86,6 +86,12 @@ final class Moderation
             $out['pro_review'] = $q("SELECT r.uid AS id, r.comment AS text, r.rating, r.reported_reason, r.reported_details, r.reported_at AS created_at, pl.name AS place, b.trade_name AS author
                                      FROM place_reviews r JOIN places pl ON pl.id = r.place_id JOIN pro_businesses b ON b.place_id = pl.id
                                      WHERE r.reported_at IS NOT NULL AND r.status <> 'hidden' ORDER BY r.reported_at LIMIT 100");
+        }
+        if (self::allows('pro_story', $role)) {
+            // Contrôle a posteriori : stories en ligne ou programmées pas encore vues par la modération
+            $out['pro_story'] = $q("SELECT s.uid AS id, s.media_kind, s.media_url, s.caption AS text, s.starts_at, s.created_at, b.trade_name AS author
+                                    FROM pro_stories s JOIN pro_businesses b ON b.id = s.business_id
+                                    WHERE s.reviewed_at IS NULL AND s.removed_at IS NULL AND s.expires_at > UTC_TIMESTAMP() ORDER BY s.starts_at LIMIT 100");
         }
         if (self::allows('pro_siret', $role)) {
             $out['pro_siret'] = $q("SELECT uid AS id, trade_name AS title, legal_name, siret, naf_code, created_at, trade_name AS author FROM pro_businesses
@@ -168,6 +174,11 @@ final class Moderation
             $notify($b, 'Ta fiche n\'a pas été validée', $reason ?: 'Elle ne respecte pas les règles de publication : corrige-la puis renvoie-la.', '/fiche');
 
             return 'Fiche refusée : le commerçant est prévenu.';
+        }
+        if ($type === 'pro_story') {
+            \App\Modules\Pro\StoryController::moderate($id, $action === 'remove', $reason);
+
+            return $action === 'remove' ? 'Story retirée : le commerçant est prévenu.' : 'Story validée.';
         }
         if ($type === 'pro_review') {
             $r = Database::fetch('SELECT r.id, r.place_id, b.id AS b_id FROM place_reviews r JOIN pro_businesses b ON b.place_id = r.place_id WHERE r.uid = :u', ['u' => $id])

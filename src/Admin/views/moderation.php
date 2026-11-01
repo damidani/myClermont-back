@@ -8,6 +8,7 @@ $sections = [
     'report'  => ['🚩 Signalements', 'Envoyés depuis l\'app par les utilisateurs.'],
     'pro_place'  => ['🏪 Fiches de commerçants à valider', 'Nouvelle fiche, ou changement de nom, d\'adresse ou de catégorie d\'une fiche en ligne (l\'ancienne version reste visible en attendant).'],
     'pro_review' => ['⭐ Avis signalés par un commerçant', 'L\'avis reste visible mais sort de la moyenne jusqu\'à ta décision.'],
+    'pro_story'  => ['📸 Stories des commerçants', 'Déjà en ligne (ou programmées) pour 24 h : retire celles qui ne respectent pas les règles des photos de fiche.'],
     'pro_siret'  => ['🧾 SIRET à vérifier', 'L\'annuaire des entreprises n\'a pas confirmé ce SIRET à l\'inscription.'],
 ];
 // Refus avec motif, transmis au commerçant
@@ -50,6 +51,9 @@ $button = static fn (string $type, string $id, string $action, string $label, st
         <?php elseif ($type === 'pro_review'): ?>
           <strong><?= str_repeat('★', (int) $it['rating']) ?><?= str_repeat('☆', 5 - (int) $it['rating']) ?></strong> <span class="muted">sur <?= Html::e($it['place'] ?? '?') ?> · motif : <?= Html::e($it['reported_reason']) ?></span>
           <?php if ($it['reported_details']): ?><div class="muted">Précision du commerçant : <?= Html::e($it['reported_details']) ?></div><?php endif; ?>
+        <?php elseif ($type === 'pro_story'): ?>
+          <strong><?= Html::e($it['author']) ?></strong> <span class="muted">· diffusion le <?= Html::e(Html::localDate($it['starts_at'], 'd/m/Y H:i')) ?></span>
+          <div><?php if ($it['media_kind'] === 'video'): ?><video src="<?= Html::e($it['media_url']) ?>" controls muted style="max-height:240px"></video><?php else: ?><img src="<?= Html::e($it['media_url']) ?>" alt="" style="max-height:240px"><?php endif; ?></div>
         <?php elseif ($type === 'pro_siret'): ?>
           <strong><?= Html::e($it['title']) ?></strong> <span class="muted"><?= Html::e($it['legal_name']) ?></span>
           <div class="muted">SIRET <code><?= Html::e($it['siret']) ?></code> · NAF <?= Html::e((string) $it['naf_code']) ?> · <a href="https://annuaire-entreprises.data.gouv.fr/etablissement/<?= Html::e($it['siret']) ?>" target="_blank" rel="noopener">Vérifier dans l'annuaire</a></div>
@@ -60,7 +64,10 @@ $button = static fn (string $type, string $id, string $action, string $label, st
         <div class="muted small"><?= isset($it['author']) ? 'Par ' . Html::e($it['author']) . ' · ' : '' ?><?= Html::e(Html::localDate($it['created_at'], 'd/m/Y H:i')) ?></div>
       </div>
       <div class="mod-actions">
-        <?php if ($type === 'pro_review'): ?>
+        <?php if ($type === 'pro_story'): ?>
+          <?= $button($type, $it['id'], 'dismiss', 'OK', 'primary') ?>
+          <?= $refuse($type, $it['id'], 'remove', 'Retirer') ?>
+        <?php elseif ($type === 'pro_review'): ?>
           <?= $button($type, $it['id'], 'remove', 'Retirer l\'avis', 'danger') ?>
           <?= $refuse($type, $it['id'], 'dismiss', 'Maintenir') ?>
         <?php elseif ($type === 'pro_place' || $type === 'pro_siret'): ?>

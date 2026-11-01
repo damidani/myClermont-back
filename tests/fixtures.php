@@ -22,7 +22,7 @@ function app_fixtures(): array
 
     $user = [
         'uid' => 'b278efc6-943a-4c36-a827-d09e71f2f75a', 'email' => 'camille@exemple.fr', 'password_hash' => 'x', 'first_name' => 'Camille',
-        'display_name' => 'Camille', 'username' => 'u1', 'phone' => '+33612345678', 'gender' => 'nonBinary', 'gender_detail' => null,
+        'display_name' => 'Camille', 'username' => 'u1', 'handle' => 'camille.r', 'handle_changed_at' => null, 'phone' => '+33612345678', 'gender' => 'nonBinary', 'gender_detail' => null,
         'pronouns' => 'iel', 'pronouns_detail' => null, 'city' => 'Chamalières', 'postal_code' => '63400', 'city_served' => 1,
         'notify_city_launch' => 0, 'marketing_opt_in' => 0, 'consent_version' => '2026-11-01', 'consented_at' => '2026-11-15 09:12:00',
         'created_at' => '2026-11-15 09:12:00', 'bio' => null, 'avatar_kind' => 'symbol', 'avatar_value' => 'person.crop.circle.fill',
@@ -66,12 +66,12 @@ function app_fixtures(): array
     ]));
 
     $comment = ['uid' => '7c1e2b0a-4d55-4a8e-9f3b-2a6c1d9e8f10', 'user_id' => 4, 'body' => 'Carrément !', 'created_at' => '2026-11-16 18:41:00',
-                'author_uid' => 'a9c1d2e3-0000-4000-8000-000000000004', 'author_username' => 'u4', 'author_display_name' => 'Léo',
+                'author_uid' => 'a9c1d2e3-0000-4000-8000-000000000004', 'author_username' => 'u4', 'author_handle' => 'leo.m', 'author_display_name' => 'Léo',
                 'author_first_name' => 'Léo', 'author_status' => 'active'];
     $post = $c(App\Modules\Community\PostPresenter::post(
         ['id' => 7, 'uid' => 'd045a91b-fa20-44fd-a11c-c09199c2f7ff', 'user_id' => 3, 'type' => 'poll', 'body' => 'Vide-grenier en décembre ?',
          'media_caption' => null, 'likes_count' => 3, 'comments_count' => 1, 'created_at' => '2026-11-16 18:20:00', 'neighborhood_name' => 'Montferrand',
-         'author_uid' => 'b278efc6-943a-4c36-a827-d09e71f2f75a', 'author_username' => 'u1', 'author_display_name' => 'Camille',
+         'author_uid' => 'b278efc6-943a-4c36-a827-d09e71f2f75a', 'author_username' => 'u1', 'author_handle' => 'camille.r', 'author_display_name' => 'Camille',
          'author_first_name' => 'Camille', 'author_status' => 'active'],
         ['media' => [], 'liked' => [], 'votes' => [], 'comments' => [7 => [$comment]],
          'options' => [7 => [['id' => 20, 'label' => 'Oui', 'votes_count' => 12], ['id' => 21, 'label' => 'Non', 'votes_count' => 4]]]],
@@ -81,7 +81,7 @@ function app_fixtures(): array
     $classified = $c(App\Modules\Classifieds\ClassifiedPresenter::card(demo_classified([
         'uid' => 'e38ba020-a771-4a14-bcc0-a5955cfef1ff', 'title' => 'Bureau en bois', 'description' => 'Bureau en bois massif, quelques traces d\'usage.',
         'price_cents' => 9000, 'is_free' => 0, 'location_label' => 'Clermont-Ferrand', 'badge_label' => null, 'category_slug' => 'maison-deco',
-        'category_name' => 'Maison & déco', 'seller_first_name' => 'Camille', 'published_at' => '2026-10-28 09:31:09', 'created_at' => '2026-10-28 09:31:09',
+        'category_name' => 'Maison & déco', 'seller_first_name' => 'Camille', 'seller_handle' => 'camille.r', 'published_at' => '2026-10-28 09:31:09', 'created_at' => '2026-10-28 09:31:09',
     ])));
 
     $fuel = $c(App\Modules\Fuel\FuelService::map([

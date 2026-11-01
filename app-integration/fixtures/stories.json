@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "author": {
+        "placeId": "cafe jaude@45.7772,3.0817",
+        "name": "Café Jaude",
+        "avatar": "https://api.myclermont.app/media/cafe.jpg",
+        "isPartner": false,
+        "spot": {
+          "id": "cafe jaude@45.7772,3.0817",
+          "name": "Café Jaude",
+          "category": "cafe",
+          "latitude": 45.7772,
+          "longitude": 3.0817,
+          "subtitle": "Le café de la place",
+          "phone": "0473000001",
+          "website": null,
+          "isPartner": false,
+          "demoName": "Café Jaude",
+          "natureKind": null
+        }
+      },
+      "stories": [
+        {
+          "id": "aaf5e7a0-784b-4302-814f-df67d0ac0c09",
+          "media": {
+            "kind": "image",
+            "url": "https://api.myclermont.app/media/2026/11/fb6ada31-eed1-47c9-ae73-11fe34210580.jpg",
+            "durationSec": 6
+          },
+          "caption": "Nouveau : le chocolat chaud de l'hiver ☕",
+          "captionStyle": "bandeau",
+          "cta": {
+            "kind": "deal",
+            "label": "Voir le bon plan",
+            "targetId": "eec3b3d0-640e-4840-82f9-6e213201aa74",
+            "url": null
+          },
+          "startsAt": "2026-11-01T18:06:27Z",
+          "expiresAt": "2026-11-02T18:06:27Z"
+        },
+        {
+          "id": "8484e6b6-4afa-41bf-b3e4-555ff44790e4",
+          "media": {
+            "kind": "image",
+            "url": "https://api.myclermont.app/media/2026/11/fb6ada31-eed1-47c9-ae73-11fe34210580.jpg",
+            "durationSec": 6
+          },
+          "caption": "",
+          "captionStyle": "aucun",
+          "cta": {
+            "kind": "place",
+            "label": "Voir la fiche",
+            "targetId": "cafe jaude@45.7772,3.0817",
+            "url": null
+          },
+          "startsAt": "2026-11-01T18:06:27Z",
+          "expiresAt": "2026-11-02T18:06:27Z"
+        }
+      ]
+    }
+  ],
+  "nextCursor": null
+}

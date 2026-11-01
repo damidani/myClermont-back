@@ -16,7 +16,7 @@ final class UserProfile
     public const PRONOUNS = ['elle', 'il', 'iel', 'elleIl', 'custom', 'undisclosed'];
 
     /** Champs en lecture seule, ignorés s'ils sont renvoyés par l'app (PATCH /me avec le UserProfile entier) */
-    private const READ_ONLY = ['id', 'provider', 'email', 'email_is_private', 'consented_at', 'created_at'];
+    private const READ_ONLY = ['id', 'provider', 'email', 'email_is_private', 'consented_at', 'created_at', 'handle', 'handle_change_available_at'];
 
     /**
      * Valide un ProfileBody et le convertit en colonnes de `users`.
@@ -148,6 +148,8 @@ final class UserProfile
             'provider'           => self::provider($user),
             'first_name'         => (string) ($user['first_name'] ?? $user['display_name'] ?? ''),
             'email'              => $email,
+            'handle'             => $user['handle'] ?? null,
+            'handle_change_available_at' => \App\Modules\Account\Handles::changeAvailableAt($user),
             'email_is_private'   => str_ends_with(mb_strtolower($email), 'privaterelay.appleid.com'),
             'phone'              => $user['phone'] ?? null,
             'gender'             => $user['gender'] ?? null,

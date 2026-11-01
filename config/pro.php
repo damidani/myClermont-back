@@ -23,8 +23,8 @@ return [
     'team_email'    => Env::get('PRO_TEAM_EMAIL', 'contact@myclermont.app'),
 
     'plans' => [
-        'gratuit'    => ['active_deals' => 1, 'team' => 1, 'photos' => 6, 'stats_days' => 60, 'csv_export' => false, 'flash' => false],
-        'partenaire' => ['active_deals' => null, 'team' => 5, 'photos' => 30, 'stats_days' => 180, 'csv_export' => true, 'flash' => true],
+        'gratuit'    => ['active_deals' => 1, 'team' => 1, 'photos' => 6, 'stats_days' => 60, 'csv_export' => false, 'flash' => false, 'stories_per_day' => 2],
+        'partenaire' => ['active_deals' => null, 'team' => 5, 'photos' => 30, 'stats_days' => 180, 'csv_export' => true, 'flash' => true, 'stories_per_day' => 10],
     ],
 
     // Modules proposés à l'inscription selon l'activité (demande 2)

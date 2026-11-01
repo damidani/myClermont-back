@@ -1,0 +1,36 @@
+{
+    "id": "05a0369b-d35d-42d0-b29b-18f5c200c68c",
+    "provider": "email",
+    "firstName": "Sam",
+    "email": "sam.clauzon@exemple.fr",
+    "handle": "samc",
+    "handleChangeAvailableAt": "2026-12-01T18:03:53Z",
+    "emailIsPrivate": false,
+    "phone": null,
+    "gender": null,
+    "genderDetail": null,
+    "pronouns": null,
+    "pronounsDetail": null,
+    "city": "Clermont-Ferrand",
+    "postalCode": null,
+    "cityServed": false,
+    "notifyCityLaunch": false,
+    "marketingOptIn": false,
+    "consentVersion": "2026-10",
+    "consentedAt": "2026-11-01T18:03:52Z",
+    "createdAt": "2026-11-01T18:03:52Z",
+    "displayName": "Sam",
+    "bio": null,
+    "neighborhood": null,
+    "avatar": {
+        "kind": "symbol",
+        "value": "person.crop.circle.fill"
+    },
+    "notificationsEnabled": true,
+    "role": "user",
+    "plus": {
+        "active": false,
+        "expiresAt": null
+    },
+    "points": 0
+}

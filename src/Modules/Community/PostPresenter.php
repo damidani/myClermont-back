@@ -57,6 +57,7 @@ final class PostPresenter
             'media_items'    => $media,
             'is_mine'        => $viewerId !== null && (int) $p['user_id'] === $viewerId,
             'share_url'      => str_replace('{id}', $p['uid'], (string) Config::get('community.share_url')),
+            'mentions'       => self::mentions(trim(($p['body'] ?? '') . ' ' . ($p['media_caption'] ?? '')), (int) $p['user_id']),
         ];
     }
 
@@ -96,23 +97,33 @@ final class PostPresenter
             'text'        => (string) $c['body'],
             'created_at'  => $date,
             'is_mine'     => $viewerId !== null && (int) $c['user_id'] === $viewerId,
+            'mentions'    => self::mentions((string) $c['body'], (int) $c['user_id']),
         ];
     }
 
-    /** Prénom affiché ; « Compte supprimé » pour un compte effacé */
+    /** Pseudo affiché (1a584b24) ; « Compte supprimé » pour un compte effacé */
     private static function authorName(array $row): string
     {
         if (($row['author_status'] ?? 'active') === 'deleted') {
             return 'Compte supprimé';
         }
 
-        return (string) ($row['author_first_name'] ?? null ?: $row['author_display_name'] ?? null ?: $row['author_username'] ?? '');
+        return \App\Modules\Account\Handles::display($row['author_handle'] ?? null, ($row['author_first_name'] ?? null) ?: ($row['author_display_name'] ?? null));
+    }
+
+    /** @return list<array{handle: string, user_id: string}> mentions @pseudo résolues (le texte reste tel quel) */
+    private static function mentions(string $text, int $authorId): array
+    {
+        static $cache = [];
+        $key = $authorId . "\0" . $text;
+
+        return $cache[$key] ??= array_map(static fn ($u) => ['handle' => $u['handle'], 'user_id' => $u['uid']], \App\Modules\Account\Handles::mentions($text, $authorId));
     }
 
     private static function specAuthor(array $row): array
     {
         return \App\Modules\Account\Repositories\UserRepository::presentAuthor([
-            'uid' => $row['author_uid'], 'display_name' => $row['author_display_name'] ?? null, 'username' => $row['author_username'],
+            'uid' => $row['author_uid'], 'handle' => $row['author_handle'] ?? null, 'display_name' => $row['author_first_name'] ?? null, 'username' => $row['author_username'],
             'avatar_kind' => $row['author_avatar_kind'] ?? 'symbol', 'avatar_value' => $row['author_avatar_value'] ?? null, 'status' => $row['author_status'] ?? 'active',
         ]);
     }

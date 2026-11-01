@@ -2,20 +2,20 @@
     "items": [
         {
             "rank": 1,
-            "displayName": "Alex",
+            "displayName": "alex.dumas",
             "score": 968,
             "isMe": false
         },
         {
             "rank": 2,
-            "displayName": "Camille R.",
+            "displayName": "camille.r",
             "score": 812,
             "isMe": true
         }
     ],
     "me": {
         "rank": 2,
-        "displayName": "Camille R.",
+        "displayName": "camille.r",
         "score": 812,
         "isMe": true
     }

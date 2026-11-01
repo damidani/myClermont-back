@@ -1,0 +1,19 @@
+{
+    "items": [
+        {
+            "handle": "sam.clauzon",
+            "avatar": {
+                "kind": "symbol",
+                "value": "person.crop.circle.fill"
+            }
+        },
+        {
+            "handle": "sam.clauzon-2",
+            "avatar": {
+                "kind": "symbol",
+                "value": "person.crop.circle.fill"
+            }
+        }
+    ],
+    "nextCursor": null
+}

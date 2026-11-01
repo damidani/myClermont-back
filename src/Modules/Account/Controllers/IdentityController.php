@@ -267,6 +267,10 @@ final class IdentityController
                 $fields['display_name'] = $profile['first_name'];
             }
         }
+        // Pseudo (8417181e) : vérifié en dernier, une fois le reste du profil validé
+        if (array_key_exists('handle', $input)) {
+            \App\Modules\Account\Handles::change($user, $input['handle']);
+        }
         $this->users->saveProfile((int) $user['id'], $profile);
         $user = $this->users->update((int) $user['id'], $fields);
         Events::dispatch('account.profile_updated', ['user_id' => (int) $user['id'], 'user' => $user]);

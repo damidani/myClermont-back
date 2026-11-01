@@ -8,6 +8,7 @@ use App\Core\Module;
 use App\Core\Router;
 use App\Modules\Account\Controllers\AuthController;
 use App\Modules\Account\Controllers\ExportController;
+use App\Modules\Account\Controllers\HandleController;
 use App\Modules\Account\Controllers\IdentityController;
 use App\Modules\Account\Controllers\ProfileController;
 
@@ -37,6 +38,9 @@ final class AccountModule implements Module
         $r->post('/auth/password/forgot', [AuthController::class, 'forgot'], ['throttle:login,ip']);
 
         $r->get('/neighborhoods', [ProfileController::class, 'neighborhoods']);
+        // Pseudos (1a584b24, 8417181e) : avant /users/{username}
+        $r->get('/users/search', [HandleController::class, 'search'], ['auth', 'throttle:user_search,device']);
+        $r->get('/users/handle-availability', [HandleController::class, 'availability'], ['auth', 'throttle:user_search,device']);
         $r->get('/users/username-available', [ProfileController::class, 'usernameAvailable']);
         $r->get('/users/{username}', [ProfileController::class, 'show']);
 

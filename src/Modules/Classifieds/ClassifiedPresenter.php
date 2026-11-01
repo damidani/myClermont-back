@@ -42,14 +42,14 @@ final class ClassifiedPresenter
             'description' => (string) ($a['description'] ?? ''),
             'condition'   => self::CONDITION_LABELS[$a['item_condition']] ?? 'Bon état',
             'seller'      => ($a['seller_status'] ?? 'active') === 'deleted' ? 'Compte supprimé'
-                : (string) (($a['seller_first_name'] ?? null) ?: ($a['seller_display_name'] ?? null) ?: ($a['seller_username'] ?? '')),
+                : (($a['seller_handle'] ?? null) ?: (string) (($a['seller_first_name'] ?? null) ?: ($a['seller_display_name'] ?? null) ?: '')),
             'images'      => array_values(array_filter($images ?? [$cover], static fn ($u) => is_string($u) && str_starts_with($u, 'https://') && !str_contains($u, 'picsum.photos'))),
             'created'     => gmdate('Y-m-d\TH:i:s\Z', strtotime(($a['created_at'] ?? $a['published_at']) . ' UTC')),
             'is_demo'     => ($a['badge_label'] ?? null) === 'DÉMO',
             // En plus (spec v1, autres clients)
             'category_slug' => $a['category_slug'],
             'seller_info' => $a['seller_uid'] === null ? null : \App\Modules\Account\Repositories\UserRepository::presentAuthor([
-                'uid' => $a['seller_uid'], 'display_name' => $a['seller_display_name'] ?? null, 'username' => $a['seller_username'],
+                'uid' => $a['seller_uid'], 'handle' => $a['seller_handle'] ?? null, 'display_name' => $a['seller_first_name'] ?? null, 'username' => $a['seller_username'],
                 'avatar_kind' => $a['seller_avatar_kind'] ?? 'symbol', 'avatar_value' => $a['seller_avatar_value'] ?? null, 'status' => $a['seller_status'] ?? 'active',
             ]),
             'created_at'  => gmdate('Y-m-d\TH:i:s\Z', strtotime(($a['created_at'] ?? $a['published_at']) . ' UTC')),

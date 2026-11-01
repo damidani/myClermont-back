@@ -76,8 +76,8 @@ return [
             'deal_redemptions'         => ['label' => 'Bons plans utilisés', 'icon' => '🎟️', 'roles' => $editor, 'readonly' => true],
         ],
         'Utilisateurs' => [
-            'users'         => ['label' => 'Comptes', 'icon' => '👤', 'roles' => $moderator, 'list' => ['id', 'first_name', 'email', 'city', 'role', 'status', 'created_at'],
-                                'search' => ['first_name', 'display_name', 'email', 'uid'], 'password' => 'password_hash', 'readonly_columns' => ['referral_code', 'consented_at']],
+            'users'         => ['label' => 'Comptes', 'icon' => '👤', 'roles' => $moderator, 'list' => ['id', 'handle', 'first_name', 'email', 'city', 'role', 'status', 'created_at'],
+                                'search' => ['handle', 'first_name', 'display_name', 'email', 'uid'], 'password' => 'password_hash', 'readonly_columns' => ['referral_code', 'consented_at']],
             'subscriptions' => ['label' => 'Abonnements My Clermont+', 'icon' => '💎', 'roles' => $moderator, 'readonly' => true],
             'devices'       => ['label' => 'Appareils', 'icon' => '📱', 'roles' => $moderator, 'list' => ['id', 'platform', 'model', 'app_version', 'user_id', 'status', 'last_seen_at'],
                                 'search' => ['uid', 'model'], 'can_create' => false],
@@ -90,6 +90,8 @@ return [
                                  'search' => ['email', 'first_name', 'last_name'], 'can_create' => false, 'readonly_columns' => ['totp_secret']],
             'pro_threads'    => ['label' => 'Messages clients', 'icon' => '✉️', 'roles' => $moderator, 'readonly' => true, 'list' => ['id', 'business_id', 'subject', 'source', 'contact_name', 'updated_at']],
             'pro_contact_requests' => ['label' => 'Demandes de rappel', 'icon' => '📞', 'list' => ['id', 'business_id', 'slot', 'message', 'handled_at', 'created_at']],
+            'pro_stories'    => ['label' => 'Stories', 'icon' => '📸', 'roles' => $moderator, 'list' => ['id', 'business_id', 'media_kind', 'caption', 'starts_at', 'removed_at', 'views', 'cta_taps'],
+                                 'search' => ['caption'], 'can_create' => false, 'hint' => 'Stories de 24 h des établissements. Les nouvelles passent dans « À modérer ».'],
             'pro_invoices'   => ['label' => 'Factures', 'icon' => '🧾'],
         ],
         'Canal agents' => [

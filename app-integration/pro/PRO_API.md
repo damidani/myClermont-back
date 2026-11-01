@@ -48,6 +48,11 @@ Toutes les routes des demandes 1 à 8 sont en place, avec les formats du front. 
   - `housings`, `housing-contacts`
 - **Statistiques**
   - `stats?from=&to=` (30 derniers jours par défaut), `stats/export?format=csv`
+- **Stories** (b5b4c116)
+  - `GET /pro/stories` → `{ items: ProStory[] }` (les 200 dernières, la plus récente d'abord) ; `POST /pro/stories` → `201 ProStory`
+  - `PATCH /pro/stories/{id}` : `caption`, `captionStyle`, `cta`, `media`, `startsAt` (seulement avant diffusion), ou `{ "status": "retiree" }`
+  - `DELETE /pro/stories/{id}` → `204`. Une story pas encore diffusée est effacée ; une story déjà diffusée est seulement retirée et reste comptée dans le quota du jour.
+  - Fixtures : `post-stories.json`, `get-stories.json`, `error-409-story_daily_limit.json`
 
 ## Côté app (requêtes signées)
 
@@ -59,6 +64,11 @@ Toutes les routes des demandes 1 à 8 sont en place, avec les formats du front. 
   - Le commerçant qui répond déclenche un push : thème `messages`, lien `myclermont://pro-threads/<id>`.
 - `POST /places/{placeId}/events { type: view|directions|call|website }` (sans compte) → `204`. Un seul comptage par appareil, lieu, type et jour.
 - `GET /places/{id}/reviews` : chaque avis porte `reply: { text, createdAt } | null`.
+- `GET /stories` (signé, compte facultatif) → `{ items: [{ author: { placeId, name, avatar, isPartner, spot: MapSpot }, stories: [{ id, media, caption, captionStyle, cta, startsAt, expiresAt }] }], nextCursor: null }`.
+  - Seules les stories en ligne sont renvoyées, de la plus ancienne à la plus récente dans chaque groupe.
+  - Groupes : partenaires d'abord, puis la story la plus récente d'abord. `avatar` = photo de couverture de la fiche (https) ou `null`.
+  - Fixture : `fixtures/stories.json`.
+- `POST /stories/{id}/view` et `POST /stories/{id}/cta`, corps vide → `204`. Comptés une fois par appareil, même si l'app renvoie.
 
 ## Points à connaître
 
@@ -86,6 +96,15 @@ Toutes les routes des demandes 1 à 8 sont en place, avec les formats du front. 
 - **Pas encore disponible** :
   - double authentification : `POST` et `DELETE /pro/auth/2fa` répondent `501 not_configured` ;
   - factures : la liste est vide tant que le paiement n'est pas branché.
+- **Stories** :
+  - média : envoyer d'abord le fichier avec `POST /pro/uploads { purpose: "story" }`. Images JPEG, PNG, WebP ou HEIC (10 Mo) ; vidéos MP4 ou MOV (30 Mo). `media.url` doit être l'URL rendue par `confirm`, sinon `400` ;
+  - durée : 6 s pour une image ; pour une vidéo, `media.durationSec` envoyé par le dashboard, 15 s au plus. Le serveur ne recadre ni ne transcode : envoyer du 9:16 ;
+  - `startsAt` absent ou passé = tout de suite ; 7 jours d'avance au plus ; `expiresAt` = `startsAt` + 24 h ;
+  - quota par jour calendaire de Paris (stories diffusées, programmées ou retirées ce jour-là) : 2 en Gratuit, 10 en Partenaire. Au-delà : `409`, `error.code = "story_daily_limit"`, `details: { limit, plan }` ;
+  - `cta.targetId` : uid du bon plan (`kind: "deal"`, un de ses bons plans) ou slug de l'événement (`kind: "event"`). Pour `kind: "place"`, le serveur met l'id de la fiche dans l'app. `url` en https seulement ;
+  - modération a posteriori : chaque nouvelle story apparaît dans « À modérer ». Retirée par l'équipe, elle passe en `retiree` et le commerçant reçoit une notification avec le motif ;
+  - `stats.views` et `stats.ctaTaps` : une fois par appareil.
+- **Pseudos** (baaff3eb §5) : `author` de `GET /pro/reviews`, `holder` de `GET /pro/deal-codes` et le corps de la notification « nouvel avis » (« camille.r : « … » ») portent le pseudo du client, jamais son nom ni son e-mail. La recherche `q` des avis et des codes porte aussi sur le pseudo. Messages, candidatures, devis et visites gardent ce que le client a saisi.
 - **E-mails** (mot de passe oublié, invitations, réponses aux clients, alertes) : ils partent dès que le SMTP est configuré. Sans SMTP, l'appel réussit quand même.
 - **Modération** : dans le back-office (`/admin` → « À modérer »), avec un motif de refus envoyé au commerçant :
   - fiches à valider ;

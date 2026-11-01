@@ -1,0 +1,72 @@
+{
+  "items": [
+    {
+      "id": "595fc91b-3fa0-4aef-a196-20224386d87c",
+      "media": {
+        "kind": "image",
+        "url": "https://api.myclermont.app/media/2026/11/fb6ada31-eed1-47c9-ae73-11fe34210580.jpg",
+        "durationSec": 6
+      },
+      "caption": "Après-demain, brunch !",
+      "captionStyle": "plein",
+      "cta": null,
+      "status": "programmee",
+      "startsAt": "2026-11-03T10:00:00Z",
+      "expiresAt": "2026-11-04T10:00:00Z",
+      "createdAt": "2026-11-01T18:06:27Z",
+      "stats": {
+        "views": 0,
+        "ctaTaps": 0
+      }
+    },
+    {
+      "id": "8484e6b6-4afa-41bf-b3e4-555ff44790e4",
+      "media": {
+        "kind": "image",
+        "url": "https://api.myclermont.app/media/2026/11/fb6ada31-eed1-47c9-ae73-11fe34210580.jpg",
+        "durationSec": 6
+      },
+      "caption": "",
+      "captionStyle": "aucun",
+      "cta": {
+        "kind": "place",
+        "label": "Voir la fiche",
+        "targetId": "cafe jaude@45.7772,3.0817",
+        "url": null
+      },
+      "status": "en_ligne",
+      "startsAt": "2026-11-01T18:06:27Z",
+      "expiresAt": "2026-11-02T18:06:27Z",
+      "createdAt": "2026-11-01T18:06:27Z",
+      "stats": {
+        "views": 0,
+        "ctaTaps": 0
+      }
+    },
+    {
+      "id": "aaf5e7a0-784b-4302-814f-df67d0ac0c09",
+      "media": {
+        "kind": "image",
+        "url": "https://api.myclermont.app/media/2026/11/fb6ada31-eed1-47c9-ae73-11fe34210580.jpg",
+        "durationSec": 6
+      },
+      "caption": "Nouveau : le chocolat chaud de l'hiver ☕",
+      "captionStyle": "bandeau",
+      "cta": {
+        "kind": "deal",
+        "label": "Voir le bon plan",
+        "targetId": "eec3b3d0-640e-4840-82f9-6e213201aa74",
+        "url": null
+      },
+      "status": "en_ligne",
+      "startsAt": "2026-11-01T18:06:27Z",
+      "expiresAt": "2026-11-02T18:06:27Z",
+      "createdAt": "2026-11-01T18:06:27Z",
+      "stats": {
+        "views": 1,
+        "ctaTaps": 1
+      }
+    }
+  ],
+  "nextCursor": null
+}

@@ -17,7 +17,7 @@ use App\Security\Crypto;
 /**
  * Photos envoyées depuis l'espace pro : même flux que l'app (spec v1 › Envoi de fichiers), avec la session web.
  *
- *   POST /pro/uploads { purpose: place|deal|event|housing, mime, sizeBytes } → { uploadId, uploadUrl, expiresAt }
+ *   POST /pro/uploads { purpose: place|deal|event|housing|story, mime, sizeBytes } → { uploadId, uploadUrl, expiresAt }
  *   PUT  uploadUrl (corps = le fichier)                                     → 204   (route commune /uploads/{id}/blob)
  *   POST /pro/uploads/{id}/confirm                                          → { uploadId, kind, url, width, height }
  *
@@ -25,7 +25,10 @@ use App\Security\Crypto;
  */
 final class UploadController
 {
-    private const PURPOSES = ['place', 'deal', 'event', 'housing'];
+    private const PURPOSES = ['place', 'deal', 'event', 'housing', 'story'];
+    /** Story (b5b4c116) : vidéo MP4 / MOV de 30 Mo et 15 s au plus */
+    private const VIDEO_MIMES = ['video/mp4', 'video/quicktime'];
+    private const MAX_VIDEO = 30 * 1024 * 1024;
     private const MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
     private const MAX = 10 * 1024 * 1024;
 
@@ -36,11 +39,12 @@ final class UploadController
         if (!in_array($j['purpose'] ?? null, self::PURPOSES, true)) {
             throw new ValidationException(['purpose' => 'Usage : ' . implode(', ', self::PURPOSES) . '.']);
         }
-        if (!in_array($j['mime'] ?? null, self::MIMES, true)) {
-            throw new ValidationException(['mime' => 'Formats acceptés : JPEG, PNG, WebP, HEIC.']);
+        $video = $j['purpose'] === 'story' && in_array($j['mime'] ?? null, self::VIDEO_MIMES, true);
+        if (!$video && !in_array($j['mime'] ?? null, self::MIMES, true)) {
+            throw new ValidationException(['mime' => $j['purpose'] === 'story' ? 'Formats acceptés : JPEG, PNG, WebP, HEIC, MP4, MOV.' : 'Formats acceptés : JPEG, PNG, WebP, HEIC.']);
         }
-        if (!is_int($j['size_bytes'] ?? null) || $j['size_bytes'] < 1 || $j['size_bytes'] > self::MAX) {
-            throw new ValidationException(['size_bytes' => 'Photo trop lourde (10 Mo maximum).']);
+        if (!is_int($j['size_bytes'] ?? null) || $j['size_bytes'] < 1 || $j['size_bytes'] > ($video ? self::MAX_VIDEO : self::MAX)) {
+            throw new ValidationException(['size_bytes' => $video ? 'Vidéo trop lourde (30 Mo maximum).' : 'Photo trop lourde (10 Mo maximum).']);
         }
         $uid = Crypto::uuid4();
         $token = Crypto::randomToken(32);
@@ -66,9 +70,13 @@ final class UploadController
             $path = \App\Content\Uploads\UploadController::pendingRoot() . '/' . $upload['storage_key'];
             try {
                 $bytes = (string) @file_get_contents($path);
-                $bytes = ImageProcessor::prepare($bytes, (string) MediaStore::detect($bytes) ?: '');
+                $detected = (string) MediaStore::detect($bytes);
+                $isVideo = $upload['purpose'] === 'story' && in_array($detected, self::VIDEO_MIMES, true);
+                if (!$isVideo) {
+                    $bytes = ImageProcessor::prepare($bytes, $detected);
+                }
                 $media = (new MediaStore())->store($bytes, ['id' => null], null, $upload['uid']);
-                if ($media['kind'] !== 'image') {
+                if ($media['kind'] !== 'image' && !($isVideo && $media['kind'] === 'video')) {
                     throw new HttpException(415, 'validation_failed', 'Seules les photos sont acceptées ici.');
                 }
             } finally {
@@ -81,7 +89,7 @@ final class UploadController
         }
         $m = Database::fetch('SELECT kind, width, height FROM media WHERE uid = :u', ['u' => $upload['uid']]);
 
-        return Response::success(['id' => $upload['uid'], 'upload_id' => $upload['uid'], 'kind' => 'image', 'url' => $upload['url'],
+        return Response::success(['id' => $upload['uid'], 'upload_id' => $upload['uid'], 'kind' => $m['kind'] ?? 'image', 'url' => $upload['url'],
             'width' => isset($m['width']) ? (int) $m['width'] : null, 'height' => isset($m['height']) ? (int) $m['height'] : null]);
     }
 }

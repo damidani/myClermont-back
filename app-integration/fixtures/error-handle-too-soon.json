@@ -1,0 +1,10 @@
+{
+    "error": {
+        "code": "handle_change_too_soon",
+        "message": "Tu pourras changer de pseudo à partir du 1er décembre.",
+        "details": {
+            "retryAt": "2026-12-01T18:03:53Z",
+            "reason": "handle_change_too_soon"
+        }
+    }
+}

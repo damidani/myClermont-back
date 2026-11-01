@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "story_daily_limit",
+    "message": "Ta formule Gratuit permet 2 stories par jour. Passe Partenaire pour en publier jusqu'à 10.",
+    "details": {
+      "reason": "story_daily_limit",
+      "limit": 2,
+      "plan": "gratuit"
+    }
+  }
+}

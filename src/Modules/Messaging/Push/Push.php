@@ -52,7 +52,7 @@ final class Push
              VALUES (:u, :dev, :topic, :t, :b, :data, :k, :th, :after, :c)',
             [
                 'u' => $to['user_id'], 'dev' => $to['device_id'], 'topic' => $topic, 't' => mb_substr($title, 0, 120), 'b' => mb_substr($body, 0, 250),
-                'data' => json_encode(array_filter(['deeplink' => $o['deeplink'] ?? null])), 'k' => $o['collapse_key'] ?? null, 'th' => $thread,
+                'data' => json_encode(array_filter(['deeplink' => $o['deeplink'] ?? null] + (array) ($o['data'] ?? []))), 'k' => $o['collapse_key'] ?? null, 'th' => $thread,
                 'after' => gmdate('Y-m-d H:i:s', $sendAfter), 'c' => gmdate('Y-m-d H:i:s'),
             ],
         );

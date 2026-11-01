@@ -22,6 +22,10 @@ final class ProModule implements Module
     public function routes(Router $router): void
     {
         $router->post('/places/{id}/events', [StatsController::class, 'track']);
+        // Stories des établissements (b5b4c116)
+        $router->get('/stories', [StoryController::class, 'feed'], ['auth:optional']);
+        $router->post('/stories/{id}/view', [StoryController::class, 'view']);
+        $router->post('/stories/{id}/cta', [StoryController::class, 'cta']);
         $router->group(['middleware' => ['auth']], static function (Router $r): void {
             $r->post('/places/{id}/messages', [ThreadController::class, 'create'], ['throttle:contact']);
             $r->get('/me/threads', [ThreadController::class, 'mine']);
@@ -113,6 +117,11 @@ final class ProModule implements Module
                 $r->delete('/events/{id}', [EventController::class, 'destroy']);
                 $r->post('/events/{id}/submit', [EventController::class, 'submit']);
                 $r->post('/events/{id}/withdraw', [EventController::class, 'withdraw']);
+
+                $r->get('/stories', [StoryController::class, 'index']);
+                $r->post('/stories', [StoryController::class, 'create']);
+                $r->patch('/stories/{id}', [StoryController::class, 'update']);
+                $r->delete('/stories/{id}', [StoryController::class, 'destroy']);
 
                 $r->get('/jobs', [RecruitController::class, 'jobs']);
                 $r->post('/jobs', [RecruitController::class, 'createJob']);

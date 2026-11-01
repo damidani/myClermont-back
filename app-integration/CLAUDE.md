@@ -98,6 +98,11 @@ Un refresh token déjà utilisé révoque toute la session. Deux refresh en para
 - **Icônes** : noms SF Symbols valides partout (`Job.icon`, `Service.icon`, `AgendaItem.icon`, cartes de Clermont IA). Liste blanche : `src/Support/AppSchemas.php` du back.
 - **Catégories** : toujours le libellé affiché (`Maison & travaux`, `Restaurants`, `Maison & déco`…), jamais un slug. Les filtres `?category=` acceptent le libellé.
 - **Images** : URL HTTPS absolues. Une fiche sans photo reçoit un visuel par défaut hébergé par le back (`/static/defaults/…`).
+- **Pseudos** (`handle`) : seul nom d'un autre habitant envoyé à l'app : `author`, `comments[].author`, `authorInfo.displayName` et `authorInfo.handle` (communauté), `displayName` (classements), `seller` (annonces), `author.displayName` (avis). Jamais l'e-mail.
+  - `GET /me` et la session portent `handle` et `handleChangeAvailableAt` (`null` = changement possible tout de suite).
+  - `PATCH /me { handle }` : `409 handle_taken` (`details.suggestions`), `422 handle_invalid` / `handle_reserved`, `429 handle_change_too_soon` (`details.retryAt`). Le premier changement est libre, puis un tous les 30 jours ; l'ancien pseudo reste réservé 30 jours.
+  - `GET /users/search?q=&limit=8` et `GET /users/handle-availability?handle=` : compte obligatoire, 30 appels par minute.
+  - Mentions `@pseudo` dans les posts et les commentaires : push `community.replies` « @auteur t'a mentionné·e : “…” », avec `postId` et `commentId` dans le payload ; `mentions: [{ handle, userId }]` dans les réponses.
 - **Sondages** : voter avec `POST /community/posts/{id}/vote { "optionIndex": 1 }`. `myVote` vaut l'index du choix ou `null`.
 - **Features non disponibles** : Clermont IA et la connexion Google répondent `503 not_configured` tant que leurs clés ne sont pas installées sur le serveur. L'app doit afficher un état « indisponible », sans planter.
 
