@@ -36,7 +36,7 @@ final class ProModule implements Module
     /** Routes de l'espace pro, montées sous /v1/pro et /api/v1/pro (hors signature d'appareil). */
     public static function proRoutes(Router $r): void
     {
-        $r->group(['prefix' => '/pro', 'middleware' => ['throttle:public,ip']], static function (Router $r): void {
+        $r->group(['prefix' => '/pro', 'middleware' => ['throttle:pro,ip']], static function (Router $r): void {
             // Sans session
             $r->group(['middleware' => ['throttle:pro_auth,ip']], static function (Router $r): void {
                 $r->post('/auth/signup', [AuthController::class, 'signup']);

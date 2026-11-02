@@ -57,6 +57,7 @@ return [
         'device'   => [$deviceMax, $deviceWindow],
         'register' => [$registerMax, $registerWindow],
         'login'    => [$loginMax, $loginWindow],
+        'pro'      => [(int) Env::get('RATE_LIMIT_PRO', 600), 60],   // espace commerçant : le dashboard charge ~18 listes par page (par IP)
         'user_search' => [30, 60],   // autocomplétion des @pseudos et vérification pendant la saisie (par appareil)
         'pro_auth' => [(int) Env::get('RATE_LIMIT_PRO_AUTH', 10), 300],   // connexion, inscription, mot de passe oublié de l'espace pro (par IP)
         'contact'  => [$contactMax, $contactWindow],
