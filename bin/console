@@ -329,6 +329,13 @@ switch ($command) {
         }
         break;
 
+    case 'openapi:build':
+        // Spec OpenAPI 3.1 générée à partir du code (65abb5dc) : complète dans app-integration/openapi.json
+        $spec = (new \App\Docs\OpenApi())->build(true);
+        file_put_contents(dirname(__DIR__) . '/app-integration/openapi.json', json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        $out('openapi.json : ' . count($spec['paths']) . ' chemins');
+        break;
+
     case 'osm:import':
         // Commerces et services OpenStreetMap de la métropole pour Clermont IA (« le coiffeur le plus proche »)
         $out('Lieux OpenStreetMap importés : ' . \App\Modules\Assistant\Nearby::import($out));

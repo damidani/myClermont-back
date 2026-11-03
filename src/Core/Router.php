@@ -26,6 +26,9 @@ final class Router
     /** @var string[] */
     private array $middleware = [];
 
+    /** @var list<array{method: string, path: string, handler: array, middleware: string[]}> toutes les routes, dans l'ordre (doc OpenAPI) */
+    private array $all = [];
+
     public function get(string $path, array $handler, array $middleware = []): void
     {
         $this->add('GET', $path, $handler, $middleware);
@@ -72,6 +75,7 @@ final class Router
     {
         $path = rtrim($this->prefix . $path, '/') ?: '/';
         $route = ['handler' => $handler, 'middleware' => [...$this->middleware, ...$middleware]];
+        $this->all[] = ['method' => $method, 'path' => $path] + $route;
 
         if (!str_contains($path, '{')) {
             $this->static[$method][$path] = $route;
@@ -84,6 +88,12 @@ final class Router
             $path,
         );
         $this->dynamic[$method][] = $route + ['regex' => '#^' . $regex . '$#'];
+    }
+
+    /** @return list<array{method: string, path: string, handler: array, middleware: string[]}> */
+    public function routes(): array
+    {
+        return $this->all;
     }
 
     /**
