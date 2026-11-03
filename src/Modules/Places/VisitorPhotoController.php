@@ -15,7 +15,7 @@ use App\Security\Crypto;
  * Photos des visiteurs côté app (demande iOS ca817cb4) :
  *   POST /visitor-photos { photoUrl, caption?, takenAt?, placeKey, place { name, category, latitude, longitude } } → 201 { id, status, reviewer }
  *   GET /me/visitor-photos                 → { items: [{ id, status, reviewer, rejectionReason? }], nextCursor }
- *   GET /visitor-photos?placeKey=…         → { items: [{ id, url, author, caption, createdAt }], nextCursor } (validées, 12 au plus)
+ *   GET /visitor-photos?placeKey=…         → { items: [{ id, url, author, caption, createdAt }], nextCursor } (validées et dans la galerie, 30 au plus)
  */
 final class VisitorPhotoController
 {
@@ -87,8 +87,9 @@ final class VisitorPhotoController
         if ($key === '') {
             throw new ValidationException(['placeKey' => 'Paramètre placeKey manquant.']);
         }
-        [$limit, $offset] = self::page($request, 12);
-        $rows = Database::fetchAll(VisitorPhotos::SELECT . " WHERE v.place_key = :k AND v.status = 'approved' ORDER BY v.decided_at DESC, v.id DESC LIMIT " . ($limit + 1) . ' OFFSET ' . $offset, ['k' => $key]);
+        // Validées et visibles : dans la galerie (une photo validée hors galerie, limite de formule atteinte, ne réapparaît pas ici)
+        [$limit, $offset] = self::page($request, 30);
+        $rows = Database::fetchAll(VisitorPhotos::SELECT . " WHERE v.place_key = :k AND v.status = 'approved' AND v.in_gallery = 1 ORDER BY v.decided_at DESC, v.id DESC LIMIT " . ($limit + 1) . ' OFFSET ' . $offset, ['k' => $key]);
 
         return Response::success([
             'items' => array_map(static fn ($r) => ['id' => $r['uid'], 'url' => $r['url'], 'author' => \App\Modules\Account\Handles::display($r['handle']),

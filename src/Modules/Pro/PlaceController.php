@@ -183,6 +183,8 @@ final class PlaceController
 
         return ['id' => $place['app_id'] ?? $place['uid']] + $d + [
             'status' => $place['pro_status'] ?? 'brouillon', 'updated_at' => Pro::iso($place['updated_at']),
+            // Avis de la team MyClermont (2399ca9a) : lecture seule, publié uniquement ; ignoré par PUT /pro/place
+            'team_review' => \App\Modules\Staff\TeamReviewController::published((int) $place['id']),
         ];
     }
 

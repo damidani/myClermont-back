@@ -31,5 +31,6 @@ return [
         'premium'       => App\Modules\Premium\PremiumMiddleware::class,
         'role'          => App\Http\Middleware\RoleMiddleware::class,
         'pro'           => App\Modules\Pro\ProAuthMiddleware::class,   // session de l'espace commerçant
+        'staff'         => App\Modules\Staff\StaffAuthMiddleware::class, // équipe MyClermont dans /admin du dashboard
     ],
 ];

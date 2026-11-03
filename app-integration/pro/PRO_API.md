@@ -128,3 +128,27 @@ Lecture pour toute l'équipe ; décisions réservées au propriétaire et au gé
 
 Une photo ajoutée rejoint la galerie sous la forme `{ id: "ph_"+id, src, caption, credit: "Photo de @pseudo", visitorPhotoId }` (6 photos en gratuit, 30 en partenaire ; au-delà : `overLimit`, pas une erreur). Couverture : `PUT /pro/place { coverId: "ph_{id}" }`.
 Les photos des pins sans commerçant vérifié sont validées par l'équipe dans le back-office (file « Photos des visiteurs » de /admin/moderation).
+
+
+## Espace /admin de l'équipe MyClermont (ca817cb4, 4a9dc3a3, 2399ca9a)
+
+Routes sous `/api/v1/admin`, hors signature d'appareil, CORS identique à `/pro`. Comptes de l'équipe = comptes du back-office (même mot de passe, même 2FA). Un jeton commerçant ou de l'app reçoit `403 forbidden`.
+
+| Méthode | Route | Corps | Réponse |
+|---|---|---|---|
+| POST | `/admin/auth/login` | `{ email, password, totp? }` | `{ accessToken, expiresIn (8 h), admin: { id, name, email, role } }` ; `401` avec `details.reason` : `invalid_credentials`, `totp_required`, `totp_invalid` |
+| POST | `/admin/auth/logout` | | 204 (le dashboard oublie le jeton) |
+| GET | `/admin/me` | | `{ id, name, email, role }` |
+| GET | `/admin/team-reviews?status=brouillon\|publie&q=` | | `{ items: AdminTeamReview[], nextCursor, counts: { brouillon, publie } }` |
+| GET | `/admin/places/search?q=` | | `{ items: PinRef[] }` (`PinRef` : `key, kind, name, city, latitude, longitude, claimedBy`) |
+| PUT | `/admin/places/{key}/team-review` | `TeamReview` sans `publishedAt` (+ `pin { name, category, latitude, longitude }` pour un repère encore inconnu) | `AdminTeamReview` |
+| DELETE | `/admin/places/{key}/team-review` | | 204 |
+| GET | `/admin/places/{key}/team-review/history` | | `{ items: TeamReviewAuditEntry[], nextCursor }` (gardé après suppression) |
+| GET | `/admin/visitor-photos?status=` | | comme `/pro/visitor-photos`, éléments avec `pin { key, kind, name, city, claimedBy }` |
+| POST | `/admin/visitor-photos/validate` | `{ ids, addToGallery }` | galerie du pin sans limite de formule |
+| POST | `/admin/visitor-photos/{id}/refuse` | `{ reason, note? }` | |
+| PATCH | `/admin/visitor-photos/{id}` | `{ inGallery }` | `{ photo }` |
+| POST | `/admin/visitor-photos/{id}/reopen` | | |
+
+`{key}` = clé du lieu (`spot-…`, `place-…`, `event-…`) encodée dans l'URL. `publishedAt` est fixé à la première publication, gardé en modification, remis à `null` au retrait. Erreurs de validation : `validation_failed` avec `details.fields`.
+`GET /pro/place` renvoie `teamReview` (publié seulement, sinon `null`) ; `PUT /pro/place` l'ignore. À la publication, le commerçant reçoit « La team MyClermont a publié un avis sur ta fiche ».

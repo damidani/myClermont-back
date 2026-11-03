@@ -54,6 +54,8 @@ return static function (Router $router, array $modules): void {
 
         // --- Espace commerçant MyClermont Pro (site web : session, sans signature d'appareil) ---
         App\Modules\Pro\ProModule::proRoutes($r);
+        // --- Espace /admin du dashboard (équipe MyClermont, session « staff ») ---
+        App\Modules\Staff\StaffRoutes::routes($r);
 
         // --- Envoi direct d'un fichier sur l'URL signée (jeton dans l'URL, valable 10 min) ---
         $r->put('/uploads/{id}/blob', [App\Content\Uploads\UploadController::class, 'receive'], ['throttle:upload,ip']);

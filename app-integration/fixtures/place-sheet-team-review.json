@@ -1,0 +1,76 @@
+{
+  "id": "lieu-la-cooperative-de-mai",
+  "name": "La Coopérative de Mai",
+  "category": "culture",
+  "subtitle": "Clermont-Ferrand",
+  "tagline": "",
+  "description": "",
+  "address": "",
+  "postalCode": "63100",
+  "city": "Clermont-Ferrand",
+  "latitude": 45.784,
+  "longitude": 3.095,
+  "phone": "",
+  "email": "",
+  "website": "",
+  "instagram": "",
+  "facebook": "",
+  "bookingUrl": "",
+  "menuUrl": "",
+  "priceLevel": 0,
+  "attributes": [],
+  "hours": {
+    "lun": [],
+    "mar": [],
+    "mer": [],
+    "jeu": [],
+    "ven": [],
+    "sam": [],
+    "dim": []
+  },
+  "exceptional": [],
+  "photos": [],
+  "coverId": null,
+  "highlights": [],
+  "tip": "",
+  "isPartner": false,
+  "rating": null,
+  "deals": [],
+  "events": [
+    {
+      "id": "afterwork-coope-2026-11-05",
+      "title": "Afterwork à la Coopé",
+      "start": "2026-11-05T18:00:00+01:00",
+      "venue": "La Coopérative de Mai"
+    },
+    {
+      "id": "pact-birrd-2026-11-06",
+      "title": "PACT + Birrd",
+      "start": "2026-11-06T20:00:00+01:00",
+      "venue": "La Coopérative de Mai"
+    },
+    {
+      "id": "wallace-cleaver-2026-11-07",
+      "title": "Wallace Cleaver",
+      "start": "2026-11-07T20:00:00+01:00",
+      "venue": "La Coopérative de Mai"
+    }
+  ],
+  "teamReview": {
+    "title": "Nouveau titre",
+    "text": "On y est allés un vendredi soir…",
+    "rating": 4.5,
+    "verdict": "Coup de cœur",
+    "pros": [
+      "Son impeccable",
+      "Bar rapide"
+    ],
+    "cons": [
+      "Parking difficile"
+    ],
+    "author": "Léa, de la team MyClermont",
+    "visitedAt": "2026-10-18T10:00:00Z",
+    "publishedAt": "2026-11-03T12:09:07Z"
+  },
+  "updatedAt": "2026-11-03T11:58:47Z"
+}

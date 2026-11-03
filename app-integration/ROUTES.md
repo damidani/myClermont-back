@@ -77,7 +77,7 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | PATCH | `/v1/devices/me` | signé, compte optionnel | pushToken, pushEnvironment (sandbox · production · development) |
 | POST | `/v1/visitor-photos` | compte | { photoUrl, caption?, takenAt?, placeKey, place } → 201 { id, status, reviewer } |
 | GET | `/v1/me/visitor-photos` | compte | items [{ id, status, reviewer, rejectionReason? }] |
-| GET | `/v1/visitor-photos?placeKey=` | signé | photos validées du pin (12) |
+| GET | `/v1/visitor-photos?placeKey=` | signé | photos validées et dans la galerie du pin (30) |
 | GET | `/v1/me/notifications` | compte | items, nextCursor, unreadCount |
 | POST | `/v1/me/notifications/read` | compte | { ids } → 204 |
 | POST | `/v1/me/notifications/read-all` | compte | 204 |
@@ -162,7 +162,7 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | GET | `/v1/places/{id}/reviews` | signé |  |
 | DELETE | `/v1/places/{id}/reviews/me` | compte |  |
 | PUT | `/v1/places/{id}/reviews/me` | compte | post |
-| GET | `/v1/places/{id}/sheet` | signé, compte optionnel | Place du dashboard + rating, deals, events, isPartner (404 sans fiche publiée) |
+| GET | `/v1/places/{id}/sheet` | signé, compte optionnel | Place du dashboard + rating, deals, events, isPartner, teamReview (404 sans fiche publiée ni avis de la team) |
 | GET | `/v1/places/{id}/detail` | signé | ancienne fiche enrichie |
 | POST | `/v1/reports` | compte | report |
 | GET | `/v1/services` | compte optionnel |  |

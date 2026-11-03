@@ -29,9 +29,17 @@ final class SheetController
         $place = $found === null ? null : Database::fetch("SELECT * FROM places WHERE id = :id AND status = 'published' AND deleted_at IS NULL",
             ['id' => Database::fetch('SELECT id FROM places WHERE uid = :u', ['u' => $found['uid']])['id'] ?? 0]);
         if ($place === null) {
-            throw new HttpException(404, 'place_not_found', 'Pas de fiche publiée pour ce lieu.');
+            // Lieu sans fiche (repère Apple Plans, commerce non inscrit) mais avec un avis de la team publié : fiche minimale (4a9dc3a3)
+            $id = rawurldecode((string) $request->param('id'));
+            $draft = Database::fetch("SELECT p.* FROM places p JOIN place_team_reviews r ON r.place_id = p.id AND r.status = 'publie'
+                                      WHERE (p.app_id = :a OR p.uid = :u OR p.slug = :s) AND p.deleted_at IS NULL LIMIT 1", ['a' => $id, 'u' => $id, 's' => $id]);
+            if ($draft === null) {
+                throw new HttpException(404, 'place_not_found', 'Pas de fiche publiée pour ce lieu.');
+            }
+            $sheet = self::minimal($draft);
+        } else {
+            $sheet = self::sheet($place);
         }
-        $sheet = self::sheet($place);
         $etag = '"' . substr(sha1(json_encode($sheet)), 0, 16) . '"';
         if (trim((string) $request->header('if-none-match', '')) === $etag) {
             return Response::notModified($etag);
@@ -57,8 +65,21 @@ final class SheetController
             'rating' => (int) ($rating['n'] ?? 0) > 0 ? ['average' => (float) $rating['average'], 'count' => (int) $rating['n']] : null,
             'deals' => self::deals($place),
             'events' => self::events($place),
+            'team_review' => \App\Modules\Staff\TeamReviewController::published((int) $place['id']),
             'updated_at' => Pro::iso($place['updated_at']),
         ];
+    }
+
+    /** id, nom, catégorie, position, champs vides et l'avis de la team */
+    private static function minimal(array $p): array
+    {
+        $empty = ['subtitle' => '', 'tagline' => '', 'description' => '', 'address' => '', 'postal_code' => '', 'city' => (string) $p['city'], 'phone' => '', 'email' => '',
+                  'website' => '', 'instagram' => '', 'facebook' => '', 'booking_url' => '', 'menu_url' => '', 'price_level' => 0, 'attributes' => [],
+                  'hours' => array_fill_keys(array_values(self::DAYS), []), 'exceptional' => [], 'photos' => [], 'cover_id' => null, 'highlights' => [], 'tip' => ''];
+
+        return ['id' => $p['app_id'] ?? $p['uid'], 'name' => $p['name'], 'category' => $p['app_category'] ?? 'lieu', 'latitude' => (float) $p['latitude'], 'longitude' => (float) $p['longitude']]
+            + $empty + ['is_partner' => false, 'rating' => null, 'deals' => [], 'events' => [], 'team_review' => \App\Modules\Staff\TeamReviewController::published((int) $p['id']),
+                        'updated_at' => Pro::iso($p['updated_at'])];
     }
 
     /** Lieu édité par My Clermont (sans espace pro) : même forme, à partir des colonnes */
