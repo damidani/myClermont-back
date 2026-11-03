@@ -315,6 +315,20 @@ switch ($command) {
         $out('Envois non confirmés supprimés : ' . \App\Content\Uploads\UploadController::purge());
         break;
 
+    case 'events:coverage':
+        // Demande iOS 1909c520 : au moins 10 sorties qui commencent dans les 21 jours, sinon alerte aux admins (une fois par jour)
+        $n = (int) Database::fetch("SELECT COUNT(*) AS n FROM events WHERE status = 'published' AND deleted_at IS NULL AND starts_at BETWEEN UTC_TIMESTAMP() AND UTC_TIMESTAMP() + INTERVAL 21 DAY")['n'];
+        $out("Sorties dans les 21 jours : {$n}");
+        if ($n < 10 && Database::execute('INSERT IGNORE INTO push_sent_keys (k, created_at) VALUES (:k, :d)', ['k' => 'events-coverage:' . gmdate('Y-m-d'), 'd' => gmdate('Y-m-d H:i:s')]) > 0) {
+            foreach (Database::fetchAll("SELECT email FROM users WHERE role = 'admin' AND status = 'active' AND email IS NOT NULL") as $admin) {
+                (new \App\Support\Mailer())->send($admin['email'], "My Clermont : seulement {$n} sorties à venir",
+                    "Il n'y a que {$n} sorties publiées qui commencent dans les 21 prochains jours (minimum souhaité : 10).\n\n"
+                    . "La section « Événements Flash » de l'app disparaît quand la liste est vide : pense à ajouter ou valider des événements dans l'administration.");
+            }
+            \App\Core\Logger::warning('Peu de sorties à venir', ['count' => $n]);
+        }
+        break;
+
     case 'osm:import':
         // Commerces et services OpenStreetMap de la métropole pour Clermont IA (« le coiffeur le plus proche »)
         $out('Lieux OpenStreetMap importés : ' . \App\Modules\Assistant\Nearby::import($out));
@@ -957,6 +971,7 @@ switch ($command) {
           demo:purge [--dry-run]                       Retire les données de démo et de test (événements demo-…, picsum, comptes de test)
           schema:check [--base=URL]                    Vérifie les réponses réelles contre les schémas de l'app iOS
           events:maintenance               Archive les événements terminés depuis 90 jours
+          events:coverage                  Alerte les admins s'il y a moins de 10 sorties dans les 21 jours
           osm:import                       Importe les commerces et services OpenStreetMap (Clermont IA)
           account:purge                    Efface les comptes supprimés depuis plus de 30 jours (cron quotidien)
           import:status                    État des sources importées (dernier passage, résultat)
