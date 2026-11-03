@@ -1,0 +1,39 @@
+{
+    "conversationId": "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+    "text": "D'après OpenStreetMap, Dessange est ouvert du mardi au samedi de 9 h à 18 h 30. C'est ouvert en ce moment. Les horaires peuvent changer les jours fériés.",
+    "cards": [
+        {
+            "icon": "scissors",
+            "colors": [
+                "#F5215C",
+                "#FA735C"
+            ],
+            "kicker": "COIFFEUR · 50 m",
+            "title": "Dessange",
+            "detail": "Clermont-Ferrand",
+            "badge": "Ouvert · ≈ 1 min à pied",
+            "isPartner": false,
+            "link": {
+                "type": "place",
+                "spot": {
+                    "id": "osm-node-2523367174",
+                    "name": "Dessange",
+                    "category": "shopping",
+                    "latitude": 45.776591,
+                    "longitude": 3.08152,
+                    "subtitle": "Clermont-Ferrand",
+                    "phone": "+33 4 73 41 09 90",
+                    "website": "https://salon.dessange.com/fr/salon-coiffure/clermont-ferrand",
+                    "isPartner": false,
+                    "demoName": "Dessange",
+                    "natureKind": null
+                }
+            }
+        }
+    ],
+    "nearbySearches": [],
+    "followUps": [
+        "Son numéro ?",
+        "Comment y aller ?"
+    ]
+}

@@ -257,6 +257,131 @@ final class Nearby
         return (bool) preg_match('/^[aeiouhéèô]/u', $label);
     }
 
+    /**
+     * Question de suite sur un lieu déjà montré (iOS ce801f2a) : « ses horaires », « son numéro », « comment y aller », « le deuxième ».
+     * Renvoie [intention, index du lieu] ou null si la question ne porte pas sur les résultats précédents.
+     */
+    public static function followUp(string $question): ?array
+    {
+        $q = self::plain($question);
+        $intent = match (true) {
+            (bool) preg_match('/horaire|ouvert|ferme|ouvre|heure|dimanche|lundi|mardi|mercredi|jeudi|vendredi|samedi|ce soir|demain/', $q) => 'hours',
+            (bool) preg_match('/numero|telephone|\btel\b|appeler|joindre/', $q) => 'phone',
+            (bool) preg_match('/itineraire|y aller|aller la-?bas|comment (y )?aller|chemin|a pied|combien de temps/', $q) => 'route',
+            (bool) preg_match('/\bsite\b|internet|web|menu|reserver|reservation/', $q) => 'website',
+            (bool) preg_match('/adresse|ou (est|se trouve)|c.est ou|situe/', $q) => 'address',
+            default => null,
+        };
+        $refers = (bool) preg_match('/\b(ses|son|sa|leurs?|il|elle|y|la-?bas|celui|celle|premier|premiere|deuxieme|second|seconde|troisieme|quatrieme|dernier|2e|3e|4e|et le|et la|et pour)\b/', $q);
+        if ($intent === null || (!$refers && mb_strlen($q) > 40)) {
+            return null;
+        }
+        $index = match (true) {
+            (bool) preg_match('/\b(deuxieme|second|seconde|2e|2eme)\b/', $q) => 1,
+            (bool) preg_match('/\b(troisieme|3e|3eme)\b/', $q) => 2,
+            (bool) preg_match('/\b(quatrieme|4e|4eme)\b/', $q) => 3,
+            (bool) preg_match('/\bdernier|derniere\b/', $q) => -1,
+            default => 0,
+        };
+
+        return [$intent, $index];
+    }
+
+    /**
+     * Réponse factuelle sur un lieu des derniers résultats (lastResults de l'app ou mémoire du serveur) :
+     * horaires OSM ou de la fiche, jamais inventés ; carte place avec le même spot.id et les mêmes coordonnées.
+     */
+    public static function detail(array $place, string $intent, float $lat, float $lon, bool $located): array
+    {
+        $name = (string) $place['name'];
+        $pLat = (float) $place['latitude'];
+        $pLon = (float) $place['longitude'];
+        // Données à jour : la fiche d'un lieu de la base, sinon OpenStreetMap (même nom, à moins de 150 m)
+        $osm = null;
+        if (preg_match('/^osm-(node|way|relation)-(\d+)$/', (string) $place['id'], $m)) {
+            $osm = Database::fetch('SELECT * FROM osm_pois WHERE id = :id', ['id' => $m[1] . '-' . $m[2]]);
+        }
+        $osm ??= Database::fetch(
+            'SELECT *, ROUND(111320 * SQRT(POW(latitude - :lat, 2) + POW((longitude - :lon) * 0.7, 2))) AS d FROM osm_pois
+             WHERE latitude BETWEEN :a1 AND :a2 AND longitude BETWEEN :o1 AND :o2 AND name = :n ORDER BY d LIMIT 1',
+            ['lat' => $pLat, 'lon' => $pLon, 'a1' => $pLat - 0.0015, 'a2' => $pLat + 0.0015, 'o1' => $pLon - 0.002, 'o2' => $pLon + 0.002, 'n' => $name],
+        );
+        $base = Database::fetch("SELECT hours_label, opening_hours, phone, website_url FROM places WHERE (uid = :id OR app_id = :id2 OR name = :n) AND status = 'published' AND deleted_at IS NULL
+                                 AND ABS(latitude - :lat) < 0.002 AND ABS(longitude - :lon) < 0.003 LIMIT 1",
+            ['id' => (string) $place['id'], 'id2' => (string) $place['id'], 'n' => $name, 'lat' => $pLat, 'lon' => $pLon]);
+        $phone = $place['phone'] ?? null ?: ($base['phone'] ?? null) ?: ($osm['phone'] ?? null);
+        $website = $place['website'] ?? null ?: ($base['website_url'] ?? null) ?: ($osm['website'] ?? null);
+        $address = trim((string) ($place['detail'] ?? '')) ?: (string) ($osm['address'] ?? '');
+        if (!preg_match('/\d/', $address)) {
+            $address = (string) ($osm['address'] ?? ''); // « Clermont-Ferrand » seul : pas une adresse
+        }
+        $hours = $osm['opening_hours'] ?? null;
+        $distance = (int) round(111320 * sqrt(($pLat - $lat) ** 2 + (($pLon - $lon) * 0.7) ** 2));
+
+        $call = $phone ? " Le mieux est d'appeler pour vérifier : {$phone}." : '';
+        $text = match ($intent) {
+            'hours' => match (true) {
+                $base !== null && !empty($base['hours_label']) => "Horaires de {$name} : {$base['hours_label']}." . $call,
+                $hours !== null => "D'après OpenStreetMap, {$name} est ouvert " . self::hoursFr($hours) . '.'
+                    . (($open = self::openNow($hours)) === null ? '' : ($open ? ' C\'est ouvert en ce moment.' : ' C\'est fermé en ce moment.'))
+                    . ' Les horaires peuvent changer les jours fériés.',
+                default => "Je n'ai pas les horaires de {$name}." . ($phone ? " Tu peux appeler pour les connaître : {$phone}." : ' Je te conseille de vérifier sur place ou en ligne.'),
+            },
+            'phone' => $phone ? "Le numéro de {$name} : {$phone}." : "Je n'ai pas le numéro de {$name}." . ($website ? " Son site : {$website}." : ''),
+            'website' => $website ? "Le site de {$name} : {$website}." : "Je n'ai pas de site pour {$name}." . ($phone ? " Tu peux appeler : {$phone}." : ''),
+            'route' => "{$name} est à " . self::distanceLabel($distance) . ' ' . ($located ? 'de toi' : 'de la place de Jaude') . ' (' . self::travel($distance) . ').'
+                . ($address !== '' ? " Adresse : {$address}." : '') . ' Touche la carte puis « Itinéraire » pour lancer le guidage.',
+            default => $address !== '' ? "{$name} se trouve {$address}, à " . self::distanceLabel($distance) . ' ' . ($located ? 'de toi' : 'de la place de Jaude') . '.'
+                                        : "{$name} est à " . self::distanceLabel($distance) . ' ' . ($located ? 'de toi' : 'de la place de Jaude') . ', je n\'ai pas son adresse exacte.',
+        };
+        $spot = ['id' => (string) $place['id'], 'name' => $name, 'category' => in_array($place['category'] ?? null, self::MAP_CATEGORIES, true) ? $place['category'] : 'lieu',
+                 'latitude' => $pLat, 'longitude' => $pLon, 'subtitle' => $address, 'phone' => $phone, 'website' => $website, 'is_partner' => false,
+                 'demo_name' => $name, 'nature_kind' => null];
+        $kind = $osm['kind'] ?? null;
+        $card = [
+            'icon' => $kind !== null ? self::KINDS[$kind][2] : 'mappin.circle.fill', 'colors' => ['#F5215C', '#FA735C'],
+            'kicker' => ($kind !== null ? mb_strtoupper(self::KINDS[$kind][0]) : 'LIEU') . ' · ' . self::distanceLabel($distance),
+            'title' => $name, 'detail' => $address !== '' ? $address : 'Clermont-Ferrand',
+            'badge' => (($open = self::openNow($hours)) === true ? 'Ouvert · ' : ($open === false ? 'Fermé · ' : '')) . self::travel($distance),
+            'is_partner' => false, 'link' => ['type' => 'place', 'spot' => $spot],
+        ];
+
+        return ['text' => $text, 'cards' => [$card], 'follow_ups' => array_values(array_diff(['Ses horaires', 'Son numéro ?', 'Comment y aller ?'],
+            [['hours' => 'Ses horaires', 'phone' => 'Son numéro ?', 'route' => 'Comment y aller ?'][$intent] ?? '']))];
+    }
+
+    /** Valeurs de MapCategory connues de l'app */
+    public const MAP_CATEGORIES = ['incontournable', 'evenement', 'spot', 'restaurant', 'fastFood', 'cafe', 'boulangerie', 'culture', 'nature', 'sport', 'carburant', 'lieu',
+                                   'tram', 'sante', 'courses', 'shopping', 'hebergement', 'services', 'mobilite', 'etudes'];
+
+    /** « Mo-Fr 09:00-19:00; Sa 09:00-12:00 » → « du lundi au vendredi de 9 h à 19 h, le samedi de 9 h à 12 h » (forme brute si trop complexe) */
+    public static function hoursFr(string $hours): string
+    {
+        if (trim($hours) === '24/7') {
+            return '24 h/24, 7 j/7';
+        }
+        $days = ['Mo' => 'lundi', 'Tu' => 'mardi', 'We' => 'mercredi', 'Th' => 'jeudi', 'Fr' => 'vendredi', 'Sa' => 'samedi', 'Su' => 'dimanche', 'PH' => 'les jours fériés'];
+        $time = static fn (string $t) => (int) substr($t, 0, 2) . ' h' . (substr($t, 3, 2) !== '00' ? ' ' . substr($t, 3, 2) : '');
+        $parts = [];
+        foreach (array_filter(array_map('trim', explode(';', $hours))) as $rule) {
+            if (!preg_match('/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su|PH)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?,?)+)?\s*(off|closed|(?:\d\d:\d\d-\d\d:\d\d,?\s*)+)$/', $rule, $m)) {
+                return $hours;
+            }
+            $dayText = $m[1] === '' ? 'tous les jours' : implode(' et ', array_map(static function ($range) use ($days) {
+                $p = explode('-', $range);
+                return count($p) === 2 ? "du {$days[$p[0]]} au {$days[$p[1]]}" : ($p[0] === 'PH' ? $days['PH'] : "le {$days[$p[0]]}");
+            }, explode(',', rtrim($m[1], ','))));
+            if ($m[2] === 'off' || $m[2] === 'closed') {
+                $parts[] = "fermé {$dayText}";
+                continue;
+            }
+            preg_match_all('/(\d\d:\d\d)-(\d\d:\d\d)/', $m[2], $spans, PREG_SET_ORDER);
+            $parts[] = $dayText . ' ' . implode(' et ', array_map(static fn ($sp) => 'de ' . $time($sp[1]) . ' à ' . $time($sp[2]), $spans));
+        }
+
+        return implode(', ', $parts);
+    }
+
     /** Genres d'un repas selon l'heure de Paris */
     private static function eatKinds(): array
     {

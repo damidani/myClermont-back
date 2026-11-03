@@ -1,5 +1,5 @@
 {
-    "conversationId": "7c1e2f4a-3b5d-4e6f-8a9b-0c1d2e3f4a5b",
+    "conversationId": "0d5a526f-86a2-48eb-8fcb-f1c2afbbdbfc",
     "text": "Le coiffeur le plus proche, c'est Dessange, à 50 m de toi (≈ 1 min à pied). C'est ouvert en ce moment d'après OpenStreetMap. J'ai aussi trouvé 3 autres coiffeurs à proximité.",
     "cards": [
         {
@@ -16,14 +16,14 @@
             "link": {
                 "type": "place",
                 "spot": {
-                    "id": "osm-node-2401874711",
+                    "id": "osm-node-2523367174",
                     "name": "Dessange",
                     "category": "shopping",
-                    "latitude": 45.777301,
-                    "longitude": 3.082512,
+                    "latitude": 45.776591,
+                    "longitude": 3.08152,
                     "subtitle": "",
-                    "phone": null,
-                    "website": null,
+                    "phone": "+33 4 73 41 09 90",
+                    "website": "https://salon.dessange.com/fr/salon-coiffure/clermont-ferrand",
                     "isPartner": false,
                     "demoName": "Dessange",
                     "natureKind": null
@@ -44,11 +44,11 @@
             "link": {
                 "type": "place",
                 "spot": {
-                    "id": "osm-node-4710233187",
+                    "id": "osm-node-5565985465",
                     "name": "Bessi Coiffeur",
                     "category": "shopping",
-                    "latitude": 45.776612,
-                    "longitude": 3.081904,
+                    "latitude": 45.776952,
+                    "longitude": 3.081084,
                     "subtitle": "3 Rue Blatin, Clermont-Ferrand",
                     "phone": null,
                     "website": null,
@@ -72,11 +72,11 @@
             "link": {
                 "type": "place",
                 "spot": {
-                    "id": "osm-node-5531904620",
+                    "id": "osm-node-2523367187",
                     "name": "Style coiffure",
                     "category": "shopping",
-                    "latitude": 45.777958,
-                    "longitude": 3.081407,
+                    "latitude": 45.776201,
+                    "longitude": 3.081169,
                     "subtitle": "",
                     "phone": null,
                     "website": null,
@@ -100,11 +100,11 @@
             "link": {
                 "type": "place",
                 "spot": {
-                    "id": "osm-way-312558841",
+                    "id": "osm-node-6612736554",
                     "name": "Le salon",
                     "category": "shopping",
-                    "latitude": 45.776021,
-                    "longitude": 3.083318,
+                    "latitude": 45.77617,
+                    "longitude": 3.083235,
                     "subtitle": "",
                     "phone": null,
                     "website": null,

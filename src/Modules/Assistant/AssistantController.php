@@ -34,7 +34,7 @@ Règles :
 - N'affirme aucun fait (adresse, prix, horaire, date, disponibilité) qui ne vienne pas d'un outil. Si les outils ne donnent rien, dis-le simplement et propose une alternative.
 - Utilise les outils pour toute question sur les sorties, lieux, bons plans, emplois, logements, services, carburants ou la météo.
 - Pour un commerce ou service courant autour de l'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…), utilise nearby_search : il renvoie les adresses réelles les plus proches (OpenStreetMap) à citer dans cards.
-- Les lignes [Lieux montrés en cartes…] de l'historique décrivent les lieux déjà montrés : sers-t'en pour « ses horaires », « son adresse »… N'invente jamais d'horaires absents.
+- Le « Contexte de la conversation » décrit les échanges précédents et les derniers résultats affichés : « il », « elle », « ses », « y », « le premier » renvoient au n° 1, « le deuxième » au n° 2. Ne relance pas une recherche « le plus proche » pour une question de suite. N'invente jamais d'horaires absents.
 - Sur l'écran carte (screen = map), privilégie les lieux à épingler.
 - Santé : en cas d'urgence, donne immédiatement le 15 (SAMU) ou le 112, et le 3237 pour la pharmacie de garde. Ne pose jamais de diagnostic.
 - Texte brut uniquement : jamais de Markdown (pas de **gras**, de titres, de listes à puces ni de liens), l'app l'affiche tel quel.
@@ -59,34 +59,51 @@ TXT;
         $lat = is_numeric($loc['lat'] ?? null) ? round((float) $loc['lat'], 3) : 45.7772;
         $lon = is_numeric($loc['lon'] ?? null) ? round((float) $loc['lon'], 3) : 3.0870;
         $screen = $data['context'] ?? $data['screen'] ?? 'chat';
-        $conversationId = $data['conversation_id'] ?? Crypto::uuid4();
+        // Contexte envoyé par l'app à partir de la 2e question (ce801f2a) : facultatif, tronqué sans erreur
+        $conv = self::conversation($json['conversation'] ?? null);
+        $conversationId = $data['conversation_id'] ?? $conv['id'] ?? Crypto::uuid4();
         $userId = isset($request->attributes['user_id']) ? (int) $request->attributes['user_id'] : null;
         $deviceId = (int) $request->attributes['device']['id'];
 
         $this->checkQuota($userId, $deviceId);
 
-        $history = Cache::store()->get('ai:conv:' . $conversationId);
-        $history = is_array($history) && ($history['owner'] ?? null) === ($userId ?? 'd' . $deviceId) ? $history['turns'] : [];
-        $cacheKey = $history === [] ? 'ai:answer:' . sha1(mb_strtolower(trim($data['question'])) . "|{$screen}|" . round($lat, 2) . '|' . round($lon, 2)) : null;
+        $memory = Cache::store()->get('ai:conv:' . $conversationId);
+        $memory = is_array($memory) && ($memory['owner'] ?? null) === ($userId ?? 'd' . $deviceId) ? $memory : ['turns' => [], 'results' => []];
+        // L'historique de l'app fait foi ; la mémoire du serveur (2 h) sert quand l'app n'en envoie pas
+        $history = $conv['history'] !== [] ? $conv['history'] : $memory['turns'];
+        $lastResults = $conv['last_results'] !== [] ? $conv['last_results'] : ($memory['results'] ?? []);
+        $cacheKey = $history === [] && $lastResults === [] ? 'ai:answer:' . sha1(mb_strtolower(trim($data['question'])) . "|{$screen}|" . round($lat, 2) . '|' . round($lon, 2)) : null;
         if ($cacheKey !== null && is_array($cached = Cache::store()->get($cacheKey))) {
             $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $cached['text'], 'cached', [], 0, 0);
             return Response::success(['conversation_id' => $conversationId] + $cached);
         }
 
-        // Commerce ou service « le plus proche » (iOS 54d34637, afe694b8) : réponse factuelle depuis OpenStreetMap et la base, sans le modèle
         $located = is_numeric($loc['lat'] ?? null) && is_numeric($loc['lon'] ?? null);
+        // Question de suite sur un lieu déjà montré (« ses horaires », « le deuxième ») : jamais une nouvelle recherche
+        if ($lastResults !== [] && ($follow = Nearby::followUp($data['question'])) !== null) {
+            [$intent, $index] = $follow;
+            $place = $index === -1 ? end($lastResults) : ($lastResults[$index] ?? $lastResults[0]);
+            $d = Nearby::detail($place, $intent, $located ? $lat : Nearby::JAUDE[0], $located ? $lon : Nearby::JAUDE[1], $located);
+            $result = ['text' => $d['text'], 'cards' => $d['cards'], 'nearby_searches' => [], 'follow_ups' => $d['follow_ups']];
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $d['text'], $lastResults);
+            $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], 'answered', ['followup:' . $intent], 0, 0);
+
+            return Response::success(['conversation_id' => $conversationId] + $result);
+        }
+
+        // Commerce ou service « le plus proche » (iOS 54d34637, afe694b8) : réponse factuelle depuis OpenStreetMap et la base, sans le modèle
         $kind = Nearby::detect($data['question']);
         if ($kind !== null) {
             $near = Nearby::reply($kind, $located ? $lat : Nearby::JAUDE[0], $located ? $lon : Nearby::JAUDE[1], $located, $screen, $data['question']);
             $result = ['text' => $near['text'], 'cards' => $near['cards'], 'nearby_searches' => [], 'follow_ups' => $near['follow_ups']];
-            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $near['text'] . ($near['results'] !== [] ? "\n" . Nearby::memo($near['results']) : ''));
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $near['text'], self::results($near['results']) ?: $lastResults);
             $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], 'answered', ['nearby:' . $kind], 0, 0);
 
             return Response::success(['conversation_id' => $conversationId] + $result);
         }
 
         $tools = new AssistantTools($lat, $lon);
-        [$reply, $used, $in, $out, $status] = $this->converse($data['question'], $history, $screen, $lat, $lon, $tools);
+        [$reply, $used, $in, $out, $status] = $this->converse($data['question'], $history, $screen, $lat, $lon, $tools, $conv['summary'], $lastResults);
         // Un petit modèle renvoie parfois une liste sous forme de texte (« a, b » ou JSON) : on la remet en liste
         foreach (['cards', 'follow_ups'] as $k) {
             if (is_string($reply[$k] ?? null)) {
@@ -114,8 +131,8 @@ TXT;
             if ($cacheKey !== null) {
                 Cache::store()->set($cacheKey, $result, (int) Config::get('assistant.cache_ttl', 600));
             }
-            $memo = array_values(array_filter($tools->seen, static fn ($r) => $r['type'] === 'nearby'));
-            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $result['text'] . ($memo !== [] ? "\n" . Nearby::memo($memo) : ''));
+            $shown = self::results(array_values(array_filter($tools->seen, static fn ($r) => $r['type'] === 'nearby')));
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $result['text'], $shown ?: $lastResults);
         }
         $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], $status, $used, $in, $out);
 
@@ -123,12 +140,22 @@ TXT;
     }
 
     /** @return array{0: array, 1: list<string>, 2: int, 3: int, 4: string} réponse, outils utilisés, jetons, statut */
-    private function converse(string $question, array $history, string $screen, float $lat, float $lon, AssistantTools $tools): array
+    private function converse(string $question, array $history, string $screen, float $lat, float $lon, AssistantTools $tools, string $summary = '', array $lastResults = []): array
     {
         $definitions = AssistantTools::definitions();
         $paris = new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris'));
 
         $messages = [['role' => 'system', 'content' => self::SYSTEM]];
+        // Contexte de la conversation (ce801f2a) : synthèse de l'app et derniers résultats affichés, numérotés
+        $context = trim($summary);
+        if ($lastResults !== []) {
+            $context .= "\nDerniers résultats affichés (« il », « ses », « le premier » = n° 1) :\n" . implode("\n", array_map(
+                static fn ($r, $i) => ($i + 1) . '. ' . $r['name'] . ($r['detail'] !== '' ? ' — ' . $r['detail'] : '') . ($r['phone'] ? ' — tél. ' . $r['phone'] : ''),
+                $lastResults, array_keys($lastResults)));
+        }
+        if ($context !== '') {
+            $messages[] = ['role' => 'system', 'content' => "Contexte de la conversation :\n" . mb_substr($context, 0, 2400)];
+        }
         foreach ($history as $turn) {
             $messages[] = ['role' => 'user', 'content' => $turn['q']];
             $messages[] = ['role' => 'assistant', 'content' => $turn['a']];
@@ -180,11 +207,65 @@ TXT;
         return [['text' => 'Je n\'ai pas réussi à finaliser la réponse, réessaie.', 'cards' => [], 'follow_ups' => []], $used, $in, $out, 'failed'];
     }
 
-    /** Mémoire de conversation : 4 derniers échanges, 30 min */
-    private function remember(string $conversationId, ?int $userId, int $deviceId, array $history, string $question, string $answer): void
+    /** Mémoire de conversation : 4 derniers échanges et derniers lieux montrés, 2 h au plus (ce801f2a), jamais dans les journaux */
+    private function remember(string $conversationId, ?int $userId, int $deviceId, array $history, string $question, string $answer, array $results = []): void
     {
         $turns = array_slice(array_merge($history, [['q' => $question, 'a' => $answer]]), -4);
-        Cache::store()->set('ai:conv:' . $conversationId, ['owner' => $userId ?? 'd' . $deviceId, 'turns' => $turns], 1800);
+        Cache::store()->set('ai:conv:' . $conversationId, ['owner' => $userId ?? 'd' . $deviceId, 'turns' => $turns, 'results' => array_slice($results, 0, 5)], 7200);
+    }
+
+    /** Lieux trouvés → format lastResults de l'app */
+    private static function results(array $found): array
+    {
+        return array_map(static fn ($r) => [
+            'type' => 'place', 'id' => (string) $r['spot']['id'], 'name' => (string) $r['spot']['name'], 'detail' => (string) ($r['address'] ?? $r['spot']['subtitle'] ?? ''),
+            'category' => (string) $r['spot']['category'], 'latitude' => (float) $r['spot']['latitude'], 'longitude' => (float) $r['spot']['longitude'],
+            'phone' => $r['spot']['phone'] ?? null, 'website' => $r['spot']['website'] ?? null,
+        ], array_slice($found, 0, 5));
+    }
+
+    /**
+     * Champ conversation de l'app : { id, turn, summary (1 600 car.), history (8 messages de 600 car.), lastResults (5) }.
+     * Tout ce qui est mal formé est ignoré : jamais d'erreur.
+     *
+     * @return array{id: ?string, summary: string, history: list<array{q: string, a: string}>, last_results: list<array>}
+     */
+    private static function conversation(mixed $c): array
+    {
+        $out = ['id' => null, 'summary' => '', 'history' => [], 'last_results' => []];
+        if (!is_array($c)) {
+            return $out;
+        }
+        if (is_string($c['id'] ?? null) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $c['id'])) {
+            $out['id'] = strtolower($c['id']);
+        }
+        $out['summary'] = is_string($c['summary'] ?? null) ? mb_substr($c['summary'], 0, 1600) : '';
+        $pending = null;
+        foreach (array_slice(is_array($c['history'] ?? null) ? $c['history'] : [], -8) as $m) {
+            if (!is_array($m) || !is_string($m['text'] ?? null)) {
+                continue;
+            }
+            $text = mb_substr($m['text'], 0, 600);
+            if (($m['role'] ?? '') === 'user') {
+                $pending = $text;
+            } elseif (($m['role'] ?? '') === 'assistant' && $pending !== null) {
+                $out['history'][] = ['q' => $pending, 'a' => $text];
+                $pending = null;
+            }
+        }
+        foreach (array_slice(is_array($c['last_results'] ?? $c['lastResults'] ?? null) ? ($c['last_results'] ?? $c['lastResults']) : [], 0, 5) as $r) {
+            if (!is_array($r) || !is_string($r['name'] ?? null) || !is_numeric($r['latitude'] ?? null) || !is_numeric($r['longitude'] ?? null)) {
+                continue; // événement, ville… : sans coordonnées, pas de question de suite sur un lieu
+            }
+            $out['last_results'][] = [
+                'type' => is_string($r['type'] ?? null) ? $r['type'] : 'place', 'id' => mb_substr((string) ($r['id'] ?? $r['name']), 0, 120), 'name' => mb_substr($r['name'], 0, 160),
+                'detail' => is_string($r['detail'] ?? null) ? mb_substr($r['detail'], 0, 255) : '', 'category' => is_string($r['category'] ?? null) ? $r['category'] : 'lieu',
+                'latitude' => (float) $r['latitude'], 'longitude' => (float) $r['longitude'],
+                'phone' => is_string($r['phone'] ?? null) ? mb_substr($r['phone'], 0, 40) : null, 'website' => is_string($r['website'] ?? null) ? mb_substr($r['website'], 0, 255) : null,
+            ];
+        }
+
+        return $out;
     }
 
     /**
