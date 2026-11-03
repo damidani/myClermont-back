@@ -1,0 +1,72 @@
+{
+    "id": "le comptoir des puys@45.7765,3.0821",
+    "name": "Le Comptoir des Puys",
+    "category": "restaurant",
+    "subtitle": "",
+    "tagline": "Cuisine de saison",
+    "description": "Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. Bon. ",
+    "address": "12 rue des Gras",
+    "postalCode": "63000",
+    "city": "Clermont-Ferrand",
+    "latitude": 45.7765,
+    "longitude": 3.0821,
+    "phone": "0473000000",
+    "email": "",
+    "website": "https://lecomptoir.example",
+    "instagram": "https://instagram.com/lecomptoir",
+    "facebook": "",
+    "bookingUrl": "",
+    "menuUrl": "",
+    "priceLevel": 2,
+    "attributes": [
+        "terrasse",
+        "pmr"
+    ],
+    "hours": {
+        "lun": [],
+        "mar": [
+            {
+                "open": "12:00",
+                "close": "14:00"
+            }
+        ],
+        "mer": [],
+        "jeu": [],
+        "ven": [],
+        "sam": [],
+        "dim": []
+    },
+    "exceptional": [
+        {
+            "date": "2026-12-25",
+            "closed": true,
+            "slots": [],
+            "note": "Noël"
+        }
+    ],
+    "photos": [
+        {
+            "src": "https://api.myclermont.app/media/test.jpg",
+            "id": "ph1",
+            "caption": "",
+            "credit": null
+        }
+    ],
+    "coverId": "ph1",
+    "highlights": [
+        {
+            "icon": "wine",
+            "title": "Vins d'Auvergne",
+            "text": "Sélection locale"
+        }
+    ],
+    "tip": "La table près de la fenêtre.",
+    "isPartner": false,
+    "rating": {
+        "average": 4.6,
+        "count": 23
+    },
+    "deals": [],
+    "events": [],
+    "updatedAt": "2026-11-03T12:00:54Z"
+}

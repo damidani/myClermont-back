@@ -186,6 +186,14 @@ final class PlaceController
         ];
     }
 
+    /** Version en ligne pour l'app (GET /places/{id}/sheet) : les champs en vérification gardent leur valeur publiée. */
+    public static function published(array $place): array
+    {
+        $d = self::data($place);
+
+        return $place['pro_pending'] !== null ? array_replace($d, self::liveSnapshot($place)) : $d;
+    }
+
     /** Données de la fiche (places.pro), complétées des valeurs par défaut. */
     public static function data(array $place): array
     {

@@ -30,8 +30,9 @@ final class PlacesModule implements Module
             $r->get('/partners', [MapController::class, 'partners']);
             $r->get('/places/{id}', [MapController::class, 'show']);
             $r->get('/places/{id}/photos', [MapController::class, 'photosOf']);
-            // Fiche enrichie historique (ouvert maintenant, infos pratiques, avis…)
-            $r->get('/places/{id}/sheet', [PlaceController::class, 'show']);
+            // Fiche au format Place du dashboard (b6496778) ; l'ancienne fiche enrichie reste sur /places/{id}/detail
+            $r->get('/places/{id}/sheet', [SheetController::class, 'show']);
+            $r->get('/places/{id}/detail', [PlaceController::class, 'show']);
         });
         $r->put('/places/{id}/review', [PlaceController::class, 'review'], ['auth']);
 

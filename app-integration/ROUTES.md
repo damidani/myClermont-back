@@ -159,7 +159,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | GET | `/v1/places/{id}/reviews` | signé |  |
 | DELETE | `/v1/places/{id}/reviews/me` | compte |  |
 | PUT | `/v1/places/{id}/reviews/me` | compte | post |
-| GET | `/v1/places/{id}/sheet` | compte optionnel |  |
+| GET | `/v1/places/{id}/sheet` | signé, compte optionnel | Place du dashboard + rating, deals, events, isPartner (404 sans fiche publiée) |
+| GET | `/v1/places/{id}/detail` | signé | ancienne fiche enrichie |
 | POST | `/v1/reports` | compte | report |
 | GET | `/v1/services` | compte optionnel |  |
 | GET | `/v1/services/categories` | compte optionnel |  |
