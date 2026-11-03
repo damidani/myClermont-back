@@ -34,6 +34,8 @@ final class PostPresenter
         return [
             'id'             => $p['uid'],
             'author'         => self::authorName($p),
+            // Identifiant stable de l'auteur, pour bloquer (b708f663)
+            'author_id'      => ($p['author_status'] ?? 'active') === 'deleted' ? null : $p['author_uid'],
             'neighborhood'   => (string) ($p['neighborhood_name'] ?? ''),
             'date'           => $date,
             'kind'           => self::KINDS[$p['type']] ?? 'Texte',
@@ -91,6 +93,7 @@ final class PostPresenter
         return [
             'id'          => $c['uid'],
             'author'      => self::authorName($c),
+            'author_id'   => ($c['author_status'] ?? 'active') === 'deleted' ? null : $c['author_uid'],
             'message'     => (string) $c['body'],
             'date'        => $date,
             'author_info' => self::specAuthor($c),

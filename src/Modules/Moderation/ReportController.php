@@ -18,7 +18,9 @@ use App\Support\Validator;
  *
  *   POST   /reports              { targetType, targetId, reason, details? }   → 201 { id }
  *   POST   /me/blocks/{userId}   → 204
- *   DELETE /me/blocks/{userId}   → 204
+ *   DELETE /me/blocks/{userId}   → 204 ({userId} = id ou pseudo)
+ *   POST   /me/blocks            { authorId } ou { author: "<pseudo>" }        → 201 { blocked }
+ *   GET    /me/blocks            → [{ id, handle, displayName, blockedAt }]
  */
 final class ReportController
 {
@@ -74,9 +76,38 @@ final class ReportController
         return Response::noContent();
     }
 
+    /** Blocage depuis le fil communautaire (b708f663) : par id d'auteur (authorId) ou par pseudo affiché */
+    public function blockAuthor(Request $request): Response
+    {
+        $data = Validator::validate($request->json(), ['author_id' => 'nullable|string|max:64', 'author' => 'nullable|string|max:64']);
+        $key = trim((string) ($data['author_id'] ?? $data['author'] ?? ''));
+        if ($key === '') {
+            throw new HttpException(400, 'validation_failed', 'Indique l\'auteur à bloquer.', ['author' => ['required']]);
+        }
+        $user = $this->user($key);
+        if ((int) $user['id'] === (int) $request->attributes['user_id']) {
+            throw new HttpException(400, 'validation_failed', 'Tu ne peux pas te bloquer toi-même.', ['author' => ['self']]);
+        }
+        (new MessagingService())->block((int) $request->attributes['user_id'], (int) $user['id']);
+
+        return Response::json(['blocked' => true, 'author_id' => $user['uid']], 201);
+    }
+
+    public function blocks(Request $request): Response
+    {
+        return Response::success(array_map(static fn ($r) => ['id' => $r['uid'], 'handle' => $r['handle'],
+            'display_name' => \App\Modules\Account\Handles::display($r['handle'], $r['display_name']), 'blocked_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($r['created_at'] . ' UTC'))],
+            Database::fetchAll('SELECT u.uid, u.handle, u.display_name, b.created_at FROM user_blocks b JOIN users u ON u.id = b.blocked_id
+                                WHERE b.blocker_id = :u ORDER BY b.created_at DESC', ['u' => $request->attributes['user_id']])));
+    }
+
+    /** Compte par uid ou par pseudo (avec ou sans @) */
     private function user(string $uid): array
     {
-        $user = preg_match('/^[0-9a-f-]{36}$/i', $uid) ? Database::fetch('SELECT id FROM users WHERE uid = :u', ['u' => strtolower($uid)]) : null;
+        $uid = rawurldecode($uid);
+        $user = preg_match('/^[0-9a-f-]{36}$/i', $uid)
+            ? Database::fetch('SELECT id, uid FROM users WHERE uid = :u', ['u' => strtolower($uid)])
+            : Database::fetch("SELECT id, uid FROM users WHERE handle = :h AND status <> 'deleted'", ['h' => ltrim($uid, '@')]);
 
         return $user ?? throw new HttpException(404, 'user_not_found', 'Utilisateur introuvable.');
     }

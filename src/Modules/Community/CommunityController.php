@@ -54,6 +54,7 @@ final class CommunityController
             $authorId,
             $limit,
             isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : null,
+            $request->attributes['user_id'] ?? null,
         );
 
         $viewerId = $request->attributes['user_id'] ?? null;
@@ -298,7 +299,7 @@ final class CommunityController
         $post = $this->findOrFail((string) $request->param('id'));
         $q = $request->query();
         $limit = max(1, min(100, (int) ($q['limit'] ?? 30)));
-        $rows = $this->posts->comments((int) $post['id'], $limit, isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : null);
+        $rows = $this->posts->comments((int) $post['id'], $limit, isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : null, $request->attributes['user_id'] ?? null);
         $viewerId = $request->attributes['user_id'] ?? null;
         $last = end($rows);
 
@@ -344,14 +345,43 @@ final class CommunityController
     {
         $post = $this->findOrFail((string) $request->param('id'));
         $data = Validator::validate($request->json(), [
-            'reason'  => 'required|in:spam,harassment,hate,inappropriate,false_info,other',
+            'reason'  => 'nullable|in:spam,harassment,hate,inappropriate,false_info,other',
             'details' => 'nullable|string|max:500',
         ]);
+        $data['reason'] ??= 'other';
         if ($this->posts->report((int) $post['id'], $request->attributes['user_id'], $data['reason'], $data['details'] ?? null)) {
             \App\Core\Logger::security('Publication masquée après signalements', ['post' => $post['uid']]);
         }
 
+        self::queueReport($request, 'post', $post['uid'], $data['reason'], $data['details'] ?? null);
+
         return Response::success(['reported' => true, 'message' => 'Merci, notre équipe va examiner cette publication.']);
+    }
+
+    /** POST /v1/community/posts/{id}/comments/{commentId}/report {reason?, details?} : file de modération (règle 1.2 de l'App Store) */
+    public function reportComment(Request $request): Response
+    {
+        $post = $this->findOrFail((string) $request->param('id'));
+        $comment = Database::fetch("SELECT id, uid FROM community_comments WHERE uid = :u AND post_id = :p AND status = 'visible'",
+            ['u' => strtolower((string) $request->param('commentId')), 'p' => $post['id']]) ?? throw new HttpException(404, 'comment_not_found', 'Commentaire introuvable.');
+        $data = Validator::validate($request->json(), [
+            'reason'  => 'nullable|in:spam,harassment,hate,inappropriate,false_info,other',
+            'details' => 'nullable|string|max:500',
+        ]);
+        self::queueReport($request, 'comment', $comment['uid'], $data['reason'] ?? 'other', $data['details'] ?? null);
+
+        return Response::success(['reported' => true, 'message' => 'Merci, notre équipe va examiner ce commentaire.']);
+    }
+
+    /** Signalement dans la file de l'administration (reports), une fois par compte et par contenu */
+    private static function queueReport(Request $request, string $type, string $targetId, string $reason, ?string $details): void
+    {
+        $map = ['hate' => 'offensive', 'false_info' => 'other'];
+        Database::execute(
+            'INSERT IGNORE INTO reports (uid, user_id, target_type, target_id, reason, details, created_at) VALUES (:uid, :u, :t, :id, :r, :d, :c)',
+            ['uid' => \App\Security\Crypto::uuid4(), 'u' => $request->attributes['user_id'], 't' => $type, 'id' => $targetId,
+             'r' => $map[$reason] ?? $reason, 'd' => $details, 'c' => gmdate('Y-m-d H:i:s')],
+        );
     }
 
     private function likeState(string $uid, bool $liked): Response

@@ -8159,6 +8159,133 @@
                 }
             }
         },
+        "/community/posts/{id}/comments/{commentId}/report": {
+            "post": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "POST /v1/community/posts/{id}/comments/{commentId}/report {reason?, details?} :",
+                "operationId": "post_community_posts_id_comments_commentId_report",
+                "x-handler": "CommunityController::reportComment",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "commentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "spam",
+                                            "harassment",
+                                            "hate",
+                                            "inappropriate",
+                                            "false_info",
+                                            "other"
+                                        ]
+                                    },
+                                    "details": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maximum": 500
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "comment_not_found · post_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/community/posts/{id}/like": {
             "put": {
                 "tags": [
@@ -8438,14 +8565,17 @@
                     }
                 ],
                 "requestBody": {
-                    "required": true,
+                    "required": false,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "type": "object",
                                 "properties": {
                                     "reason": {
-                                        "type": "string",
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
                                         "enum": [
                                             "spam",
                                             "harassment",
@@ -8462,10 +8592,7 @@
                                         ],
                                         "maximum": 500
                                     }
-                                },
-                                "required": [
-                                    "reason"
-                                ]
+                                }
                             }
                         }
                     }
@@ -15343,6 +15470,162 @@
                 }
             }
         },
+        "/me/blocks": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET    /me/blocks            → [{ id, handle, displayName, blockedAt }]",
+                "operationId": "get_me_blocks",
+                "x-handler": "ReportController::blocks",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "Blocage depuis le fil communautaire (b708f663) :",
+                "operationId": "post_me_blocks",
+                "x-handler": "ReportController::blockAuthor",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "authorId": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maximum": 64
+                                    },
+                                    "author": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maximum": 64
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields) · validation_failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/me/blocks/{userId}": {
             "post": {
                 "tags": [
@@ -15426,7 +15709,7 @@
                 "tags": [
                     "app"
                 ],
-                "summary": "DELETE /me/blocks/{userId}   → 204",
+                "summary": "DELETE /me/blocks/{userId}   → 204 ({userId} = id ou pseudo)",
                 "operationId": "delete_me_blocks_userId",
                 "x-handler": "ReportController::unblock",
                 "security": [

@@ -58,6 +58,7 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | PUT | `/v1/community/posts/{postId}/comments/{commentId}/like` | compte | 204 |
 | DELETE | `/v1/community/posts/{postId}/comments/{commentId}/like` | compte | 204 |
 | POST | `/v1/community/posts/{id}/report` | compte |  |
+| POST | `/v1/community/posts/{id}/comments/{commentId}/report` | compte | `{reason?, details?}` → file de modération |
 | POST | `/v1/community/posts/{id}/vote` | compte |  |
 | PUT | `/v1/community/posts/{id}/vote` | compte |  |
 | GET | `/v1/conversations` | compte |  |
@@ -128,6 +129,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | DELETE | `/v1/me` | compte |  |
 | GET | `/v1/me` | compte |  |
 | PATCH | `/v1/me` | compte |  |
+| GET | `/v1/me/blocks` | compte | auteurs bloqués |
+| POST | `/v1/me/blocks` | compte | `{authorId}` ou `{author: "<pseudo>"}` → 201 ; masque ses posts et commentaires |
 | DELETE | `/v1/me/blocks/{userId}` | compte |  |
 | POST | `/v1/me/blocks/{userId}` | compte |  |
 | GET | `/v1/me/export` | compte | contact |

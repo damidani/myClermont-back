@@ -18,9 +18,9 @@ final class PostRepository
     private const FROM = 'community_posts p JOIN users u ON u.id = p.user_id LEFT JOIN neighborhoods n ON n.id = p.neighborhood_id';
 
     /** Fil d'actualité, du plus récent au plus ancien (curseur = id). */
-    public function feed(?array $types, ?int $neighborhoodId, ?int $authorId, int $limit, ?int $beforeId): array
+    public function feed(?array $types, ?int $neighborhoodId, ?int $authorId, int $limit, ?int $beforeId, ?int $viewerId = null): array
     {
-        $where = "p.status = 'visible'";
+        $where = "p.status = 'visible'" . self::notBlocked('p.user_id', $viewerId);
         $params = ['limit' => $limit];
         if ($types !== null) {
             $in = [];
@@ -118,7 +118,7 @@ final class PostRepository
                        u.avatar_value AS author_avatar_value, u.status AS author_status,
                        ROW_NUMBER() OVER (PARTITION BY c.post_id ORDER BY c.id DESC) AS rn
                 FROM community_comments c JOIN users u ON u.id = c.user_id
-                WHERE c.post_id IN ({$in}) AND c.status = 'visible'
+                WHERE c.post_id IN ({$in}) AND c.status = 'visible'" . self::notBlocked('c.user_id', $userId) . "
              ) t WHERE t.rn <= 20 ORDER BY t.post_id, t.id",
             $params,
         ) as $c) {
@@ -205,13 +205,13 @@ final class PostRepository
         });
     }
 
-    public function comments(int $postId, int $limit, ?int $afterId): array
+    public function comments(int $postId, int $limit, ?int $afterId, ?int $viewerId = null): array
     {
         return Database::fetchAll(
             "SELECT c.id, c.uid, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.is_staff AS author_is_staff, u.staff_title AS author_staff_title, u.display_name AS author_display_name,
                     u.first_name AS author_first_name, u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status
              FROM community_comments c JOIN users u ON u.id = c.user_id
-             WHERE c.post_id = :p AND c.status = 'visible' AND c.id > :after ORDER BY c.id LIMIT :limit",
+             WHERE c.post_id = :p AND c.status = 'visible' AND c.id > :after" . self::notBlocked('c.user_id', $viewerId) . " ORDER BY c.id LIMIT :limit",
             ['p' => $postId, 'after' => $afterId ?? 0, 'limit' => $limit],
         );
     }
@@ -273,6 +273,12 @@ final class PostRepository
 
             return $hidden;
         });
+    }
+
+    /** Masque les auteurs bloqués par le lecteur (règle 1.2 de l'App Store) ; id entier, donc sans paramètre lié */
+    private static function notBlocked(string $column, ?int $viewerId): string
+    {
+        return $viewerId === null ? '' : " AND {$column} NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = " . (int) $viewerId . ')';
     }
 
     /** @return array{0: string, 1: array} */

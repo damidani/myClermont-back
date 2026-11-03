@@ -14,6 +14,8 @@ final class ModerationModule implements Module
     {
         $r->group(['middleware' => ['auth']], static function (Router $r): void {
             $r->post('/reports', [ReportController::class, 'store'], ['throttle:report']);
+            $r->get('/me/blocks', [ReportController::class, 'blocks']);
+            $r->post('/me/blocks', [ReportController::class, 'blockAuthor']);
             $r->post('/me/blocks/{userId}', [ReportController::class, 'block']);
             $r->delete('/me/blocks/{userId}', [ReportController::class, 'unblock']);
         });

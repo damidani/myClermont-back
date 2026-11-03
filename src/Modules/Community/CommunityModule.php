@@ -44,6 +44,7 @@ final class CommunityModule implements Module
             $r->put('/community/posts/{postId}/comments/{commentId}/like', [CommunityController::class, 'likeComment']);
             $r->delete('/community/posts/{postId}/comments/{commentId}/like', [CommunityController::class, 'unlikeComment']);
             $r->post('/community/posts/{id}/report', [CommunityController::class, 'report']);
+            $r->post('/community/posts/{id}/comments/{commentId}/report', [CommunityController::class, 'reportComment']);
         });
     }
 

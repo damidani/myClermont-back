@@ -17,3 +17,4 @@ app-integration/*.local.md
 
 # Site statique de commercant.myclermont.app (zip transmis à part, déployé sur le serveur)
 /commercant/
+*.zip
