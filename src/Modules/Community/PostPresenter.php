@@ -36,6 +36,7 @@ final class PostPresenter
             'author'         => self::authorName($p),
             // Identifiant stable de l'auteur, pour bloquer (b708f663)
             'author_id'      => ($p['author_status'] ?? 'active') === 'deleted' ? null : $p['author_uid'],
+            'author_is_member' => self::isMember($p),
             'neighborhood'   => (string) ($p['neighborhood_name'] ?? ''),
             'date'           => $date,
             'kind'           => self::KINDS[$p['type']] ?? 'Texte',
@@ -94,6 +95,7 @@ final class PostPresenter
             'id'          => $c['uid'],
             'author'      => self::authorName($c),
             'author_id'   => ($c['author_status'] ?? 'active') === 'deleted' ? null : $c['author_uid'],
+            'author_is_member' => self::isMember($c),
             'message'     => (string) $c['body'],
             'date'        => $date,
             'author_info' => self::specAuthor($c),
@@ -116,6 +118,12 @@ final class PostPresenter
     }
 
     /** Pseudo affiché (1a584b24) ; « Compte supprimé » pour un compte effacé */
+    /** Badge Membre My Clermont+ (9cdabedf), calculé à la lecture */
+    private static function isMember(array $row): bool
+    {
+        return ($row['author_status'] ?? 'active') !== 'deleted' && !empty($row['author_premium_until']) && strtotime($row['author_premium_until'] . ' UTC') > time();
+    }
+
     private static function authorName(array $row): string
     {
         if (($row['author_status'] ?? 'active') === 'deleted') {

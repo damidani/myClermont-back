@@ -1,79 +1,83 @@
 {
-    "items": [
+  "items": [
+    {
+      "id": "d045a91b-fa20-44fd-a11c-c09199c2f7ff",
+      "author": "camille.r",
+      "neighborhood": "Montferrand",
+      "date": "2026-11-16T18:20:00Z",
+      "kind": "Sondage",
+      "text": "Vide-grenier en décembre ?",
+      "mediaFiles": [],
+      "pollOptions": [
+        "Oui",
+        "Non"
+      ],
+      "votes": [
+        12,
+        4
+      ],
+      "myVote": null,
+      "pollQuestion": "Vide-grenier en décembre ?",
+      "likes": 3,
+      "liked": false,
+      "comments": [
         {
-            "id": "d045a91b-fa20-44fd-a11c-c09199c2f7ff",
-            "author": "camille.r",
-            "neighborhood": "Montferrand",
-            "date": "2026-11-16T18:20:00Z",
-            "kind": "Sondage",
-            "text": "Vide-grenier en décembre ?",
-            "mediaFiles": [],
-            "pollOptions": [
-                "Oui",
-                "Non"
-            ],
-            "votes": [
-                12,
-                4
-            ],
-            "myVote": null,
-            "pollQuestion": "Vide-grenier en décembre ?",
-            "likes": 3,
-            "liked": false,
-            "comments": [
-                {
-                    "id": "7c1e2b0a-4d55-4a8e-9f3b-2a6c1d9e8f10",
-                    "author": "leo.m",
-                    "message": "Carrément !",
-                    "date": "2026-11-16T18:41:00Z",
-                    "authorInfo": {
-                        "id": "a9c1d2e3-0000-4000-8000-000000000004",
-                        "displayName": "leo.m",
-                        "handle": "leo.m",
-                        "avatar": {
-                            "kind": "symbol",
-                            "value": "person.crop.circle.fill"
-                        }
-                    },
-                    "text": "Carrément !",
-                    "createdAt": "2026-11-16T18:41:00Z",
-                    "isMine": false,
-                    "mentions": []
-                }
-            ],
-            "authorInfo": {
-                "id": "b278efc6-943a-4c36-a827-d09e71f2f75a",
-                "displayName": "camille.r",
-                "handle": "camille.r",
-                "avatar": {
-                    "kind": "symbol",
-                    "value": "person.crop.circle.fill"
-                }
-            },
-            "createdAt": "2026-11-16T18:20:00Z",
-            "specKind": "poll",
-            "media": [],
-            "poll": {
-                "options": [
-                    "Oui",
-                    "Non"
-                ],
-                "votes": [
-                    12,
-                    4
-                ],
-                "myVote": null,
-                "optionIds": [
-                    20,
-                    21
-                ]
-            },
-            "commentsCount": 1,
-            "mediaItems": [],
-            "isMine": false,
-            "shareUrl": "https://myclermont.app/communaute/d045a91b-fa20-44fd-a11c-c09199c2f7ff",
-            "mentions": []
+          "id": "7c1e2b0a-4d55-4a8e-9f3b-2a6c1d9e8f10",
+          "author": "leo.m",
+          "message": "Carrément !",
+          "date": "2026-11-16T18:41:00Z",
+          "authorInfo": {
+            "id": "a9c1d2e3-0000-4000-8000-000000000004",
+            "displayName": "leo.m",
+            "handle": "leo.m",
+            "avatar": {
+              "kind": "symbol",
+              "value": "person.crop.circle.fill"
+            }
+          },
+          "text": "Carrément !",
+          "createdAt": "2026-11-16T18:41:00Z",
+          "isMine": false,
+          "mentions": [],
+          "authorId": "a9c1d2e3-0000-4000-8000-000000000004",
+          "authorIsMember": false
         }
-    ],
-    "nextCursor": null
+      ],
+      "authorInfo": {
+        "id": "b278efc6-943a-4c36-a827-d09e71f2f75a",
+        "displayName": "camille.r",
+        "handle": "camille.r",
+        "avatar": {
+          "kind": "symbol",
+          "value": "person.crop.circle.fill"
+        }
+      },
+      "createdAt": "2026-11-16T18:20:00Z",
+      "specKind": "poll",
+      "media": [],
+      "poll": {
+        "options": [
+          "Oui",
+          "Non"
+        ],
+        "votes": [
+          12,
+          4
+        ],
+        "myVote": null,
+        "optionIds": [
+          20,
+          21
+        ]
+      },
+      "commentsCount": 1,
+      "mediaItems": [],
+      "isMine": false,
+      "shareUrl": "https://myclermont.app/communaute/d045a91b-fa20-44fd-a11c-c09199c2f7ff",
+      "mentions": [],
+      "authorId": "b278efc6-943a-4c36-a827-d09e71f2f75a",
+      "authorIsMember": true
+    }
+  ],
+  "nextCursor": null
 }

@@ -4939,7 +4939,7 @@
                         }
                     },
                     "429": {
-                        "description": "rate_limited (en-tête Retry-After)",
+                        "description": "quota_exceeded · rate_limited (en-tête Retry-After)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7496,7 +7496,9 @@
                                                     "text": "Carrément !",
                                                     "createdAt": "2026-11-16T18:41:00Z",
                                                     "isMine": false,
-                                                    "mentions": []
+                                                    "mentions": [],
+                                                    "authorId": "a9c1d2e3-0000-4000-8000-000000000004",
+                                                    "authorIsMember": false
                                                 }
                                             ],
                                             "authorInfo": {
@@ -7530,7 +7532,9 @@
                                             "mediaItems": [],
                                             "isMine": false,
                                             "shareUrl": "https://myclermont.app/communaute/d045a91b-fa20-44fd-a11c-c09199c2f7ff",
-                                            "mentions": []
+                                            "mentions": [],
+                                            "authorId": "b278efc6-943a-4c36-a827-d09e71f2f75a",
+                                            "authorIsMember": true
                                         }
                                     ],
                                     "nextCursor": null
@@ -16986,6 +16990,106 @@
                     },
                     "401": {
                         "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "POST /me/subscription (9cdabedf) :",
+                "operationId": "post_me_subscription",
+                "x-handler": "SubscriptionsModule::attach",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "signedTransaction": {
+                                        "type": "string",
+                                        "maxLength": 20000
+                                    },
+                                    "appAccountToken": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maximum": 64
+                                    }
+                                },
+                                "required": [
+                                    "signedTransaction"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields) · invalid_transaction",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "conflict",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -33396,6 +33500,72 @@
                 }
             }
         },
+        "/webhooks/app-store": {
+            "post": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "Notifications serveur App Store v2.",
+                "operationId": "post_webhooks_app_store",
+                "x-handler": "SubscriptionsModule::webhook",
+                "security": [],
+                "x-rate-limit": [
+                    {
+                        "name": "public",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "signedPayload": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/apple/app-store": {
             "post": {
                 "tags": [
@@ -33429,8 +33599,15 @@
                     }
                 },
                 "responses": {
-                    "204": {
-                        "description": "Fait, sans contenu"
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "400": {
                         "description": "validation_failed (details.fields)",

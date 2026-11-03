@@ -13,7 +13,7 @@ final class PostRepository
 {
     private const COLUMNS = 'p.id, p.uid, p.user_id, p.type, p.body, p.badge_label, p.media_caption, p.likes_count, p.comments_count,
                              p.status, p.created_at, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.is_staff AS author_is_staff, u.staff_title AS author_staff_title, u.display_name AS author_display_name, u.first_name AS author_first_name,
-                             u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status, n.name AS neighborhood_name';
+                             u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status, u.premium_until AS author_premium_until, n.name AS neighborhood_name';
 
     private const FROM = 'community_posts p JOIN users u ON u.id = p.user_id LEFT JOIN neighborhoods n ON n.id = p.neighborhood_id';
 
@@ -115,7 +115,7 @@ final class PostRepository
             "SELECT * FROM (
                 SELECT c.id, c.uid, c.post_id, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.is_staff AS author_is_staff, u.staff_title AS author_staff_title,
                        u.display_name AS author_display_name, u.first_name AS author_first_name, u.avatar_kind AS author_avatar_kind,
-                       u.avatar_value AS author_avatar_value, u.status AS author_status,
+                       u.avatar_value AS author_avatar_value, u.status AS author_status, u.premium_until AS author_premium_until,
                        ROW_NUMBER() OVER (PARTITION BY c.post_id ORDER BY c.id DESC) AS rn
                 FROM community_comments c JOIN users u ON u.id = c.user_id
                 WHERE c.post_id IN ({$in}) AND c.status = 'visible'" . self::notBlocked('c.user_id', $userId) . "
@@ -209,7 +209,7 @@ final class PostRepository
     {
         return Database::fetchAll(
             "SELECT c.id, c.uid, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.is_staff AS author_is_staff, u.staff_title AS author_staff_title, u.display_name AS author_display_name,
-                    u.first_name AS author_first_name, u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status
+                    u.first_name AS author_first_name, u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status, u.premium_until AS author_premium_until
              FROM community_comments c JOIN users u ON u.id = c.user_id
              WHERE c.post_id = :p AND c.status = 'visible' AND c.id > :after" . self::notBlocked('c.user_id', $viewerId) . " ORDER BY c.id LIMIT :limit",
             ['p' => $postId, 'after' => $afterId ?? 0, 'limit' => $limit],
@@ -230,7 +230,7 @@ final class PostRepository
 
             return Database::fetch(
                 'SELECT c.id, c.uid, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.is_staff AS author_is_staff, u.staff_title AS author_staff_title, u.display_name AS author_display_name, u.first_name AS author_first_name,
-                        u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status
+                        u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status, u.premium_until AS author_premium_until
                  FROM community_comments c JOIN users u ON u.id = c.user_id WHERE c.uid = :uid',
                 ['uid' => $uid],
             );

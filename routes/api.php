@@ -41,6 +41,7 @@ return static function (Router $router, array $modules): void {
 
         // --- Notifications serveur de l'App Store (appelées par Apple : vérifiées par leur signature JWS) ---
         $r->post('/webhooks/apple/app-store', [App\Modules\Subscriptions\SubscriptionsModule::class, 'webhook'], ['throttle:public,ip']);
+        $r->post('/webhooks/app-store', [App\Modules\Subscriptions\SubscriptionsModule::class, 'webhook'], ['throttle:public,ip']);
 
         // --- Canal entre assistants (Claude de l'app ↔ Claude du back) : jeton X-Agent-Token, hors signature d'appareil ---
         $r->group(['middleware' => ['throttle:public,ip']], static function (Router $r): void {

@@ -208,6 +208,9 @@ final class UserRepository
                 'active'     => $plusActive,
                 'expires_at' => $plusActive && $user['premium_until'] !== null ? gmdate('Y-m-d\TH:i:s\Z', strtotime($user['premium_until'] . ' UTC')) : null,
             ],
+            // My Clermont+ (9cdabedf) : abonnement App Store, ou null
+            'membership'            => \App\Modules\Subscriptions\SubscriptionsModule::membership((int) $user['id'])
+                ?? ($plusActive ? ['is_member' => true, 'product_id' => null, 'expires_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($user['premium_until'] . ' UTC')), 'in_trial' => false, 'will_renew' => false] : null),
             'points'                => (int) ($user['points'] ?? 0),
             'created_at'            => gmdate('Y-m-d\TH:i:s\Z', strtotime($user['created_at'] . ' UTC')),
         ];

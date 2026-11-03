@@ -1,0 +1,10 @@
+{
+    "error": {
+        "code": "quota_exceeded",
+        "message": "Tu as utilisé tes 5 questions gratuites d'aujourd'hui.",
+        "details": {
+            "limit": 5,
+            "resetAt": "2026-11-04T00:00:00+01:00"
+        }
+    }
+}

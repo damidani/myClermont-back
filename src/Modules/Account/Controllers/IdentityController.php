@@ -286,6 +286,7 @@ final class IdentityController
         Database::execute("UPDATE users SET status = 'deleted', deleted_at = :d, updated_at = :d2 WHERE id = :id", ['d' => $now, 'd2' => $now, 'id' => $user['id']]);
         (new RefreshTokenRepository())->revokeAllForUser((int) $user['id']);
         Database::execute('UPDATE devices SET user_id = NULL WHERE user_id = :u', ['u' => $user['id']]);
+        \App\Modules\Subscriptions\SubscriptionsModule::detach((int) $user['id']);
         (new DeviceRepository())->forget((string) $request->attributes['device']['uid']);
 
         if ($user['apple_refresh_encrypted']) {

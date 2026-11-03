@@ -270,11 +270,28 @@ TXT;
 
     /**
      * Décision du 30/10 (brief §8) : un compte gratuit suffit. Sans compte, 1 question découverte par appareil (X-Device-Id),
-     * puis 401 account_required. Avec un compte, seul le plafond anti-abus de 10 questions par minute s'applique (throttle:ai).
+     * puis 401 account_required. Avec un compte : 5 questions par jour de Paris, 300 pour un membre My Clermont+ (9cdabedf), et 10 par minute (throttle:ai).
      */
     private function checkQuota(?int $userId, int $deviceId): void
     {
         if ($userId !== null) {
+            // My Clermont+ (9cdabedf) : 5 questions par jour de Paris (Chat et carte cumulés) pour un compte gratuit, 300 pour un membre
+            $tz = new \DateTimeZone('Europe/Paris');
+            $midnight = new \DateTimeImmutable('today', $tz);
+            $used = (int) Database::fetch('SELECT COUNT(*) AS n FROM ai_questions WHERE user_id = :u AND created_at >= :d',
+                ['u' => $userId, 'd' => $midnight->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s')])['n'];
+            $free = (int) Config::get('assistant.daily_free', 5);
+            if ($used < $free) {
+                return;
+            }
+            $member = \App\Modules\Subscriptions\SubscriptionsModule::isMember($userId, true);
+            $limit = $member ? (int) Config::get('assistant.daily_member', 300) : $free;
+            if ($used >= $limit) {
+                throw new HttpException(429, 'quota_exceeded', $member
+                    ? 'Tu as atteint la limite de questions pour aujourd\'hui. Reviens demain !'
+                    : "Tu as utilisé tes {$free} questions gratuites d'aujourd'hui.",
+                    ['limit' => $limit, 'reset_at' => $midnight->modify('+1 day')->format('Y-m-d\TH:i:sP')]);
+            }
             return;
         }
         $total = (int) (Database::fetch('SELECT COALESCE(SUM(questions), 0) AS n FROM ai_usage WHERE scope_key = :d', ['d' => 'd:' . $deviceId])['n'] ?? 0);

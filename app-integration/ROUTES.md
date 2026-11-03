@@ -130,6 +130,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | GET | `/v1/me` | compte |  |
 | PATCH | `/v1/me` | compte |  |
 | GET | `/v1/me/blocks` | compte | auteurs bloqués |
+| POST | `/v1/me/subscription` | compte | `{signedTransaction, appAccountToken?}` → `{isMember, productId, expiresAt, inTrial, willRenew}` ; 400 `invalid_transaction`, 409 `conflict` (`owned_by_other_account`) |
+| POST | `/v1/webhooks/app-store` | Apple | notifications App Store V2 (`signedPayload`) |
 | POST | `/v1/me/blocks` | compte | `{authorId}` ou `{author: "<pseudo>"}` → 201 ; masque ses posts et commentaires |
 | DELETE | `/v1/me/blocks/{userId}` | compte |  |
 | POST | `/v1/me/blocks/{userId}` | compte |  |
