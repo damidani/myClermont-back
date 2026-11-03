@@ -99,6 +99,8 @@ final class AdminKernel
             $path === '/upload' && $m === 'POST'             => $c->upload(),
             $path === '/cache/clear' && $m === 'POST'        => $c->clearCache(),
             $path === '/moderation' && $m === 'GET'          => $c->moderation(),
+            // Spec OpenAPI complète (pro, admin, agents) pour /docs (65abb5dc) : réservée à une session du back-office
+            $path === '/openapi.json' && $m === 'GET'        => [200, ['Content-Type' => 'application/json; charset=utf-8'], \App\Docs\DocsPage::spec(true)],
             $path === '/moderation' && $m === 'POST'         => $c->moderate(),
             (bool) preg_match('#^/r/(\w+)(?:/(new|edit|delete|export\.csv))?$#', $path, $p) => $c->resource($p[1], $p[2] ?? 'list'),
             default => [404, [], AdminController::page('Introuvable', '<div class="card"><p>Page introuvable.</p></div>', $req)],

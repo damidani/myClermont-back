@@ -16531,6 +16531,47 @@
                 }
             }
         },
+        "/openapi.json": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /openapi.json",
+                "operationId": "get_openapi.json",
+                "x-handler": "DocsPage::publicSpec",
+                "security": [],
+                "x-rate-limit": [
+                    {
+                        "name": "public",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/partners": {
             "get": {
                 "tags": [

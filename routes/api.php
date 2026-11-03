@@ -44,6 +44,7 @@ return static function (Router $router, array $modules): void {
 
         // --- Canal entre assistants (Claude de l'app ↔ Claude du back) : jeton X-Agent-Token, hors signature d'appareil ---
         $r->group(['middleware' => ['throttle:public,ip']], static function (Router $r): void {
+            $r->get('/openapi.json', [App\Docs\DocsPage::class, 'publicSpec']);
             $r->get('/agents/status', [App\Modules\Agents\AgentsModule::class, 'status']);
             $r->get('/agents/bundle', [App\Modules\Agents\AgentsModule::class, 'bundle']);
             $r->post('/agents/messages', [App\Modules\Agents\AgentsModule::class, 'create']);

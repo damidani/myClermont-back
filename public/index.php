@@ -28,6 +28,12 @@ if ($path === '/admin' || str_starts_with($path, '/admin/')) {
     return;
 }
 
+// Documentation de l'API (Swagger UI) : routes de l'app en public, version complète avec une session du back-office
+if ($path === '/docs' || $path === '/docs/') {
+    \App\Docs\DocsPage::run();
+    return;
+}
+
 // Page web du lien « mot de passe oublié » (envoyé par e-mail)
 if ($path === '/password/reset') {
     (new \App\Modules\Account\PasswordResetPage())->run();
