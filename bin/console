@@ -315,6 +315,11 @@ switch ($command) {
         $out('Envois non confirmés supprimés : ' . \App\Content\Uploads\UploadController::purge());
         break;
 
+    case 'osm:import':
+        // Commerces et services OpenStreetMap de la métropole pour Clermont IA (« le coiffeur le plus proche »)
+        $out('Lieux OpenStreetMap importés : ' . \App\Modules\Assistant\Nearby::import($out));
+        break;
+
     case 'events:maintenance':
         // Spec v1 : les événements terminés depuis plus de 90 jours passent en archived
         $n = Database::execute(
@@ -952,6 +957,7 @@ switch ($command) {
           demo:purge [--dry-run]                       Retire les données de démo et de test (événements demo-…, picsum, comptes de test)
           schema:check [--base=URL]                    Vérifie les réponses réelles contre les schémas de l'app iOS
           events:maintenance               Archive les événements terminés depuis 90 jours
+          osm:import                       Importe les commerces et services OpenStreetMap (Clermont IA)
           account:purge                    Efface les comptes supprimés depuis plus de 30 jours (cron quotidien)
           import:status                    État des sources importées (dernier passage, résultat)
           import:preview <slug> [n]        Affiche les n premiers éléments récupérés, sans rien enregistrer

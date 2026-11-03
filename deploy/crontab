@@ -22,3 +22,5 @@
 45 * * * * php /var/www/myclermont/bin/console uploads:purge > /dev/null 2>&1
 */5 * * * * php /var/www/myclermont/bin/console push:topics > /dev/null 2>&1
 10 4 * * * php /var/www/myclermont/bin/console rgpd:purge > /dev/null 2>&1
+# Commerces et services OpenStreetMap pour Clermont IA (lundi, 4 h 40)
+40 4 * * 1 php /var/www/myclermont/bin/console osm:import >> /var/www/myclermont/storage/logs/imports.log 2>&1

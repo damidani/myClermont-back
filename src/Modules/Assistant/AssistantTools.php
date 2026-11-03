@@ -20,7 +20,7 @@ final class AssistantTools
     /** @var array<string, array> résultats vus pendant la question, par référence */
     public array $seen = [];
 
-    /** @var list<array> recherches que l'app lancera avec Plans autour de l'utilisateur */
+    /** @var list<array> recherches Plans confiées à l'app : plus utilisées (le serveur cherche lui-même), gardées vides pour le contrat */
     public array $nearbySearches = [];
 
     public function __construct(private readonly float $lat, private readonly float $lon)
@@ -55,12 +55,8 @@ final class AssistantTools
             ['name' => 'fuel_prices', 'description' => 'Prix des carburants des stations proches (flux officiel).',
              'inputSchema' => $obj(['fuel' => ['type' => 'string', 'enum' => FuelService::FUELS]])],
             ['name' => 'weather', 'description' => 'Météo actuelle à Clermont-Ferrand.', 'inputSchema' => $obj([])],
-            ['name' => 'nearby_search', 'description' => 'Pour un commerce ou service courant autour de l\'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…) : l\'app le cherchera elle-même sur la carte. Ne renvoie aucun résultat.',
-             'inputSchema' => $obj([
-                 'query' => ['type' => 'string'], 'label' => ['type' => 'string'],
-                 'icon'  => ['type' => 'string', 'description' => 'Nom SF Symbols, ex. cross.case.fill'],
-                 'limit' => ['type' => 'integer'],
-             ], ['query', 'label'])],
+            ['name' => 'nearby_search', 'description' => 'Commerces et services réels les plus proches de l\'utilisateur (OpenStreetMap) : pharmacie, coiffeur, boulangerie, distributeur, parking… ou un nom d\'enseigne. Adresse, distance, horaires et téléphone.',
+             'inputSchema' => $obj(['query' => ['type' => 'string', 'description' => 'Genre (« coiffeur ») ou nom (« Monoprix »)']], ['query'])],
             ['name' => 'reply', 'strict' => true,
              'description' => 'Réponse finale à afficher. À appeler une seule fois, en dernier.',
              'inputSchema' => ['type' => 'object', 'additionalProperties' => false, 'required' => ['text', 'cards', 'follow_ups'], 'properties' => [
@@ -184,17 +180,25 @@ final class AssistantTools
         return ['fuel' => $fuel, 'stations' => $out];
     }
 
+    /** Commerces et services réels les plus proches (OpenStreetMap et base), par genre connu ou par nom */
     private function nearby(array $in): array
     {
-        if (count($this->nearbySearches) < 3 && !empty($in['query'])) {
-            $this->nearbySearches[] = [
-                'query' => mb_substr((string) $in['query'], 0, 60), 'label' => mb_substr((string) ($in['label'] ?? $in['query']), 0, 60),
-                'icon'  => preg_match('/^[a-z0-9.]{2,60}$/', (string) ($in['icon'] ?? '')) ? $in['icon'] : 'mappin.circle.fill',
-                'limit' => max(1, min(10, (int) ($in['limit'] ?? 4))),
-            ];
+        $query = trim((string) ($in['query'] ?? ''));
+        if ($query === '') {
+            return ['places' => []];
+        }
+        $kind = Nearby::kindOf($query);
+        $results = $kind !== null ? Nearby::search($kind, $this->lat, $this->lon, 6)
+                                  : Nearby::search('restaurant', $this->lat, $this->lon, 6, mb_substr($query, 0, 60));
+        $out = [];
+        foreach ($results as $r) {
+            $ref = 'near:' . $r['spot']['id'];
+            $this->seen[$ref] = ['type' => 'nearby'] + $r;
+            $out[] = ['ref' => $ref, 'name' => $r['spot']['name'], 'address' => $r['address'], 'distance_m' => $r['distance'],
+                      'opening_hours' => $r['opening_hours'], 'phone' => $r['spot']['phone']];
         }
 
-        return ['status' => 'L\'app affichera les résultats autour de l\'utilisateur.'];
+        return ['places' => $out];
     }
 
     private function rows(string $type, string $sql, array $params): array

@@ -56,6 +56,9 @@ final class CardBuilder
 
     private static function card(array $r): ?array
     {
+        if ($r['type'] === 'nearby') {
+            return Nearby::card($r);
+        }
         $base = ['badge' => null, 'is_partner' => false];
         $card = match ($r['type']) {
             'event' => $base + [

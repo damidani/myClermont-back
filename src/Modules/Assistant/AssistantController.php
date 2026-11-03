@@ -33,11 +33,12 @@ Règles :
 - Réponds en français, en tutoyant, en 120 mots maximum, sur un ton chaleureux et concret.
 - N'affirme aucun fait (adresse, prix, horaire, date, disponibilité) qui ne vienne pas d'un outil. Si les outils ne donnent rien, dis-le simplement et propose une alternative.
 - Utilise les outils pour toute question sur les sorties, lieux, bons plans, emplois, logements, services, carburants ou la météo.
-- Pour un commerce ou service courant autour de l'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…), utilise nearby_search : l'app fera la recherche sur sa carte.
+- Pour un commerce ou service courant autour de l'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…), utilise nearby_search : il renvoie les adresses réelles les plus proches (OpenStreetMap) à citer dans cards.
+- Les lignes [Lieux montrés en cartes…] de l'historique décrivent les lieux déjà montrés : sers-t'en pour « ses horaires », « son adresse »… N'invente jamais d'horaires absents.
 - Sur l'écran carte (screen = map), privilégie les lieux à épingler.
 - Santé : en cas d'urgence, donne immédiatement le 15 (SAMU) ou le 112, et le 3237 pour la pharmacie de garde. Ne pose jamais de diagnostic.
 - Texte brut uniquement : jamais de Markdown (pas de **gras**, de titres, de listes à puces ni de liens), l'app l'affiche tel quel.
-- Honnêteté : n'annonce jamais d'adresses, de lieux ou de bons plans (« voici… », « je te propose… ») sans mettre leurs références dans cards. Si les outils ne renvoient rien, dis-le simplement (« je n'ai pas encore d'adresse référencée près de toi ») et propose une autre piste.
+- Honnêteté : n'annonce jamais d'adresses, de lieux ou de bons plans (« voici… », « je te propose… », « je vais te montrer… », « sur la carte ») sans mettre leurs références dans cards. Si les outils ne renvoient rien, dis-le simplement (« je n'ai pas encore d'adresse référencée près de toi ») et propose une autre piste.
 - Termine TOUJOURS par l'outil reply : le texte de ta réponse, les références (champ ref) des résultats à montrer en cartes (6 maximum, uniquement des références reçues des outils), et 2 ou 3 relances courtes que l'utilisateur pourrait taper.
 TXT;
 
@@ -72,6 +73,18 @@ TXT;
             return Response::success(['conversation_id' => $conversationId] + $cached);
         }
 
+        // Commerce ou service « le plus proche » (iOS 54d34637, afe694b8) : réponse factuelle depuis OpenStreetMap et la base, sans le modèle
+        $located = is_numeric($loc['lat'] ?? null) && is_numeric($loc['lon'] ?? null);
+        $kind = Nearby::detect($data['question']);
+        if ($kind !== null) {
+            $near = Nearby::reply($kind, $located ? $lat : Nearby::JAUDE[0], $located ? $lon : Nearby::JAUDE[1], $located, $screen, $data['question']);
+            $result = ['text' => $near['text'], 'cards' => $near['cards'], 'nearby_searches' => [], 'follow_ups' => $near['follow_ups']];
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $near['text'] . ($near['results'] !== [] ? "\n" . Nearby::memo($near['results']) : ''));
+            $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], 'answered', ['nearby:' . $kind], 0, 0);
+
+            return Response::success(['conversation_id' => $conversationId] + $result);
+        }
+
         $tools = new AssistantTools($lat, $lon);
         [$reply, $used, $in, $out, $status] = $this->converse($data['question'], $history, $screen, $lat, $lon, $tools);
         // Un petit modèle renvoie parfois une liste sous forme de texte (« a, b » ou JSON) : on la remet en liste
@@ -91,17 +104,18 @@ TXT;
             'nearby_searches' => $tools->nearbySearches,
             'follow_ups'      => array_slice(array_values(array_filter(array_map(static fn ($f) => is_string($f) ? mb_substr(trim($f), 0, 80) : null, $reply['follow_ups'] ?? []))), 0, 3),
         ];
-        // Filet de sécurité (bug iOS c3c45faf) : sans carte, retirer les phrases qui annoncent des suggestions à suivre
-        if ($result['cards'] === [] && preg_match('/\b(voici|voilà|ci-dessous|ci-après|je te propose|quelques (adresses|bons plans|idées|lieux))\b/iu', $result['text'])) {
-            $kept = array_filter(preg_split('/(?<=[.!?])\s+/u', $result['text']) ?: [], static fn ($p) => !preg_match('/\b(voici|voilà|ci-dessous|ci-après|je te propose|quelques (adresses|bons plans|idées|lieux))\b/iu', $p));
+        // Filet de sécurité (bugs iOS c3c45faf, 54d34637) : sans carte, retirer les phrases qui annoncent des suggestions ou un affichage
+        $promise = '/\\b(voici|voilà|ci-dessous|ci-après|je te propose|je vais te montrer|je te montre|je t\'affiche|l\'app (va )?te montre|sur la carte|quelques (adresses|bons plans|idées|lieux))\\b/iu';
+        if ($result['cards'] === [] && preg_match($promise, $result['text'])) {
+            $kept = array_filter(preg_split('/(?<=[.!?])\\s+/u', $result['text']) ?: [], static fn ($p) => !preg_match($promise, $p));
             $result['text'] = trim(implode(' ', $kept)) ?: 'Je n\'ai pas encore d\'adresse référencée pour ça près de toi. Essaie une autre question ou regarde la carte de l\'app.';
         }
         if ($status === 'answered') {
             if ($cacheKey !== null) {
                 Cache::store()->set($cacheKey, $result, (int) Config::get('assistant.cache_ttl', 600));
             }
-            $turns = array_slice(array_merge($history, [['q' => $data['question'], 'a' => $result['text']]]), -4);
-            Cache::store()->set('ai:conv:' . $conversationId, ['owner' => $userId ?? 'd' . $deviceId, 'turns' => $turns], 1800);
+            $memo = array_values(array_filter($tools->seen, static fn ($r) => $r['type'] === 'nearby'));
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $result['text'] . ($memo !== [] ? "\n" . Nearby::memo($memo) : ''));
         }
         $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], $status, $used, $in, $out);
 
@@ -164,6 +178,13 @@ TXT;
         }
 
         return [['text' => 'Je n\'ai pas réussi à finaliser la réponse, réessaie.', 'cards' => [], 'follow_ups' => []], $used, $in, $out, 'failed'];
+    }
+
+    /** Mémoire de conversation : 4 derniers échanges, 30 min */
+    private function remember(string $conversationId, ?int $userId, int $deviceId, array $history, string $question, string $answer): void
+    {
+        $turns = array_slice(array_merge($history, [['q' => $question, 'a' => $answer]]), -4);
+        Cache::store()->set('ai:conv:' . $conversationId, ['owner' => $userId ?? 'd' . $deviceId, 'turns' => $turns], 1800);
     }
 
     /**

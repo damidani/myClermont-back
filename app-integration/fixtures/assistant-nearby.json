@@ -1,0 +1,140 @@
+{
+    "conversationId": "7c1e2f4a-3b5d-4e6f-8a9b-0c1d2e3f4a5b",
+    "text": "Le coiffeur le plus proche, c'est Dessange, à 50 m de toi (≈ 1 min à pied). C'est ouvert en ce moment d'après OpenStreetMap. J'ai aussi trouvé 3 autres coiffeurs à proximité.",
+    "cards": [
+        {
+            "icon": "scissors",
+            "colors": [
+                "#F5215C",
+                "#FA735C"
+            ],
+            "kicker": "COIFFEUR · 50 m",
+            "title": "Dessange",
+            "detail": "Clermont-Ferrand",
+            "badge": "Ouvert · ≈ 1 min à pied",
+            "isPartner": false,
+            "link": {
+                "type": "place",
+                "spot": {
+                    "id": "osm-node-2401874711",
+                    "name": "Dessange",
+                    "category": "shopping",
+                    "latitude": 45.777301,
+                    "longitude": 3.082512,
+                    "subtitle": "",
+                    "phone": null,
+                    "website": null,
+                    "isPartner": false,
+                    "demoName": "Dessange",
+                    "natureKind": null
+                }
+            }
+        },
+        {
+            "icon": "scissors",
+            "colors": [
+                "#F5215C",
+                "#FA735C"
+            ],
+            "kicker": "COIFFEUR · 50 m",
+            "title": "Bessi Coiffeur",
+            "detail": "3 Rue Blatin, Clermont-Ferrand",
+            "badge": "≈ 1 min à pied",
+            "isPartner": false,
+            "link": {
+                "type": "place",
+                "spot": {
+                    "id": "osm-node-4710233187",
+                    "name": "Bessi Coiffeur",
+                    "category": "shopping",
+                    "latitude": 45.776612,
+                    "longitude": 3.081904,
+                    "subtitle": "3 Rue Blatin, Clermont-Ferrand",
+                    "phone": null,
+                    "website": null,
+                    "isPartner": false,
+                    "demoName": "Bessi Coiffeur",
+                    "natureKind": null
+                }
+            }
+        },
+        {
+            "icon": "scissors",
+            "colors": [
+                "#F5215C",
+                "#FA735C"
+            ],
+            "kicker": "COIFFEUR · 100 m",
+            "title": "Style coiffure",
+            "detail": "Clermont-Ferrand",
+            "badge": "Ouvert · ≈ 1 min à pied",
+            "isPartner": false,
+            "link": {
+                "type": "place",
+                "spot": {
+                    "id": "osm-node-5531904620",
+                    "name": "Style coiffure",
+                    "category": "shopping",
+                    "latitude": 45.777958,
+                    "longitude": 3.081407,
+                    "subtitle": "",
+                    "phone": null,
+                    "website": null,
+                    "isPartner": false,
+                    "demoName": "Style coiffure",
+                    "natureKind": null
+                }
+            }
+        },
+        {
+            "icon": "scissors",
+            "colors": [
+                "#F5215C",
+                "#FA735C"
+            ],
+            "kicker": "COIFFEUR · 150 m",
+            "title": "Le salon",
+            "detail": "Clermont-Ferrand",
+            "badge": "Ouvert · ≈ 2 min à pied",
+            "isPartner": false,
+            "link": {
+                "type": "place",
+                "spot": {
+                    "id": "osm-way-312558841",
+                    "name": "Le salon",
+                    "category": "shopping",
+                    "latitude": 45.776021,
+                    "longitude": 3.083318,
+                    "subtitle": "",
+                    "phone": null,
+                    "website": null,
+                    "isPartner": false,
+                    "demoName": "Le salon",
+                    "natureKind": null
+                }
+            }
+        },
+        {
+            "icon": "map.fill",
+            "colors": [
+                "#F5215C",
+                "#FA735C"
+            ],
+            "kicker": "CARTE",
+            "title": "Voir les boutiques",
+            "detail": "Tous les lieux autour de toi",
+            "badge": null,
+            "isPartner": false,
+            "link": {
+                "type": "mapFilter",
+                "category": "shopping"
+            }
+        }
+    ],
+    "nearbySearches": [],
+    "followUps": [
+        "Ses horaires",
+        "Itinéraire vers le plus proche",
+        "Où manger près de moi ?"
+    ]
+}
