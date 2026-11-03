@@ -167,6 +167,38 @@ final class AccountController
         return Response::success(ProPresenter::business(Pro::business($request)));
     }
 
+    /** POST /pro/business/verification/reply { message, attachmentIds? } : réponse à une demande de complément de l'équipe */
+    public function verificationReply(Request $request): Response
+    {
+        Pro::requireRole($request, 'gerant');
+        $b = Pro::business($request);
+        if ($b['verification'] !== 'complement') {
+            throw new HttpException(409, 'not_requested', 'L\'équipe ne t\'a demandé aucun complément.');
+        }
+        $j = $request->json();
+        $message = is_string($j['message'] ?? null) ? trim($j['message']) : '';
+        if (mb_strlen($message) < 10 || mb_strlen($message) > 1000) {
+            throw new ValidationException(['message' => 'Ta réponse doit faire entre 10 et 1000 caractères.']);
+        }
+        $ids = array_slice(array_values(array_filter(is_array($j['attachment_ids'] ?? null) ? $j['attachment_ids'] : [], 'is_string')), 0, 3);
+        $attachments = [];
+        foreach ($ids as $id) {
+            $u = Database::fetch("SELECT uid, url FROM uploads WHERE uid = :u AND purpose = 'verification' AND confirmed_at IS NOT NULL", ['u' => strtolower($id)]);
+            if ($u === null) {
+                throw new ValidationException(['attachmentIds' => 'Pièce jointe introuvable.']);
+            }
+            $attachments[] = ['id' => $u['uid'], 'url' => $u['url']];
+        }
+        $review = Verification::review($b);
+        $member = Pro::member($request);
+        Verification::log($review, 'merchant', trim($member['first_name'] . ' ' . $member['last_name']), 'complement_envoye', $message, null, $attachments);
+        $review['request'] = null;
+        Verification::save((int) $b['id'], $review, 'en_cours');
+        Verification::mailTeam('Complément reçu : ' . $b['trade_name'], "{$b['trade_name']} a répondu :\n\n{$message}\n\n" . Verification::adminLink($b));
+
+        return Response::success(ProPresenter::business(Database::fetch('SELECT * FROM pro_businesses WHERE id = :id', ['id' => $b['id']])));
+    }
+
     public function updateBusiness(Request $request): Response
     {
         Pro::requireRole($request, 'gerant');
@@ -186,17 +218,26 @@ final class AccountController
         if (array_key_exists('siret', $j)) {
             $siret = preg_replace('/\s+/', '', (string) $j['siret']);
             if ($siret !== $b['siret']) {
-                if ($b['verification'] === 'verifie') {
-                    throw new HttpException(403, 'forbidden', 'Le SIRET vérifié ne peut plus être modifié : contacte l\'équipe.', ['reason' => 'siret_locked']);
+                if (in_array($b['verification'], ['verifie', 'refuse'], true)) {
+                    throw new HttpException(409, 'siret_locked', 'Le SIRET ne peut plus être modifié : contacte l\'équipe MyClermont.');
                 }
-                if ($siret !== '' && !preg_match('/^\d{14}$/', $siret)) {
-                    $errors['siret'] = 'Le SIRET compte 14 chiffres.';
-                } else {
-                    $found = $siret !== '' ? Sirene::lookup($siret) : null;
-                    $set += ['siret' => $siret, 'verification' => $siret === '' ? 'a_verifier' : (($found['active'] ?? false) ? 'verifie' : 'en_cours')];
-                    if ($found && !isset($set['naf_code'])) {
-                        $set['naf_code'] = $found['naf'];
-                    }
+                if (!preg_match('/^\d{14}$/', $siret)) {
+                    throw new HttpException(422, 'siret_invalid', 'Le SIRET compte 14 chiffres.');
+                }
+                // Contrôle SIRENE et entrée au journal ; depuis a_verifier, la demande part à l'équipe
+                $review = Verification::review($b);
+                $review['sirene'] = Verification::sirene($siret);
+                $member = Pro::member($request);
+                Verification::log($review, 'merchant', trim($member['first_name'] . ' ' . $member['last_name']), 'siret_ajoute', $siret);
+                Verification::log($review, 'system', 'Annuaire des entreprises', 'siret_controle', ($review['sirene']['found'] ?? false) ? (($review['sirene']['active'] ?? false) ? 'SIRET actif' : 'Établissement fermé') : 'SIRET introuvable');
+                $next = $b['verification'] === 'a_verifier' ? 'en_cours' : $b['verification'];
+                Verification::save((int) $b['id'], $review, $next);
+                $set['siret'] = $siret;
+                if (!isset($set['naf_code']) && !empty($review['sirene']['naf_code'])) {
+                    $set['naf_code'] = $review['sirene']['naf_code'];
+                }
+                if ($b['verification'] === 'a_verifier') {
+                    Verification::mailTeam('Nouvelle inscription à valider : ' . $b['trade_name'], "{$b['trade_name']} a ajouté son SIRET ({$siret}).\n\n" . Verification::adminLink($b));
                 }
             }
         }

@@ -152,3 +152,26 @@ Routes sous `/api/v1/admin`, hors signature d'appareil, CORS identique à `/pro`
 
 `{key}` = clé du lieu (`spot-…`, `place-…`, `event-…`) encodée dans l'URL. `publishedAt` est fixé à la première publication, gardé en modification, remis à `null` au retrait. Erreurs de validation : `validation_failed` avec `details.fields`.
 `GET /pro/place` renvoie `teamReview` (publié seulement, sinon `null`) ; `PUT /pro/place` l'ignore. À la publication, le commerçant reçoit « La team MyClermont a publié un avis sur ta fiche ».
+
+
+## Validation des inscriptions commerçant (ca817cb4)
+
+Statuts `verification` : `a_verifier` (SIRET manquant), `en_cours` (attend l'équipe, réponse sous 48 h ouvrées), `complement` (question de l'équipe), `verifie`, `refuse`.
+Une inscription n'est plus validée automatiquement : même avec un SIRET actif, elle passe en `en_cours`. Les établissements déjà vérifiés le restent.
+`Business.review` = `{ submittedAt, decidedAt, sirene, claim, request, refusal, history }` (sans les signaux, réservés à l'équipe).
+
+**Verrou** : tant que `verification` ≠ `verifie`, ces actions répondent `403 not_verified` avec `details.verification` (les brouillons restent acceptés) : `POST /pro/place/submit`, `POST /pro/stories`, bon plan en `actif`, `POST /pro/events/{id}/submit`, offre ou logement en `publiee`, prestation activée.
+
+| Méthode | Route | Corps | Réponse / erreurs |
+|---|---|---|---|
+| PATCH | `/pro/business` | `{ siret }` | depuis `a_verifier` → `en_cours` (contrôle SIRENE + journal) ; `422 siret_invalid`, `409 siret_locked` (en `verifie` ou `refuse`) |
+| POST | `/pro/business/verification/reply` | `{ message (10 à 1000), attachmentIds? (3, upload purpose `verification`) }` | `Business`, repasse en `en_cours` ; `409 not_requested` |
+| GET | `/admin/overview` | | `{ pendingApplications, overdueApplications, waitingMerchant, pendingPhotos, averageDecisionHours, decisionsCount }` |
+| GET | `/admin/merchants?status=&q=` | | `{ items: MerchantApplication[], nextCursor, counts }` (`signals` : siret, metropole, doublon, email) |
+| GET | `/admin/merchants/{id}` | | `MerchantApplication` |
+| POST | `/admin/merchants/{id}/approve` | | `verifie` + e-mail ; photos en attente de son repère transférées ; `422 siret_missing`, `409 already_decided` |
+| POST | `/admin/merchants/{id}/request-info` | `{ message (10 à 1000) }` | `complement` + e-mail |
+| POST | `/admin/merchants/{id}/reject` | `{ reason, message }` (`message` obligatoire si `autre`) | `refuse` + e-mail ; compte conservé |
+
+E-mails : au commerçant « Demande reçue · réponse sous 48 h ouvrées » ou « Ajoute ton SIRET » ; aux admins « Nouvelle inscription à valider » avec le lien `https://commercant.myclermont.app/admin/inscriptions?id=…`.
+Les pièces jointes `verification` acceptent pour l'instant des images (JPEG, PNG, WebP, HEIC), pas encore le PDF.

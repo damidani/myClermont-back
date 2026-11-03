@@ -78,6 +78,7 @@ final class EventController
     public function submit(Request $request): Response
     {
         Pro::requireRole($request, 'gerant');
+        Verification::require($request);
         $e = $this->find($request);
         if (in_array($e['pro_status'], ['brouillon', 'refuse'], true)) {
             $d = self::data($e);

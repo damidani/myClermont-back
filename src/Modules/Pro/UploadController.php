@@ -25,7 +25,7 @@ use App\Security\Crypto;
  */
 final class UploadController
 {
-    private const PURPOSES = ['place', 'deal', 'event', 'housing', 'story'];
+    private const PURPOSES = ['place', 'deal', 'event', 'housing', 'story', 'verification'];
     /** Story (b5b4c116) : vidéo MP4 / MOV de 30 Mo et 15 s au plus */
     private const VIDEO_MIMES = ['video/mp4', 'video/quicktime'];
     private const MAX_VIDEO = 30 * 1024 * 1024;

@@ -85,16 +85,12 @@ final class AuthController
         $modules = array_values(array_unique([...Config::get('pro.activity_modules.' . $activity, []),
             ...array_intersect($goals, ['bonsPlans', 'evenements', 'emplois', 'devis', 'logements'])]));
 
-        // SIRET revérifié auprès de l'annuaire des entreprises (sans clé) ; sans réponse, l'équipe vérifiera
-        $verification = 'a_verifier';
-        $nafLabel = null;
-        if ($siret !== '') {
-            $found = Sirene::lookup($siret);
-            $verification = $found === null ? 'en_cours' : ($found['active'] ? 'verifie' : 'en_cours');
-            $legal = $legal !== '' ? $legal : (string) ($found['name'] ?? '');
-            $naf = $naf !== '' ? $naf : (string) ($found['naf'] ?? '');
-            $nafLabel = $found['naf_label'] ?? null;
-        }
+        // SIRET contrôlé dans l'annuaire des entreprises (sans clé) ; la décision revient toujours à l'équipe (ca817cb4)
+        $verification = $siret !== '' ? 'en_cours' : 'a_verifier';
+        $sirene = Verification::sirene($siret);
+        $legal = $legal !== '' ? $legal : (string) ($sirene['legal_name'] ?? '');
+        $naf = $naf !== '' ? $naf : (string) ($sirene['naf_code'] ?? '');
+        $nafLabel = $sirene['naf_label'] ?? null;
         $lat = is_numeric($j['latitude'] ?? null) ? (float) $j['latitude'] : null;
         $lon = is_numeric($j['longitude'] ?? null) ? (float) $j['longitude'] : null;
 
@@ -113,6 +109,14 @@ final class AuthController
                 'latitude' => $lat, 'longitude' => $lon, 'phone' => ($j['phone_on_place'] ?? false) === true ? $phone : '', 'email' => '',
             ]);
             Database::execute('UPDATE pro_businesses SET place_id = :p WHERE id = :id', ['p' => $placeId, 'id' => $businessId]);
+            $pin = Database::fetch('SELECT app_id, name, address, latitude, longitude FROM places WHERE id = :p', ['p' => $placeId]);
+            $review = ['sirene' => $sirene, 'claim' => ['kind' => 'new', 'pin_key' => 'place-' . $pin['app_id'], 'name' => $pin['name'], 'address' => (string) $pin['address'],
+                       'latitude' => (float) $pin['latitude'], 'longitude' => (float) $pin['longitude']], 'request' => null, 'refusal' => null, 'history' => []];
+            Verification::log($review, 'merchant', trim($first . ' ' . $last), 'soumise');
+            if ($sirene !== null) {
+                Verification::log($review, 'system', 'Annuaire des entreprises', 'siret_controle', $sirene['found'] ? ($sirene['active'] ? 'SIRET actif' : 'Établissement fermé') : 'SIRET introuvable');
+            }
+            Verification::save($businessId, $review, $verification);
 
             return Database::insert(
                 "INSERT INTO pro_members (uid, business_id, email, password_hash, first_name, last_name, job_title, phone, role, status, created_at, updated_at)
@@ -121,6 +125,12 @@ final class AuthController
                  'f' => $first, 'l' => $last, 'j' => $jobTitle, 'ph' => $phone, 'c' => $now, 'up' => $now],
             );
         });
+
+        $b = Database::fetch('SELECT b.* FROM pro_businesses b JOIN pro_members m ON m.business_id = b.id WHERE m.id = :m', ['m' => $memberId]);
+        $verification === 'en_cours'
+            ? Pro::mail($email, 'Demande reçue · réponse sous 48 h ouvrées', "Bonjour {$first},\n\nMerci pour ton inscription sur MyClermont Pro ! L'équipe vérifie ton établissement « {$trade} » et te répond sous 48 h ouvrées.\nEn attendant, tu peux préparer ta fiche : elle sera publiée dès la validation.")
+            : Pro::mail($email, 'Ajoute ton SIRET pour faire valider ton établissement', "Bonjour {$first},\n\nPour que l'équipe valide « {$trade} », ajoute ton numéro SIRET dans les paramètres de ton espace commerçant.\nTu peux déjà préparer ta fiche.");
+        Verification::mailTeam('Nouvelle inscription à valider : ' . $trade, "{$trade} ({$city}) vient de s'inscrire" . ($siret !== '' ? " avec le SIRET {$siret}" : ' sans SIRET') . ".\n\n" . Verification::adminLink($b));
 
         return $this->open($request, $memberId, (bool) ($j['remember'] ?? true), 201);
     }

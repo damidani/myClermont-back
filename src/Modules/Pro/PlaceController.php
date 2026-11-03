@@ -71,6 +71,7 @@ final class PlaceController
     public function submit(Request $request): Response
     {
         Pro::requireRole($request, 'gerant');
+        Verification::require($request);
         $place = Pro::place($request);
         $d = self::data($place);
         $errors = [];

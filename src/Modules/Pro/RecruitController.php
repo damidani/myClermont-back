@@ -409,6 +409,9 @@ final class RecruitController
 
     private function saveJob(int $id, array $d, array $b): void
     {
+        if ($d['status'] === 'publiee') {
+            Verification::requireBusiness($b);
+        }
         $d['company'] = Pro::displayName($b);
         $now = gmdate('Y-m-d H:i:s');
         $owner = Database::fetch("SELECT email FROM pro_members WHERE business_id = :b AND role = 'proprietaire' LIMIT 1", ['b' => $b['id']]);
@@ -468,6 +471,9 @@ final class RecruitController
 
     private function saveService(int $id, array $d, Request $request): void
     {
+        if ($d['active']) {
+            Verification::requireBusiness(Pro::business($request));
+        }
         $b = Pro::business($request);
         $place = Pro::place($request);
         $owner = Database::fetch("SELECT email FROM pro_members WHERE business_id = :b AND role = 'proprietaire' LIMIT 1", ['b' => $b['id']]);
@@ -564,6 +570,9 @@ final class RecruitController
 
     private function saveHousing(int $id, array $d, Request $request): void
     {
+        if ($d['status'] === 'publiee') {
+            Verification::requireBusiness(Pro::business($request));
+        }
         $place = Pro::place($request);
         $owner = Database::fetch("SELECT first_name, last_name, email, phone FROM pro_members WHERE business_id = :b AND role = 'proprietaire' LIMIT 1", ['b' => Pro::business($request)['id']]);
         [$lat, $lon] = [$d['latitude'], $d['longitude']];

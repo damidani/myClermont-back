@@ -99,8 +99,8 @@ final class Moderation
                                         FROM place_visitor_photos v JOIN users u ON u.id = v.user_id WHERE v.business_id IS NULL AND v.status = 'pending' ORDER BY v.id LIMIT 100");
         }
         if (self::allows('pro_siret', $role)) {
-            $out['pro_siret'] = $q("SELECT uid AS id, trade_name AS title, legal_name, siret, naf_code, created_at, trade_name AS author FROM pro_businesses
-                                    WHERE verification = 'en_cours' AND deleted_at IS NULL ORDER BY id LIMIT 100");
+            $out['pro_siret'] = $q("SELECT uid AS id, trade_name AS title, legal_name, siret, naf_code, COALESCE(verification_submitted_at, created_at) AS created_at, trade_name AS author
+                                    FROM pro_businesses WHERE verification = 'en_cours' AND deleted_at IS NULL ORDER BY id LIMIT 100");
         }
 
         return $out;
@@ -210,12 +210,17 @@ final class Moderation
 
             return $remove ? 'Avis retiré : le commerçant est prévenu.' : 'Avis maintenu : le commerçant est prévenu.';
         }
-        // pro_siret
-        $b = Database::fetch('SELECT id FROM pro_businesses WHERE uid = :u', ['u' => $id]) ?? throw new \DomainException('Établissement introuvable.');
-        Database::execute('UPDATE pro_businesses SET verification = :v WHERE id = :id', ['v' => $action === 'publish' ? 'verifie' : 'a_verifier', 'id' => $b['id']]);
-        $notify($b, $action === 'publish' ? 'SIRET vérifié' : 'SIRET à corriger', $action === 'publish' ? 'Ton établissement est vérifié.' : ($reason ?: 'Nous n\'avons pas pu vérifier ton SIRET : corrige-le dans les paramètres.'), '/parametres');
+        // pro_siret : inscription à valider (même décision que /admin/merchants du dashboard)
+        $b = Database::fetch('SELECT * FROM pro_businesses WHERE uid = :u', ['u' => $id]) ?? throw new \DomainException('Établissement introuvable.');
+        try {
+            $action === 'publish'
+                ? \App\Modules\Pro\Verification::approve($b, 'Équipe MyClermont')
+                : \App\Modules\Pro\Verification::requestInfo($b, 'Équipe MyClermont', $reason !== '' ? $reason : 'Nous n\'avons pas pu vérifier ton SIRET : vérifie-le dans les paramètres.');
+        } catch (\App\Exceptions\HttpException $e) {
+            throw new \DomainException($e->getMessage());
+        }
 
-        return $action === 'publish' ? 'SIRET marqué comme vérifié.' : 'SIRET à corriger : le commerçant est prévenu.';
+        return $action === 'publish' ? 'Établissement validé : le commerçant peut publier.' : 'Complément demandé : le commerçant est prévenu.';
     }
 
     private static function resolveReport(string $id, string $action, array $admin, string $now, string $ip): string

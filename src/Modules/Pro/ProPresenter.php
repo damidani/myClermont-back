@@ -22,6 +22,9 @@ final class ProPresenter
             'id' => $b['uid'], 'legal_name' => $b['legal_name'], 'siret' => $b['siret'], 'naf_code' => $b['naf_code'], 'naf_label' => $b['naf_label'],
             'activity' => $b['activity'], 'modules' => self::list($b['modules']), 'goals' => self::list($b['goals']),
             'plan' => $b['plan'], 'plan_since' => Pro::iso($b['plan_since']), 'verification' => $b['verification'], 'created_at' => Pro::iso($b['created_at']),
+            // VerificationReview (ca817cb4), sans les signaux réservés à l'équipe
+            'review' => ['submitted_at' => Pro::iso($b['verification_submitted_at'] ?? null), 'decided_at' => Pro::iso($b['verification_decided_at'] ?? null)]
+                + array_intersect_key(Verification::review($b), array_flip(['sirene', 'claim', 'request', 'refusal', 'history'])),
         ];
     }
 

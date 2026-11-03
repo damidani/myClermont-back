@@ -17,6 +17,13 @@ final class StaffRoutes
                 $r->post('/auth/logout', [StaffController::class, 'logout']);
                 $r->get('/me', [StaffController::class, 'me']);
 
+                $r->get('/overview', [MerchantController::class, 'overview']);
+                $r->get('/merchants', [MerchantController::class, 'index']);
+                $r->get('/merchants/{id}', [MerchantController::class, 'show']);
+                $r->post('/merchants/{id}/approve', [MerchantController::class, 'approve']);
+                $r->post('/merchants/{id}/request-info', [MerchantController::class, 'requestInfo']);
+                $r->post('/merchants/{id}/reject', [MerchantController::class, 'reject']);
+
                 $r->get('/team-reviews', [TeamReviewController::class, 'index']);
                 $r->get('/places/search', [TeamReviewController::class, 'search']);
                 $r->get('/places/{key:.+}/team-review/history', [TeamReviewController::class, 'history']);

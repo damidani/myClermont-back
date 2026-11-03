@@ -40,6 +40,7 @@ final class StoryController
     public function create(Request $request): Response
     {
         Pro::requireRole($request, 'gerant');
+        Verification::require($request);
         $business = Pro::business($request);
         $d = self::validate($request->json(), null, $business);
         self::quota($business, $d['starts_at'], null);

@@ -28,7 +28,8 @@ final class Contract
                                 'rate_limited', 'upstream_unavailable', 'not_configured', 'server_error',
                                 // Codes explicites demandés par l'app et le dashboard (pseudos 8417181e, stories b5b4c116), aussi dans details.reason
                                 'handle_taken', 'handle_invalid', 'handle_reserved', 'handle_change_too_soon', 'story_daily_limit',
-                                'already_decided', 'not_validated', 'too_many_photos', 'plan_limit'];
+                                'already_decided', 'not_validated', 'too_many_photos', 'plan_limit',
+                                'not_verified', 'siret_invalid', 'siret_locked', 'siret_missing', 'not_requested'];
 
     public static function apply(Response $response): Response
     {

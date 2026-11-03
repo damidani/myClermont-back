@@ -70,6 +70,7 @@ final class ProModule implements Module
                 $r->get('/business', [AccountController::class, 'business']);
                 $r->patch('/business', [AccountController::class, 'updateBusiness']);
                 $r->patch('/business/modules', [AccountController::class, 'updateModules']);
+                $r->post('/business/verification/reply', [AccountController::class, 'verificationReply']);
                 $r->get('/team', [AccountController::class, 'team']);
                 $r->post('/team/invitations', [AccountController::class, 'invite']);
                 $r->post('/team/invitations/{id}/resend', [AccountController::class, 'resendInvite']);

@@ -10,7 +10,7 @@ $sections = [
     'pro_review' => ['⭐ Avis signalés par un commerçant', 'L\'avis reste visible mais sort de la moyenne jusqu\'à ta décision.'],
     'pro_story'  => ['📸 Stories des commerçants', 'Déjà en ligne (ou programmées) pour 24 h : retire celles qui ne respectent pas les règles des photos de fiche.'],
     'visitor_photo' => ['📷 Photos des visiteurs', 'Prises depuis un pin sans commerçant vérifié. Validée, la photo rejoint la fiche ; refusée, l\'auteur reçoit le motif (ex. « Photo floue »).'],
-    'pro_siret'  => ['🧾 SIRET à vérifier', 'L\'annuaire des entreprises n\'a pas confirmé ce SIRET à l\'inscription.'],
+    'pro_siret'  => ['🧾 Inscriptions commerçant à valider', 'Réponse attendue sous 48 h ouvrées. Le commerçant ne peut rien publier avant la validation. « Refuser » demande un complément (le motif lui est envoyé) ; le refus définitif se fait depuis l\'espace /admin du dashboard.'],
 ];
 // Refus avec motif, transmis au commerçant
 $refuse = static fn (string $type, string $id, string $action = 'refuse', string $label = 'Refuser') =>
@@ -78,7 +78,7 @@ $button = static fn (string $type, string $id, string $action, string $label, st
           <?= $button($type, $it['id'], 'publish', 'Valider', 'primary') ?>
           <?= $refuse($type, $it['id']) ?>
         <?php elseif ($type === 'pro_place' || $type === 'pro_siret'): ?>
-          <?= $button($type, $it['id'], 'publish', $type === 'pro_siret' ? 'SIRET vérifié' : 'Publier', 'primary') ?>
+          <?= $button($type, $it['id'], 'publish', $type === 'pro_siret' ? 'Valider l\'établissement' : 'Publier', 'primary') ?>
           <?= $refuse($type, $it['id']) ?>
         <?php elseif ($type === 'report'): ?>
           <?= $button($type, $it['id'], 'remove', 'Retirer le contenu', 'danger') ?>

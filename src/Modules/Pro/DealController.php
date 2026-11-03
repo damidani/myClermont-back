@@ -245,6 +245,9 @@ final class DealController
 
     private static function save(int $id, array $d, array $business): void
     {
+        if ($d['status'] === 'actif') {
+            Verification::requireBusiness($business);
+        }
         $original = Pro::cents($d['original']);
         $reduced = Pro::cents($d['reduced']);
         Database::execute(

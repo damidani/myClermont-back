@@ -1,0 +1,124 @@
+{
+  "items": [
+    {
+      "id": "47e3a24a-03f2-4480-b16d-54d8bf0def8e",
+      "status": "en_cours",
+      "submittedAt": "2026-11-03T12:12:31Z",
+      "dueAt": "2026-11-05T12:12:31Z",
+      "business": {
+        "tradeName": "Boulangerie 6110",
+        "legalName": "",
+        "siret": "35600000000048",
+        "nafCode": "53.10Z",
+        "nafLabel": null,
+        "activity": "boulangerie",
+        "createdAt": "2026-11-03T12:12:29Z"
+      },
+      "contact": {
+        "firstName": "Paul",
+        "lastName": "Roux",
+        "jobTitle": "Gérant",
+        "email": "paul6110@gmail.com",
+        "phone": "0473000002"
+      },
+      "place": {
+        "name": "Boulangerie 6110",
+        "category": "boulangerie",
+        "address": "3 rue des Gras",
+        "postalCode": "63000",
+        "city": "Clermont-Ferrand",
+        "latitude": 45.7779,
+        "longitude": 3.0862,
+        "website": "",
+        "status": "brouillon",
+        "completion": 75
+      },
+      "claim": {
+        "kind": "new",
+        "pinKey": "place-boulangerie 6110@45.7779,3.0862",
+        "name": "Boulangerie 6110",
+        "address": "3 rue des Gras",
+        "latitude": 45.7779,
+        "longitude": 3.0862
+      },
+      "sirene": {
+        "checkedAt": "2026-11-03T12:12:31Z",
+        "found": true,
+        "active": true,
+        "legalName": "LA POSTE",
+        "nafCode": "53.10Z",
+        "nafLabel": null,
+        "address": null,
+        "createdOn": null
+      },
+      "signals": [
+        {
+          "key": "siret",
+          "level": "ok",
+          "label": "SIRET actif",
+          "detail": "LA POSTE"
+        },
+        {
+          "key": "metropole",
+          "level": "ok",
+          "label": "Dans la métropole",
+          "detail": "Clermont-Ferrand"
+        },
+        {
+          "key": "doublon",
+          "level": "ok",
+          "label": "Pas de doublon",
+          "detail": ""
+        },
+        {
+          "key": "email",
+          "level": "warn",
+          "label": "Adresse personnelle",
+          "detail": "gmail.com"
+        }
+      ],
+      "request": null,
+      "refusal": null,
+      "decidedAt": null,
+      "history": [
+        {
+          "id": "26f148d3-d256-4aab-ad38-137f3e9a103d",
+          "at": "2026-11-03T12:12:29Z",
+          "actor": {
+            "kind": "merchant",
+            "name": "Paul Roux"
+          },
+          "action": "soumise"
+        },
+        {
+          "id": "c582b7be-279a-40bf-9054-19de6b5ece78",
+          "at": "2026-11-03T12:12:31Z",
+          "actor": {
+            "kind": "merchant",
+            "name": "Paul Roux"
+          },
+          "action": "siret_ajoute",
+          "message": "35600000000048"
+        },
+        {
+          "id": "7c714224-9747-49ae-855f-679a576db9ed",
+          "at": "2026-11-03T12:12:31Z",
+          "actor": {
+            "kind": "system",
+            "name": "Annuaire des entreprises"
+          },
+          "action": "siret_controle",
+          "message": "SIRET actif"
+        }
+      ]
+    }
+  ],
+  "nextCursor": null,
+  "counts": {
+    "a_verifier": 0,
+    "en_cours": 1,
+    "complement": 0,
+    "verifie": 5,
+    "refuse": 0
+  }
+}
