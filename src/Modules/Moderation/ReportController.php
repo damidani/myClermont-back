@@ -38,7 +38,7 @@ final class ReportController
     public function store(Request $request): Response
     {
         $data = Validator::validate($request->json(), [
-            'target_type' => 'required|in:' . implode(',', array_keys(self::TARGETS)),
+            'target_type' => 'required|in:post,comment,review,classified,user,event,message',   // = clés de TARGETS
             'target_id'   => 'required|string|max:64',
             'reason'      => 'required|in:spam,scam,offensive,harassment,inappropriate,other',
             'details'     => 'nullable|string|max:500',

@@ -30162,7 +30162,13 @@
                                     "targetType": {
                                         "type": "string",
                                         "enum": [
-                                            ""
+                                            "post",
+                                            "comment",
+                                            "review",
+                                            "classified",
+                                            "user",
+                                            "event",
+                                            "message"
                                         ]
                                     },
                                     "targetId": {
