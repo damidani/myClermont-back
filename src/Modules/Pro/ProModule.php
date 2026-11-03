@@ -166,8 +166,8 @@ final class ProModule implements Module
     /** CORS de l'espace pro : origine du front uniquement, avec cookies. */
     public static function isProPath(string $path): bool
     {
-        // Dashboard : espace commerçant et espace /admin de l'équipe (StaffRoutes)
-        return (bool) preg_match('#^(/api)?/v1/(pro|admin)(/|$)#', $path);
+        // Dashboard : espace commerçant, espace /admin de l'équipe (StaffRoutes) et envoi direct d'un fichier (URL signée de /pro/uploads)
+        return (bool) preg_match('#^(/api)?/v1/((pro|admin)(/|$)|uploads/[0-9a-f-]{36}/blob$)#', $path);
     }
 
     public static function cors(Request $request, Response $response): Response
