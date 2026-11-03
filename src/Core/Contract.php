@@ -27,7 +27,8 @@ final class Contract
     private const SPEC_CODES = ['validation_failed', 'unauthenticated', 'forbidden', 'plus_required', 'not_found', 'conflict',
                                 'rate_limited', 'upstream_unavailable', 'not_configured', 'server_error',
                                 // Codes explicites demandés par l'app et le dashboard (pseudos 8417181e, stories b5b4c116), aussi dans details.reason
-                                'handle_taken', 'handle_invalid', 'handle_reserved', 'handle_change_too_soon', 'story_daily_limit'];
+                                'handle_taken', 'handle_invalid', 'handle_reserved', 'handle_change_too_soon', 'story_daily_limit',
+                                'already_decided', 'not_validated', 'too_many_photos', 'plan_limit'];
 
     public static function apply(Response $response): Response
     {
@@ -63,6 +64,9 @@ final class Contract
         return $response;
     }
 
+    /** Clés qui sont des valeurs d'énumération de l'espace pro (compteurs par statut) : jamais converties */
+    private const KEEP = ['en_attente', 'en_cours', 'en_revue', 'en_pause', 'a_verifier', 'devis_envoye'];
+
     /** Clés snake_case → camelCase, récursivement (les valeurs ne sont jamais modifiées). */
     public static function camel(mixed $value): mixed
     {
@@ -71,7 +75,7 @@ final class Contract
         }
         $out = [];
         foreach ($value as $k => $v) {
-            $out[is_string($k) && str_contains($k, '_') ? lcfirst(str_replace('_', '', ucwords($k, '_'))) : $k] = self::camel($v);
+            $out[is_string($k) && str_contains($k, '_') && !in_array($k, self::KEEP, true) ? lcfirst(str_replace('_', '', ucwords($k, '_'))) : $k] = self::camel($v);
         }
 
         return $out;

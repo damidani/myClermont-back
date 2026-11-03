@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "id": "6c408ae8-105f-48ed-a881-59171d4f5662",
+      "status": "pending",
+      "reviewer": "myclermont"
+    },
+    {
+      "id": "1dea97d7-97d3-4a14-915c-1d098dc8ec9a",
+      "status": "approved",
+      "reviewer": "merchant"
+    }
+  ],
+  "nextCursor": null
+}

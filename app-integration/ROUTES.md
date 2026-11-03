@@ -75,6 +75,9 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | POST | `/v1/devices` | compte optionnel |  |
 | GET | `/v1/devices/me` | signé |  |
 | PATCH | `/v1/devices/me` | signé, compte optionnel | pushToken, pushEnvironment (sandbox · production · development) |
+| POST | `/v1/visitor-photos` | compte | { photoUrl, caption?, takenAt?, placeKey, place } → 201 { id, status, reviewer } |
+| GET | `/v1/me/visitor-photos` | compte | items [{ id, status, reviewer, rejectionReason? }] |
+| GET | `/v1/visitor-photos?placeKey=` | signé | photos validées du pin (12) |
 | GET | `/v1/me/notifications` | compte | items, nextCursor, unreadCount |
 | POST | `/v1/me/notifications/read` | compte | { ids } → 204 |
 | POST | `/v1/me/notifications/read-all` | compte | 204 |

@@ -118,6 +118,13 @@ final class ProModule implements Module
                 $r->post('/events/{id}/submit', [EventController::class, 'submit']);
                 $r->post('/events/{id}/withdraw', [EventController::class, 'withdraw']);
 
+                $r->get('/visitor-photos', [VisitorPhotoController::class, 'index']);
+                $r->post('/visitor-photos/validate', [VisitorPhotoController::class, 'validate']);
+                $r->get('/visitor-photos/{id}', [VisitorPhotoController::class, 'show']);
+                $r->patch('/visitor-photos/{id}', [VisitorPhotoController::class, 'update']);
+                $r->post('/visitor-photos/{id}/refuse', [VisitorPhotoController::class, 'refuse']);
+                $r->post('/visitor-photos/{id}/reopen', [VisitorPhotoController::class, 'reopen']);
+
                 $r->get('/stories', [StoryController::class, 'index']);
                 $r->post('/stories', [StoryController::class, 'create']);
                 $r->patch('/stories/{id}', [StoryController::class, 'update']);

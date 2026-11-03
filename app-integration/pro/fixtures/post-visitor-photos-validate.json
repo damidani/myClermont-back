@@ -1,0 +1,44 @@
+{
+  "validated": [
+    "1dea97d7-97d3-4a14-915c-1d098dc8ec9a"
+  ],
+  "addedToGallery": [
+    "1dea97d7-97d3-4a14-915c-1d098dc8ec9a"
+  ],
+  "overLimit": [],
+  "cover": "ph_1dea97d7-97d3-4a14-915c-1d098dc8ec9a",
+  "items": [
+    {
+      "id": "1dea97d7-97d3-4a14-915c-1d098dc8ec9a",
+      "src": "https://api.myclermont.app/media/2026/11/6f03e022-ea81-461d-8137-ae42b7dd8f8e.jpg",
+      "author": "camille.r",
+      "caption": "Terrasse au soleil",
+      "placeKey": "spot-le comptoir 8856@45.7771,3.0870",
+      "submittedAt": "2026-11-03T12:05:16Z",
+      "takenAt": "2026-11-01T17:42:00Z",
+      "status": "validee",
+      "decidedAt": "2026-11-03T12:05:17Z",
+      "decidedBy": "Léa B.",
+      "refusalReason": null,
+      "refusalNote": null,
+      "inGallery": true
+    }
+  ],
+  "place": {
+    "photos": [
+      {
+        "id": "p1",
+        "src": "https://api.myclermont.app/media/cafe.jpg",
+        "caption": ""
+      },
+      {
+        "id": "ph_1dea97d7-97d3-4a14-915c-1d098dc8ec9a",
+        "src": "https://api.myclermont.app/media/2026/11/6f03e022-ea81-461d-8137-ae42b7dd8f8e.jpg",
+        "caption": "Terrasse au soleil",
+        "credit": "Photo de @camille.r",
+        "visitorPhotoId": "1dea97d7-97d3-4a14-915c-1d098dc8ec9a"
+      }
+    ],
+    "coverId": "ph_1dea97d7-97d3-4a14-915c-1d098dc8ec9a"
+  }
+}

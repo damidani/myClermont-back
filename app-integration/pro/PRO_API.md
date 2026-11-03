@@ -111,3 +111,20 @@ Toutes les routes des demandes 1 à 8 sont en place, avec les formats du front. 
   - événements ;
   - avis signalés ;
   - SIRET à vérifier.
+
+
+## Photos des visiteurs (ca817cb4)
+
+Lecture pour toute l'équipe ; décisions réservées au propriétaire et au gérant (`403 forbidden` pour un équipier). Statuts : `en_attente`, `validee`, `refusee`. Motifs de refus : `floue`, `hors_sujet`, `personnes`, `inapproprie`, `doublon`, `autre`.
+
+| Méthode | Route | Corps | Réponse |
+|---|---|---|---|
+| GET | `/pro/visitor-photos?status=` | | `{ items: VisitorPhoto[], nextCursor, counts: { en_attente, validee, refusee } }` (en attente : plus anciennes d'abord) |
+| GET | `/pro/visitor-photos/{id}` | | `VisitorPhoto` |
+| POST | `/pro/visitor-photos/validate` | `{ ids (1 à 50), addToGallery, setAsCover? }` | `{ validated, addedToGallery, overLimit, cover, items, place: { photos, coverId } }` ; `409 already_decided` (`details.ids`) |
+| POST | `/pro/visitor-photos/{id}/refuse` | `{ reason, note? (200) }` | `VisitorPhoto` ; l'auteur est notifié avec le motif |
+| PATCH | `/pro/visitor-photos/{id}` | `{ inGallery }` | `{ photo, place }` ; `409 not_validated`, `403 plan_limit { max, current }` |
+| POST | `/pro/visitor-photos/{id}/reopen` | | `VisitorPhoto` (repasse en attente, hors galerie, sans notification) |
+
+Une photo ajoutée rejoint la galerie sous la forme `{ id: "ph_"+id, src, caption, credit: "Photo de @pseudo", visitorPhotoId }` (6 photos en gratuit, 30 en partenaire ; au-delà : `overLimit`, pas une erreur). Couverture : `PUT /pro/place { coverId: "ph_{id}" }`.
+Les photos des pins sans commerçant vérifié sont validées par l'équipe dans le back-office (file « Photos des visiteurs » de /admin/moderation).

@@ -9,6 +9,7 @@ $sections = [
     'pro_place'  => ['🏪 Fiches de commerçants à valider', 'Nouvelle fiche, ou changement de nom, d\'adresse ou de catégorie d\'une fiche en ligne (l\'ancienne version reste visible en attendant).'],
     'pro_review' => ['⭐ Avis signalés par un commerçant', 'L\'avis reste visible mais sort de la moyenne jusqu\'à ta décision.'],
     'pro_story'  => ['📸 Stories des commerçants', 'Déjà en ligne (ou programmées) pour 24 h : retire celles qui ne respectent pas les règles des photos de fiche.'],
+    'visitor_photo' => ['📷 Photos des visiteurs', 'Prises depuis un pin sans commerçant vérifié. Validée, la photo rejoint la fiche ; refusée, l\'auteur reçoit le motif (ex. « Photo floue »).'],
     'pro_siret'  => ['🧾 SIRET à vérifier', 'L\'annuaire des entreprises n\'a pas confirmé ce SIRET à l\'inscription.'],
 ];
 // Refus avec motif, transmis au commerçant
@@ -54,6 +55,9 @@ $button = static fn (string $type, string $id, string $action, string $label, st
         <?php elseif ($type === 'pro_story'): ?>
           <strong><?= Html::e($it['author']) ?></strong> <span class="muted">· diffusion le <?= Html::e(Html::localDate($it['starts_at'], 'd/m/Y H:i')) ?></span>
           <div><?php if ($it['media_kind'] === 'video'): ?><video src="<?= Html::e($it['media_url']) ?>" controls muted style="max-height:240px"></video><?php else: ?><img src="<?= Html::e($it['media_url']) ?>" alt="" style="max-height:240px"><?php endif; ?></div>
+        <?php elseif ($type === 'visitor_photo'): ?>
+          <strong><?= Html::e($it['place']) ?></strong> <span class="muted">· <code><?= Html::e($it['place_key']) ?></code></span>
+          <div><img src="<?= Html::e($it['media_url']) ?>" alt="" style="max-height:240px"></div>
         <?php elseif ($type === 'pro_siret'): ?>
           <strong><?= Html::e($it['title']) ?></strong> <span class="muted"><?= Html::e($it['legal_name']) ?></span>
           <div class="muted">SIRET <code><?= Html::e($it['siret']) ?></code> · NAF <?= Html::e((string) $it['naf_code']) ?> · <a href="https://annuaire-entreprises.data.gouv.fr/etablissement/<?= Html::e($it['siret']) ?>" target="_blank" rel="noopener">Vérifier dans l'annuaire</a></div>
@@ -70,6 +74,9 @@ $button = static fn (string $type, string $id, string $action, string $label, st
         <?php elseif ($type === 'pro_review'): ?>
           <?= $button($type, $it['id'], 'remove', 'Retirer l\'avis', 'danger') ?>
           <?= $refuse($type, $it['id'], 'dismiss', 'Maintenir') ?>
+        <?php elseif ($type === 'visitor_photo'): ?>
+          <?= $button($type, $it['id'], 'publish', 'Valider', 'primary') ?>
+          <?= $refuse($type, $it['id']) ?>
         <?php elseif ($type === 'pro_place' || $type === 'pro_siret'): ?>
           <?= $button($type, $it['id'], 'publish', $type === 'pro_siret' ? 'SIRET vérifié' : 'Publier', 'primary') ?>
           <?= $refuse($type, $it['id']) ?>

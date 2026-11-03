@@ -38,10 +38,14 @@ final class PlacesModule implements Module
 
         // Avis (spec v1)
         $r->get('/places/{id}/reviews', [ReviewController::class, 'index']);
+        $r->get('/visitor-photos', [VisitorPhotoController::class, 'index']);
         $r->group(['middleware' => ['auth']], static function (Router $r): void {
             $r->put('/places/{id}/reviews/me', [ReviewController::class, 'put'], ['throttle:post']);
             $r->delete('/places/{id}/reviews/me', [ReviewController::class, 'delete']);
             $r->post('/me/reviews/import', [ReviewController::class, 'import']);
+            // Photos des visiteurs (ca817cb4)
+            $r->post('/visitor-photos', [VisitorPhotoController::class, 'store'], ['throttle:upload']);
+            $r->get('/me/visitor-photos', [VisitorPhotoController::class, 'mine']);
         });
     }
 

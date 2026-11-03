@@ -33,6 +33,8 @@ final class UploadController
         'classified' => ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
         'avatar'     => ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
         'place'      => ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
+        // Photo d'un visiteur depuis un pin (ca817cb4) : JPEG de l'appareil photo de l'app, sans métadonnées
+        'visitor_photo' => ['image/jpeg'],
     ];
     private const MAX = ['image' => 10 * 1024 * 1024, 'pdf' => 5 * 1024 * 1024, 'video' => 60 * 1024 * 1024];
 

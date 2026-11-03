@@ -45,7 +45,8 @@ final class SheetController
         $d = $place['pro'] !== null && $place['business_id'] !== null ? ProPlace::published($place) : self::fromColumns($place);
         $d['photos'] = array_values(array_filter(array_map(static fn ($p) => ['src' => self::absolute((string) $p['src'])] + $p + ['caption' => '', 'credit' => null], $d['photos']),
             static fn ($p) => $p['src'] !== ''));
-        $d['photos'] = array_merge($d['photos'], self::visitorPhotos((int) $place['id']));
+        $have = array_column($d['photos'], 'id');
+        $d['photos'] = array_merge($d['photos'], array_values(array_filter(self::visitorPhotos((int) $place['id']), static fn ($p) => !in_array($p['id'], $have, true))));
         unset($d['status']);
 
         $rating = Database::fetch("SELECT ROUND(AVG(rating), 1) AS average, COUNT(*) AS n FROM place_reviews WHERE place_id = :p AND status = 'visible' AND reported_at IS NULL", ['p' => $place['id']]);
@@ -88,13 +89,9 @@ final class SheetController
     /** Photos des visiteurs validées (ca817cb4) : crédit = pseudo */
     private static function visitorPhotos(int $placeId): array
     {
-        if (!Database::fetch("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'place_visitor_photos'")) {
-            return [];
-        }
-
-        return array_map(static fn ($r) => ['id' => 'vp-' . $r['uid'], 'src' => self::absolute($r['url']), 'caption' => (string) $r['caption'], 'credit' => $r['handle']],
+        return array_map(static fn ($r) => ['id' => 'ph_' . $r['uid'], 'src' => self::absolute($r['url']), 'caption' => (string) $r['caption'], 'credit' => $r['handle']],
             Database::fetchAll("SELECT v.uid, v.url, v.caption, u.handle FROM place_visitor_photos v LEFT JOIN users u ON u.id = v.user_id
-                                WHERE v.place_id = :p AND v.status = 'approved' ORDER BY v.decided_at DESC LIMIT 30", ['p' => $placeId]));
+                                WHERE v.place_id = :p AND v.status = 'approved' AND v.in_gallery = 1 ORDER BY v.decided_at DESC LIMIT 30", ['p' => $placeId]));
     }
 
     private static function deals(array $place): array
