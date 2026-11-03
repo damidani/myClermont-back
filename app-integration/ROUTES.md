@@ -55,6 +55,8 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | DELETE | `/v1/community/posts/{id}/like` | compte |  |
 | POST | `/v1/community/posts/{id}/like` | compte |  |
 | PUT | `/v1/community/posts/{id}/like` | compte |  |
+| PUT | `/v1/community/posts/{postId}/comments/{commentId}/like` | compte | 204 |
+| DELETE | `/v1/community/posts/{postId}/comments/{commentId}/like` | compte | 204 |
 | POST | `/v1/community/posts/{id}/report` | compte |  |
 | POST | `/v1/community/posts/{id}/vote` | compte |  |
 | PUT | `/v1/community/posts/{id}/vote` | compte |  |
@@ -72,7 +74,13 @@ Accès : **signé** = signature appareil seule · **compte optionnel** = Bearer 
 | POST | `/v1/deals/{id}/redeem` | compte |  |
 | POST | `/v1/devices` | compte optionnel |  |
 | GET | `/v1/devices/me` | signé |  |
-| PATCH | `/v1/devices/me` | signé |  |
+| PATCH | `/v1/devices/me` | signé, compte optionnel | pushToken, pushEnvironment (sandbox · production · development) |
+| GET | `/v1/me/notifications` | compte | items, nextCursor, unreadCount |
+| POST | `/v1/me/notifications/read` | compte | { ids } → 204 |
+| POST | `/v1/me/notifications/read-all` | compte | 204 |
+| DELETE | `/v1/me/notifications/{id}` | compte | 204 |
+| GET | `/v1/me/notification-preferences` | compte |  |
+| PUT | `/v1/me/notification-preferences` | compte |  |
 | POST | `/v1/devices/register` | clé application | register |
 | DELETE | `/v1/devices/{id}` | signé |  |
 | PATCH | `/v1/devices/{id}` | compte optionnel |  |

@@ -22,7 +22,7 @@ final class FcmPushSender
         $message = [
             'token'        => $token,
             'notification' => ['title' => $title, 'body' => $body],
-            'data'         => array_map('strval', array_filter($data, 'is_scalar')),
+            'data'         => array_map(static fn ($v) => is_scalar($v) ? (string) $v : (string) json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), array_filter($data, static fn ($v) => $v !== null)),
             'android'      => array_filter(['priority' => 'HIGH', 'collapse_key' => $collapseKey]),
         ];
         $r = (new HttpClient(timeout: 10, retries: 1))->request(

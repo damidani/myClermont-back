@@ -113,7 +113,7 @@ final class PostRepository
         // Les 20 derniers commentaires de chaque post, du plus ancien au plus récent (brief iOS §12.1)
         foreach (Database::fetchAll(
             "SELECT * FROM (
-                SELECT c.id, c.uid, c.post_id, c.user_id, c.body, c.created_at, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle,
+                SELECT c.id, c.uid, c.post_id, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle,
                        u.display_name AS author_display_name, u.first_name AS author_first_name, u.avatar_kind AS author_avatar_kind,
                        u.avatar_value AS author_avatar_value, u.status AS author_status,
                        ROW_NUMBER() OVER (PARTITION BY c.post_id ORDER BY c.id DESC) AS rn
@@ -208,7 +208,7 @@ final class PostRepository
     public function comments(int $postId, int $limit, ?int $afterId): array
     {
         return Database::fetchAll(
-            "SELECT c.id, c.uid, c.user_id, c.body, c.created_at, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.display_name AS author_display_name,
+            "SELECT c.id, c.uid, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.display_name AS author_display_name,
                     u.first_name AS author_first_name, u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status
              FROM community_comments c JOIN users u ON u.id = c.user_id
              WHERE c.post_id = :p AND c.status = 'visible' AND c.id > :after ORDER BY c.id LIMIT :limit",
@@ -229,7 +229,7 @@ final class PostRepository
             }
 
             return Database::fetch(
-                'SELECT c.id, c.uid, c.user_id, c.body, c.created_at, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.display_name AS author_display_name, u.first_name AS author_first_name,
+                'SELECT c.id, c.uid, c.user_id, c.body, c.created_at, (SELECT COUNT(*) FROM community_comment_likes cl WHERE cl.comment_id = c.id) AS likes_count, u.uid AS author_uid, u.username AS author_username, u.handle AS author_handle, u.display_name AS author_display_name, u.first_name AS author_first_name,
                         u.avatar_kind AS author_avatar_kind, u.avatar_value AS author_avatar_value, u.status AS author_status
                  FROM community_comments c JOIN users u ON u.id = c.user_id WHERE c.uid = :uid',
                 ['uid' => $uid],

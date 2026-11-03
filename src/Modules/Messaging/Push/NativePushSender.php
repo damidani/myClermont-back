@@ -16,7 +16,7 @@ final class NativePushSender implements PushSender
         foreach ($devices as $d) {
             try {
                 $ok = match (true) {
-                    $d['platform'] === 'ios' && Config::get('push.apns.key') => (new ApnsPushSender())->send($d['push_token'], $title, $body, $data, $collapseKey),
+                    $d['platform'] === 'ios' && Config::get('push.apns.key') => (new ApnsPushSender())->send($d['push_token'], $title, $body, $data, $collapseKey, $d['push_environment'] ?? null),
                     $d['platform'] === 'android' && Config::get('push.fcm.service_account') => (new FcmPushSender())->send($d['push_token'], $title, $body, $data, $collapseKey),
                     default => false,
                 } || $ok;

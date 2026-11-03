@@ -17,15 +17,17 @@ use App\Security\AppleClient;
  */
 final class ApnsPushSender
 {
-    public function send(string $token, string $title, string $body, array $data, ?string $collapseKey): bool
+    public function send(string $token, string $title, string $body, array $data, ?string $collapseKey, ?string $environment = null): bool
     {
         $payload = ['aps' => array_filter([
             'alert'     => ['title' => $title, 'body' => $body],
             'sound'     => 'default',
             'thread-id' => $data['thread_id'] ?? null,
-        ])] + array_diff_key($data, ['thread_id' => 1]);
+            'badge'     => $data['badge'] ?? null,
+        ], static fn ($v) => $v !== null)] + array_diff_key($data, ['thread_id' => 1, 'badge' => 1]);
 
-        $host = Config::get('push.apns.sandbox') ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
+        // Environnement envoyé par l'appareil (sandbox pour les builds Xcode), sinon celui du serveur
+        $host = ($environment !== null ? $environment === 'sandbox' : Config::get('push.apns.sandbox')) ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
         $ch = curl_init($host . '/3/device/' . rawurlencode($token));
         curl_setopt_array($ch, [
             CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_2_0,

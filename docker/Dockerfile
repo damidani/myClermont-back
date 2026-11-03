@@ -1,11 +1,11 @@
-# Image « tout-en-un » de myClermont : Nginx + PHP-FPM 8.3 (OPcache, APCu, sodium) + cron.
+# Image « tout-en-un » de myClermont : Nginx + PHP-FPM 8.3 (OPcache, APCu, sodium, intl) + cron.
 # La base MySQL/MariaDB est un service à part (voir docker-compose.yml).
 FROM php:8.3-fpm-bookworm
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends nginx supervisor cron msmtp-mta ca-certificates tzdata libzip-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
+ && apt-get install -y --no-install-recommends nginx supervisor cron msmtp-mta ca-certificates tzdata libzip-dev libjpeg62-turbo-dev libpng-dev libwebp-dev libicu-dev \
  && docker-php-ext-configure gd --with-jpeg --with-webp \
- && docker-php-ext-install -j"$(nproc)" pdo_mysql opcache zip gd \
+ && docker-php-ext-install -j"$(nproc)" pdo_mysql opcache zip gd intl \
  && pecl install apcu \
  && docker-php-ext-enable apcu \
  && rm -rf /var/lib/apt/lists/* /tmp/pear /etc/nginx/sites-enabled/default \

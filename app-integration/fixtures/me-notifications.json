@@ -1,0 +1,66 @@
+{
+    "items": [
+        {
+            "id": "ntf_1bbd5631-bd81-40bc-8e4c-33cffa2649da",
+            "kind": "post_commented",
+            "title": "💬 camille.r a commenté ta publication",
+            "body": "Et encore moi",
+            "createdAt": "2026-11-03T11:53:35Z",
+            "readAt": null,
+            "pushedAt": null,
+            "imageUrl": null,
+            "actor": "camille.r",
+            "target": {
+                "type": "post",
+                "id": "3935a851-25f0-459a-80ef-c73dd35ec3d0"
+            }
+        },
+        {
+            "id": "ntf_3b216f22-99af-46d6-b0a3-bb5c058fe778",
+            "kind": "post_commented",
+            "title": "💬 camille.r a commenté ta publication",
+            "body": "Moi aussi !",
+            "createdAt": "2026-11-03T11:53:35Z",
+            "readAt": null,
+            "pushedAt": null,
+            "imageUrl": null,
+            "actor": "camille.r",
+            "target": {
+                "type": "post",
+                "id": "3935a851-25f0-459a-80ef-c73dd35ec3d0"
+            }
+        },
+        {
+            "id": "ntf_44f16cf7-5d83-41f0-a2c4-392dc116923b",
+            "kind": "post_commented",
+            "title": "💬 camille.r a commenté ta publication",
+            "body": "Trop bien, j'y étais aussi",
+            "createdAt": "2026-11-03T11:53:35Z",
+            "readAt": null,
+            "pushedAt": null,
+            "imageUrl": null,
+            "actor": "camille.r",
+            "target": {
+                "type": "post",
+                "id": "3935a851-25f0-459a-80ef-c73dd35ec3d0"
+            }
+        },
+        {
+            "id": "ntf_e15292b7-111b-4c79-8a3b-c7b3deb15641",
+            "kind": "post_liked",
+            "title": "❤️ camille.r et 1 autre aiment ta publication",
+            "body": "« Le marché Saint-Joseph ce matin, quelle ambiance ! »",
+            "createdAt": "2026-11-03T11:53:35Z",
+            "readAt": null,
+            "pushedAt": null,
+            "imageUrl": null,
+            "actor": "camille.r",
+            "target": {
+                "type": "post",
+                "id": "3935a851-25f0-459a-80ef-c73dd35ec3d0"
+            }
+        }
+    ],
+    "nextCursor": null,
+    "unreadCount": 4
+}

@@ -11,10 +11,10 @@ use App\Core\Database;
 final class DeviceRepository
 {
     private const COLUMNS = 'id, uid, platform, token_hash, secret_encrypted, status, user_id, model, os_version,
-                             app_version, push_token, last_seen_at, created_at';
+                             app_version, push_token, push_environment, last_seen_at, created_at';
 
     /** Champs modifiables par l'appareil lui-même. */
-    public const UPDATABLE = ['model', 'os_version', 'app_version', 'push_token'];
+    public const UPDATABLE = ['model', 'os_version', 'app_version', 'push_token', 'push_environment'];
 
     /**
      * Appel le plus fréquent de l'API (à chaque requête signée) :

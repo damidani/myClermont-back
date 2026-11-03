@@ -21,30 +21,26 @@ final class NotificationsModule implements Module
         $r->patch('/devices/{id}', [DeviceTopicsController::class, 'update'], ['auth:optional']);
         $r->delete('/devices/{id}', [DeviceTopicsController::class, 'destroy']);
         $r->post('/live-activities', [DeviceTopicsController::class, 'liveActivity'], ['auth:optional']);
+        // Boîte de notifications et préférences de l'app (4890352c)
+        $r->group(['middleware' => ['auth']], static function (Router $r): void {
+            $r->get('/me/notifications', [NoticeController::class, 'index']);
+            $r->post('/me/notifications/read', [NoticeController::class, 'read']);
+            $r->post('/me/notifications/read-all', [NoticeController::class, 'readAll']);
+            $r->delete('/me/notifications/{id}', [NoticeController::class, 'destroy']);
+            $r->get('/me/notification-preferences', [NoticeController::class, 'preferences']);
+            $r->put('/me/notification-preferences', [NoticeController::class, 'updatePreferences']);
+        });
     }
 
     public function listeners(): array
     {
         return [
-            'community.comment_created'  => [[self::class, 'onComment']],
             'jobs.application_submitted' => [[self::class, 'onApplication']],
         ];
     }
 
     public function boot(): void
     {
-    }
-
-    /** Réponse à mon post : une notification par tranche de 15 minutes, quel que soit le nombre de commentaires. */
-    public function onComment(array $e): void
-    {
-        if (empty($e['post_author_id']) || (int) $e['post_author_id'] === (int) $e['user_id']) {
-            return;
-        }
-        $name = Database::fetch('SELECT CONCAT(\'@\', COALESCE(handle, first_name, display_name)) AS n FROM users WHERE id = :u', ['u' => $e['user_id']])['n'] ?? 'Quelqu\'un';
-        Push::toUser((int) $e['post_author_id'], 'community.replies', 'Nouvelle réponse', "{$name} a commenté ta publication.", [
-            'deeplink' => 'myclermont://community/post/' . $e['post_uid'], 'thread_id' => 'community:' . $e['post_uid'], 'delay' => 900,
-        ]);
     }
 
     public function onApplication(array $e): void

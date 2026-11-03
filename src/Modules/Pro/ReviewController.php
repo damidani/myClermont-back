@@ -57,6 +57,9 @@ final class ReviewController
             throw new HttpException(409, 'conflict', 'Tu as déjà répondu à cet avis : modifie ta réponse.', ['reason' => 'already_replied']);
         }
         Database::execute('UPDATE place_reviews SET reply_text = :t, reply_at = COALESCE(reply_at, :d) WHERE id = :id', ['t' => $text, 'd' => gmdate('Y-m-d H:i:s'), 'id' => $review['id']]);
+        if ($review['user_id'] !== null && $review['reply_text'] === null) {
+            self::notifyReply((int) $review['user_id'], (int) $review['place_id'], $text);
+        }
 
         return Response::success(self::present($this->find($request)));
     }
@@ -120,6 +123,19 @@ final class ReviewController
 
         return ['average' => $n ? round(array_sum(array_column($rows, 'rating')) / $n, 1) : 0, 'count' => $n, 'distribution' => $dist,
                 'response_rate' => $n ? round($replied / $n, 3) : 0, 'to_answer' => $n - $replied];
+    }
+
+    /** review_replied (4890352c) : le commerçant a répondu à mon avis */
+    private static function notifyReply(int $userId, int $placeId, string $text): void
+    {
+        $p = Database::fetch('SELECT ' . \App\Modules\Places\MapController::columns() . ' FROM places p JOIN place_categories c ON c.id = p.category_id WHERE p.id = :id', ['id' => $placeId]);
+        if ($p === null) {
+            return;
+        }
+        $spot = \App\Modules\Places\MapController::place($p);
+        \App\Modules\Notifications\Notices::send($userId, 'review_replied', "💬 {$spot['name']} a répondu à ton avis", \App\Modules\Notifications\Notices::excerpt($text), [
+            'type' => 'place', 'placeKey' => 'spot-' . $spot['id'], 'name' => $spot['name'], 'latitude' => $spot['latitude'], 'longitude' => $spot['longitude'], 'category' => $spot['category'],
+        ]);
     }
 
     private function find(Request $request): array

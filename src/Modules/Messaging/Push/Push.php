@@ -30,6 +30,17 @@ final class Push
         return self::queue(['user_id' => null, 'device_id' => $deviceId], $topic, $title, $body, $options);
     }
 
+    /** Notification de la boîte (Notices) : sans thème, collapse-id = noticeId, pushed_at renseigné à l'envoi */
+    public static function notice(int $userId, int $noticeId, string $title, string $body, string $thread, array $data, string $collapseKey): void
+    {
+        Database::execute(
+            'INSERT INTO push_outbox (user_id, device_id, topic, title, body, data, collapse_key, thread_id, notice_id, send_after, created_at)
+             VALUES (:u, NULL, NULL, :t, :b, :data, :k, :th, :n, :after, :c)',
+            ['u' => $userId, 't' => mb_substr($title, 0, 120), 'b' => mb_substr($body, 0, 250), 'data' => json_encode(array_filter($data, static fn ($v) => $v !== null), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+             'k' => substr($collapseKey, 0, 64), 'th' => $thread, 'n' => $noticeId, 'after' => gmdate('Y-m-d H:i:s'), 'c' => gmdate('Y-m-d H:i:s')],
+        );
+    }
+
     private static function queue(array $to, string $topic, string $title, string $body, array $o): bool
     {
         if (isset($o['once_key']) && Database::execute('INSERT IGNORE INTO push_sent_keys (k, created_at) VALUES (:k, :d)', ['k' => substr($o['once_key'], 0, 120), 'd' => gmdate('Y-m-d H:i:s')]) === 0) {

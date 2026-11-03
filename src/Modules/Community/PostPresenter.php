@@ -98,7 +98,18 @@ final class PostPresenter
             'created_at'  => $date,
             'is_mine'     => $viewerId !== null && (int) $c['user_id'] === $viewerId,
             'mentions'    => self::mentions((string) $c['body'], (int) $c['user_id']),
+            'likes'       => (int) ($c['likes_count'] ?? 0),
+            'liked'       => $viewerId !== null && isset(self::likedComments($viewerId)[(int) $c['id']]),
         ];
+    }
+
+    /** @var array<int, array<int, true>> commentaires aimés, par lecteur (une requête par requête HTTP) */
+    private static array $liked = [];
+
+    private static function likedComments(int $viewerId): array
+    {
+        return self::$liked[$viewerId] ??= array_fill_keys(array_map('intval', array_column(
+            \App\Core\Database::fetchAll('SELECT comment_id FROM community_comment_likes WHERE user_id = :u ORDER BY created_at DESC LIMIT 5000', ['u' => $viewerId]), 'comment_id')), true);
     }
 
     /** Pseudo affiché (1a584b24) ; « Compte supprimé » pour un compte effacé */

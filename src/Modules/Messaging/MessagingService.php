@@ -261,23 +261,15 @@ final class MessagingService
      */
     private function queuePush(int $conversationId, int $senderId, array $recipientIds, string $body): void
     {
-        $sender = Database::fetch('SELECT username, display_name FROM users WHERE id = :u', ['u' => $senderId]);
-        $conversation = Database::fetch('SELECT uid FROM conversations WHERE id = :c', ['c' => $conversationId]);
-        $preview = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '…' : $body;
-        $data = json_encode(['type' => 'message', 'conversation_id' => $conversation['uid'], 'deeplink' => 'myclermont://conversation/' . $conversation['uid']]);
-
+        $conversation = Database::fetch('SELECT uid, context_type, context_id FROM conversations WHERE id = :c', ['c' => $conversationId]);
+        $who = \App\Modules\Notifications\Notices::handle($senderId);
+        $target = $conversation['context_type'] === 'classified' ? ['type' => 'classified', 'id' => $conversation['context_id'], 'conversationId' => $conversation['uid']]
+                                                                 : ['type' => 'conversation', 'id' => $conversation['uid']];
         foreach ($recipientIds as $userId) {
-            $key = 'conv:' . $conversation['uid'];
-            $updated = Database::execute(
-                "UPDATE push_outbox SET body = :b, created_at = :d WHERE user_id = :u AND collapse_key = :k AND status = 'pending'",
-                ['b' => $preview, 'd' => gmdate('Y-m-d H:i:s'), 'u' => $userId, 'k' => $key],
-            );
-            if ($updated === 0) {
-                Database::execute(
-                    "INSERT INTO push_outbox (user_id, topic, title, body, data, collapse_key, thread_id, created_at) VALUES (:u, 'classifieds.messages', :t, :b, :data, :k, :k2, :d)",
-                    ['u' => $userId, 't' => (string) ($sender['display_name'] ?? $sender['username'] ?? 'Nouveau message'), 'b' => $preview, 'data' => $data, 'k' => $key, 'k2' => $key, 'd' => gmdate('Y-m-d H:i:s')],
-                );
-            }
+            // classified_message (4890352c) : une notification par conversation, mise à jour à chaque message
+            \App\Modules\Notifications\Notices::send((int) $userId, 'classified_message', "✉️ {$who} t'a écrit", \App\Modules\Notifications\Notices::excerpt($body, 120), $target, [
+                'actor_id' => $senderId, 'actor' => $who, 'group' => 'conv:' . $conversation['uid'], 'group_title' => static fn (int $n) => "✉️ {$who} t'a écrit ({$n} messages)",
+            ]);
         }
     }
 

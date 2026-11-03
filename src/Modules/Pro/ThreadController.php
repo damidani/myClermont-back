@@ -9,7 +9,6 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Exceptions\HttpException;
 use App\Exceptions\ValidationException;
-use App\Modules\Messaging\Push\Push;
 use App\Security\Crypto;
 
 /**
@@ -91,7 +90,9 @@ final class ThreadController
         Database::execute('UPDATE pro_threads SET unread_pro = 0, unread_client = 1, archived = 0 WHERE id = :id', ['id' => $t['id']]);
         $name = Pro::displayName(Pro::business($request));
         if ($t['user_id'] !== null) {
-            Push::toUser((int) $t['user_id'], 'messages', $name, mb_substr($text, 0, 140), ['deeplink' => 'myclermont://pro-threads/' . $t['uid'], 'thread_id' => 'pro-' . $t['uid']]);
+            // request_replied (4890352c) : boîte de l'app, push selon les préférences
+            \App\Modules\Notifications\Notices::send((int) $t['user_id'], 'request_replied', "💬 {$name} t'a répondu", \App\Modules\Notifications\Notices::excerpt($text),
+                ['type' => $t['source'] === 'logement' ? 'housing' : 'request', 'id' => $t['uid']]);
         }
         if ($t['contact_email'] !== '') {
             Pro::mail($t['contact_email'], "{$name} t'a répondu : {$t['subject']}", "{$name} a répondu à ton message :\n\n{$text}\n\nRéponds-lui depuis l'app My Clermont.");

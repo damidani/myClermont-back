@@ -31,11 +31,11 @@ final class PushDispatcher
         foreach ($due as $push) {
             $devices = $push['device_id'] !== null
                 ? Database::fetchAll(
-                    "SELECT d.platform, d.push_token, d.topics FROM devices d LEFT JOIN users u ON u.id = d.user_id
+                    "SELECT d.platform, d.push_token, d.push_environment, d.topics FROM devices d LEFT JOIN users u ON u.id = d.user_id
                      WHERE d.id = :d AND d.status = 'active' AND d.push_token IS NOT NULL AND (u.id IS NULL OR u.notifications_enabled = 1)",
                     ['d' => $push['device_id']])
                 : Database::fetchAll(
-                    "SELECT d.platform, d.push_token, d.topics FROM devices d JOIN users u ON u.id = d.user_id
+                    "SELECT d.platform, d.push_token, d.push_environment, d.topics FROM devices d JOIN users u ON u.id = d.user_id
                      WHERE d.user_id = :u AND d.status = 'active' AND d.push_token IS NOT NULL AND u.notifications_enabled = 1 AND u.status = 'active'",
                     ['u' => $push['user_id']]);
             if ($push['topic'] !== null) {
@@ -52,6 +52,9 @@ final class PushDispatcher
             if ($push['thread_id'] !== null) {
                 $data['thread_id'] = $push['thread_id'];
             }
+            if ($push['notice_id'] !== null && $push['user_id'] !== null) {
+                $data['badge'] = (int) (Database::fetch('SELECT COUNT(*) AS n FROM user_notices WHERE user_id = :u AND read_at IS NULL', ['u' => $push['user_id']])['n'] ?? 0);
+            }
             try {
                 $ok = $sender->send($devices, $push['title'], $push['body'], $data, $push['collapse_key']);
             } catch (\Throwable $e) {
@@ -63,6 +66,9 @@ final class PushDispatcher
                 'UPDATE push_outbox SET status = :s, attempts = attempts + 1, sent_at = :d WHERE id = :id',
                 ['s' => $ok ? 'sent' : ($final ? 'failed' : 'pending'), 'd' => $ok ? gmdate('Y-m-d H:i:s') : null, 'id' => $push['id']],
             );
+            if ($ok && $push['notice_id'] !== null) {
+                Database::execute('UPDATE user_notices SET pushed_at = :d WHERE id = :id', ['d' => gmdate('Y-m-d H:i:s'), 'id' => $push['notice_id']]);
+            }
             $result[$ok ? 'sent' : 'failed']++;
         }
 

@@ -84,9 +84,22 @@ final class DeviceController
             'os_version'  => 'nullable|string|max:50',
             'app_version' => 'nullable|string|max:30',
             'push_token'  => 'nullable|string|max:255',
+            'push_environment' => 'nullable|in:sandbox,production,development',
+            'notifications_enabled' => 'nullable|boolean',
         ]);
-
+        // 4890352c : builds Xcode → APNs sandbox, TestFlight et App Store → production
+        if (($data['push_environment'] ?? null) === 'development') {
+            $data['push_environment'] = 'sandbox';
+        }
+        if (!empty($data['push_token'])) {
+            // Un jeton push n'appartient qu'à un appareil (réinstallation de l'app)
+            \App\Core\Database::execute('UPDATE devices SET push_token = NULL WHERE push_token = :t AND id <> :id', ['t' => $data['push_token'], 'id' => $request->attributes['device']['id']]);
+        }
         $device = $this->devices->update($request->attributes['device'], $data);
+        // Avec un compte : appareil rattaché (notificationsEnabled = autorisation iOS de cet appareil, accepté sans effet côté compte)
+        if (isset($request->attributes['user_id']) && (int) ($device['user_id'] ?? 0) !== (int) $request->attributes['user_id']) {
+            $this->devices->attachUser($device, (int) $request->attributes['user_id']);
+        }
 
         return Response::success(DeviceRepository::present($device));
     }

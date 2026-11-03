@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Community;
 
+use App\Modules\Notifications\Notices;
+
 use App\Content\Media\MediaStore;
 use App\Core\Config;
 use App\Core\Database;
@@ -206,7 +208,16 @@ final class CommunityController
     public function like(Request $request): Response
     {
         $post = $this->findOrFail((string) $request->param('id'));
-        $this->posts->like((int) $post['id'], $request->attributes['user_id']);
+        $userId = (int) $request->attributes['user_id'];
+        if ($this->posts->like((int) $post['id'], $userId)) {
+            // 1er j'aime tout de suite, puis « camille.r et 3 autres… » dans la même notification
+            $who = Notices::handle($userId);
+            Notices::send((int) $post['user_id'], 'post_liked', "❤️ {$who} aime ta publication", '« ' . Notices::excerpt((string) $post['body'], 60) . ' »',
+                ['type' => 'post', 'id' => $post['uid']], [
+                    'actor_id' => $userId, 'actor' => $who, 'group' => 'post_liked:' . $post['uid'],
+                    'group_title' => static fn (int $n) => "❤️ {$who} et " . ($n - 1) . ' autre' . ($n > 2 ? 's' : '') . ' aiment ta publication',
+                ]);
+        }
 
         return $this->likeState($post['uid'], true);
     }
@@ -218,6 +229,36 @@ final class CommunityController
         $this->posts->unlike((int) $post['id'], $request->attributes['user_id']);
 
         return $this->likeState($post['uid'], false);
+    }
+
+    /** PUT /v1/community/posts/{postId}/comments/{commentId}/like (4890352c) → 204, idempotent */
+    public function likeComment(Request $request): Response
+    {
+        $post = $this->findOrFail((string) $request->param('postId'));
+        $comment = Database::fetch("SELECT id, uid, user_id, body FROM community_comments WHERE uid = :c AND post_id = :p AND status = 'visible'",
+            ['c' => strtolower((string) $request->param('commentId')), 'p' => $post['id']]) ?? throw new HttpException(404, 'comment_not_found', 'Commentaire introuvable.');
+        $userId = (int) $request->attributes['user_id'];
+        if (Database::execute('INSERT IGNORE INTO community_comment_likes (comment_id, user_id, created_at) VALUES (:c, :u, :d)',
+            ['c' => $comment['id'], 'u' => $userId, 'd' => gmdate('Y-m-d H:i:s')]) > 0) {
+            $who = Notices::handle($userId);
+            Notices::send((int) $comment['user_id'], 'comment_liked', "❤️ {$who} aime ton commentaire", '« ' . Notices::excerpt((string) $comment['body'], 60) . ' »',
+                ['type' => 'post', 'id' => $post['uid']], [
+                    'actor_id' => $userId, 'actor' => $who, 'group' => 'comment_liked:' . $comment['uid'],
+                    'group_title' => static fn (int $n) => "❤️ {$who} et " . ($n - 1) . ' autre' . ($n > 2 ? 's' : '') . ' aiment ton commentaire',
+                ]);
+        }
+
+        return Response::noContent();
+    }
+
+    /** DELETE /v1/community/posts/{postId}/comments/{commentId}/like → 204 */
+    public function unlikeComment(Request $request): Response
+    {
+        $post = $this->findOrFail((string) $request->param('postId'));
+        Database::execute('DELETE l FROM community_comment_likes l JOIN community_comments c ON c.id = l.comment_id WHERE c.uid = :c AND c.post_id = :p AND l.user_id = :u',
+            ['c' => strtolower((string) $request->param('commentId')), 'p' => $post['id'], 'u' => $request->attributes['user_id']]);
+
+        return Response::noContent();
     }
 
     /** PUT /v1/community/posts/{id}/vote {option_id} — un vote définitif par personne */
@@ -281,7 +322,8 @@ final class CommunityController
         $comment = $this->posts->addComment((int) $post['id'], $userId, $data['body'], $status);
         if ($status === 'visible') {
             Events::dispatch('community.comment_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'post_author_id' => (int) $post['user_id']]);
-            self::notifyMentions($data['body'], (int) $userId, (int) $post['id'], $post['uid'], (int) $comment['id'], $comment['uid']);
+            $mentioned = self::notifyMentions($data['body'], (int) $userId, (int) $post['id'], $post['uid'], (int) $comment['id'], $comment['uid']);
+            self::notifyComment($post, (int) $userId, $data['body'], $mentioned);
         }
 
         return Response::success(PostPresenter::comment($comment, $userId), 201);
@@ -319,23 +361,46 @@ final class CommunityController
         return Response::success(['id' => $uid, 'is_liked' => $liked, 'likes_count' => (int) ($count['likes_count'] ?? 0)]);
     }
 
-    /** « @auteur t'a mentionné·e : “début du message…” » à chaque personne mentionnée (10 au plus, une fois par message) */
-    public static function notifyMentions(string $text, int $authorId, int $postId, string $postUid, ?int $commentId, ?string $commentUid): void
+    /** « @auteur t'a mentionné·e : “début du message…” » à chaque personne mentionnée (10 au plus, une fois par message) ; renvoie les ids notifiés */
+    public static function notifyMentions(string $text, int $authorId, int $postId, string $postUid, ?int $commentId, ?string $commentUid): array
     {
         $mentions = \App\Modules\Account\Handles::mentions($text, $authorId);
         if ($mentions === []) {
-            return;
+            return [];
         }
-        $author = \App\Modules\Account\Handles::display(Database::fetch('SELECT handle FROM users WHERE id = :u', ['u' => $authorId])['handle'] ?? null);
-        $excerpt = mb_strlen($text) > 80 ? rtrim(mb_substr($text, 0, 80)) . '…' : $text;
+        $author = Notices::handle($authorId);
+        $done = [];
         foreach ($mentions as $m) {
             $new = Database::execute('INSERT IGNORE INTO community_mentions (post_id, comment_id, user_id, created_at) VALUES (:p, :c, :u, :d)',
                 ['p' => $postId, 'c' => $commentId, 'u' => $m['id'], 'd' => gmdate('Y-m-d H:i:s')]);
             if ($new > 0) {
-                \App\Modules\Messaging\Push\Push::toUser($m['id'], 'community.replies', 'Nouvelle mention', "@{$author} t'a mentionné·e : “{$excerpt}”", [
-                    'deeplink' => 'myclermont://community/post/' . $postUid, 'thread_id' => 'community:' . $postUid,
-                    'data' => array_filter(['postId' => $postUid, 'commentId' => $commentUid]),
-                ]);
+                Notices::send($m['id'], 'mentioned', "@{$author} t'a mentionné·e", '« ' . Notices::excerpt($text) . ' »',
+                    array_filter(['type' => 'post', 'id' => $postUid, 'commentId' => $commentUid]), ['actor_id' => $authorId, 'actor' => $author]);
+                $done[] = $m['id'];
+            }
+        }
+
+        return $done;
+    }
+
+    /**
+     * post_commented à l'auteur de la publication ; comment_replied aux autres personnes de la discussion
+     * (1 par publication et par heure), sauf celles déjà mentionnées dans ce commentaire.
+     */
+    private static function notifyComment(array $post, int $authorId, string $text, array $mentioned): void
+    {
+        $who = Notices::handle($authorId);
+        $target = ['type' => 'post', 'id' => $post['uid']];
+        if (!in_array((int) $post['user_id'], $mentioned, true)) {
+            Notices::send((int) $post['user_id'], 'post_commented', "💬 {$who} a commenté ta publication", Notices::excerpt($text), $target,
+                ['actor_id' => $authorId, 'actor' => $who]);
+        }
+        $others = Database::fetchAll("SELECT DISTINCT user_id FROM community_comments WHERE post_id = :p AND status = 'visible' AND user_id NOT IN (:a, :o) LIMIT 50",
+            ['p' => $post['id'], 'a' => $authorId, 'o' => $post['user_id']]);
+        foreach ($others as $o) {
+            if (!in_array((int) $o['user_id'], $mentioned, true)) {
+                Notices::send((int) $o['user_id'], 'comment_replied', "💬 {$who} a répondu dans une discussion", Notices::excerpt($text), $target,
+                    ['actor_id' => $authorId, 'actor' => $who, 'once_per' => ['comment_replied:' . $post['uid'], 3600]]);
             }
         }
     }

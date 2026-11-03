@@ -66,7 +66,7 @@ return static function (Router $router, array $modules): void {
                 $r->post('/uploads/{id}/confirm', [App\Content\Uploads\UploadController::class, 'confirm']);
             });
             $r->get('/devices/me', [DeviceController::class, 'show']);
-            $r->patch('/devices/me', [DeviceController::class, 'update']);
+            $r->patch('/devices/me', [DeviceController::class, 'update'], ['auth:optional']);
 
             foreach ($modules as $module) {
                 $module->routes($r);
