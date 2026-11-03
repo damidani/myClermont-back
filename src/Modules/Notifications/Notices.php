@@ -33,8 +33,6 @@ final class Notices
         'time_zone' => 'Europe/Paris',
     ];
 
-    private const DAILY_PUSHES = 8;
-    private const GROUP_PUSH_GAP = 1800;
 
     /**
      * @param array{actor_id?: int, actor?: string, image_url?: string, group?: string, group_title?: \Closure, once_per?: array{0: string, 1: int}} $o
@@ -72,7 +70,7 @@ final class Notices
             $id = (int) $existing['id'];
             $uid = $existing['uid'];
             // 30 min au moins entre deux push d'un même groupe
-            $push = $existing['pushed_at'] === null || strtotime($existing['pushed_at'] . ' UTC') < time() - self::GROUP_PUSH_GAP;
+            $push = $existing['pushed_at'] === null || strtotime($existing['pushed_at'] . ' UTC') < time() - 60 * (int) \App\Modules\Staff\Settings::get('notifications')['group_gap_minutes'];
         } else {
             $uid = Crypto::uuid4();
             $id = Database::insert(
@@ -114,11 +112,12 @@ final class Notices
         if ($p['quiet_hours']['enabled'] && self::isQuiet($p['quiet_hours']['start'], $p['quiet_hours']['end'], $p['time_zone'])) {
             return false; // la nuit : dans la boîte seulement
         }
-        if (!in_array($family, ['photos', 'replies'], true)) {
+        // Annonces de l'équipe (system) et familles photos / réponses : hors plafond quotidien (réglable dans l'admin)
+        if ($family !== null && !in_array($family, ['photos', 'replies'], true)) {
             $today = (new \DateTimeImmutable('today', new \DateTimeZone('Europe/Paris')))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
             $sent = (int) (Database::fetch("SELECT COUNT(*) AS n FROM user_notices WHERE user_id = :u AND pushed_at >= :d AND (family IS NULL OR family NOT IN ('photos','replies'))",
                 ['u' => $user['id'], 'd' => $today])['n'] ?? 0);
-            if ($sent >= self::DAILY_PUSHES) {
+            if ($sent >= (int) \App\Modules\Staff\Settings::get('notifications')['daily_push_cap']) {
                 return false;
             }
         }

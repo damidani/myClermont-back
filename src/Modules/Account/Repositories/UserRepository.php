@@ -225,6 +225,9 @@ final class UserRepository
             // Pseudo public (demande 1a584b24) : jamais l'e-mail ni le nom
             'display_name' => \App\Modules\Account\Handles::display($user['handle'] ?? null, $user['display_name'] ?? $user['username'] ?? null),
             'handle'       => $user['handle'] ?? null,
+            // Badge de l'équipe MyClermont (c06e670d)
+            'is_staff'     => (bool) ($user['is_staff'] ?? false),
+            'staff_title'  => !empty($user['is_staff']) ? ($user['staff_title'] ?? null ?: 'Équipe MyClermont') : null,
             'avatar'       => ($user['avatar_kind'] ?? 'symbol') === 'photo'
                 ? ['kind' => 'photo', 'url' => $user['avatar_value']]
                 : ['kind' => 'symbol', 'value' => $user['avatar_value'] ?? 'person.crop.circle.fill'],

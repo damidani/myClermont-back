@@ -24,6 +24,17 @@ final class StaffRoutes
                 $r->post('/merchants/{id}/request-info', [MerchantController::class, 'requestInfo']);
                 $r->post('/merchants/{id}/reject', [MerchantController::class, 'reject']);
 
+                $r->get('/broadcasts', [BroadcastController::class, 'index']);
+                $r->post('/broadcasts', [BroadcastController::class, 'create']);
+                $r->post('/broadcasts/audience', [BroadcastController::class, 'audience']);
+                $r->patch('/broadcasts/{id}', [BroadcastController::class, 'update']);
+                $r->post('/broadcasts/{id}/send', [BroadcastController::class, 'send']);
+                $r->post('/broadcasts/{id}/test', [BroadcastController::class, 'test']);
+                $r->post('/broadcasts/{id}/cancel', [BroadcastController::class, 'cancel']);
+                $r->get('/settings', [BroadcastController::class, 'settings']);
+                $r->put('/settings', [BroadcastController::class, 'updateSettings']);
+                $r->patch('/users/{id}/staff', [BroadcastController::class, 'staff']);
+
                 $r->get('/team-reviews', [TeamReviewController::class, 'index']);
                 $r->get('/places/search', [TeamReviewController::class, 'search']);
                 $r->get('/places/{key:.+}/team-review/history', [TeamReviewController::class, 'history']);

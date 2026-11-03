@@ -93,7 +93,7 @@ final class VisitorPhotoController
 
         return Response::success([
             'items' => array_map(static fn ($r) => ['id' => $r['uid'], 'url' => $r['url'], 'author' => \App\Modules\Account\Handles::display($r['handle']),
-                                                    'caption' => $r['caption'], 'created_at' => VisitorPhotos::iso($r['created_at'])], array_slice($rows, 0, $limit)),
+                                                    'caption' => $r['caption'], 'created_at' => VisitorPhotos::iso($r['created_at']), 'author_is_staff' => (bool) $r['is_staff']], array_slice($rows, 0, $limit)),
             'next_cursor' => count($rows) > $limit ? (string) ($offset + $limit) : null,
         ]);
     }

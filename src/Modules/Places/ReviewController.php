@@ -37,7 +37,7 @@ final class ReviewController
         $before = is_string($cursor) && ctype_digit($cursor) ? (int) $cursor : PHP_INT_MAX;
         [$where, $params] = self::scope($place);
         $rows = Database::fetchAll(
-            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.handle, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
+            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.handle, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status, u.is_staff, u.staff_title
              FROM place_reviews r JOIN users u ON u.id = r.user_id
              WHERE {$where} AND r.status IN ('visible', 'pending') AND r.id < :b ORDER BY r.id DESC LIMIT 21",
             $params + ['b' => $before],
@@ -72,7 +72,7 @@ final class ReviewController
         }
         [$where, $params] = self::scope($place);
         $row = Database::fetch(
-            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.handle, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status
+            "SELECT r.id, r.uid, r.rating, r.comment, r.status, r.created_at, r.reply_text, r.reply_at, u.uid AS user_uid, u.handle, u.display_name, u.first_name, u.username, u.avatar_kind, u.avatar_value, u.status AS user_status, u.is_staff, u.staff_title
              FROM place_reviews r JOIN users u ON u.id = r.user_id WHERE {$where} AND r.user_id = :u",
             $params + ['u' => $userId],
         );
@@ -137,6 +137,7 @@ final class ReviewController
             'author'     => UserRepository::presentAuthor([
                 'uid' => $r['user_uid'], 'handle' => $r['handle'] ?? null, 'display_name' => $r['first_name'] ?? $r['display_name'], 'username' => $r['username'],
                 'avatar_kind' => $r['avatar_kind'], 'avatar_value' => $r['avatar_value'], 'status' => $r['user_status'],
+                'is_staff' => $r['is_staff'] ?? 0, 'staff_title' => $r['staff_title'] ?? null,
             ]),
             'created_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($r['created_at'] . ' UTC')),
             // Réponse publique du commerçant (espace pro)

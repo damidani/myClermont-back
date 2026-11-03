@@ -196,6 +196,755 @@
                 }
             }
         },
+        "/admin/broadcasts": {
+            "get": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "GET /admin/broadcasts                         → { items: Broadcast[], nextCursor }",
+                "operationId": "get_admin_broadcasts",
+                "x-handler": "BroadcastController::index",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "POST /admin/broadcasts                        { title, body, channels: [push, email], emailSubject?, emailBody?, audience, target? } → Broadcast (brouillon)",
+                "operationId": "post_admin_broadcasts",
+                "x-handler": "BroadcastController::create",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "body": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "channels": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "target": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "audience": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "emailSubject": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "emailBody": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/broadcasts/audience": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "POST /admin/broadcasts/audience               { audience } → { total, push, email }",
+                "operationId": "post_admin_broadcasts_audience",
+                "x-handler": "BroadcastController::audience",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "audience": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/broadcasts/{id}": {
+            "patch": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "PATCH /admin/broadcasts/{id}                  → Broadcast (brouillon seulement)",
+                "operationId": "patch_admin_broadcasts_id",
+                "x-handler": "BroadcastController::update",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "body": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "channels": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "target": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "audience": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "emailSubject": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "emailBody": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/broadcasts/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "POST /admin/broadcasts/{id}/cancel",
+                "operationId": "post_admin_broadcasts_id_cancel",
+                "x-handler": "BroadcastController::cancel",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {}
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/broadcasts/{id}/send": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "POST /admin/broadcasts/{id}/send              { sendAt? } → programmé (envoyé par le cron broadcasts:send dans la minute)",
+                "operationId": "post_admin_broadcasts_id_send",
+                "x-handler": "BroadcastController::send",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "sendAt": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "conflict",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/broadcasts/{id}/test": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "POST /admin/broadcasts/{id}/test              → envoi aux comptes staff seulement",
+                "operationId": "post_admin_broadcasts_id_test",
+                "x-handler": "BroadcastController::test",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {}
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/me": {
             "get": {
                 "tags": [
@@ -1690,6 +2439,162 @@
                 }
             }
         },
+        "/admin/settings": {
+            "get": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "GET | PUT /admin/settings                     → { notifications, mail }",
+                "operationId": "get_admin_settings",
+                "x-handler": "BroadcastController::settings",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "GET | PUT /admin/settings                     → { notifications, mail }",
+                "operationId": "put_admin_settings",
+                "x-handler": "BroadcastController::updateSettings",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "notifications": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "mail": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/team-reviews": {
             "get": {
                 "tags": [
@@ -1984,6 +2889,119 @@
                     },
                     "404": {
                         "description": "user_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/staff": {
+            "patch": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "PATCH /admin/users/{id}/staff                 { isStaff, staffTitle? } → badge staff d'un compte de l'app",
+                "operationId": "patch_admin_users_id_staff",
+                "x-handler": "BroadcastController::staff",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "isStaff": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "staffTitle": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -9046,6 +10064,92 @@
                 }
             }
         },
+        "/deals/{id}/wallet-pass": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /deals/{id}/wallet-pass                bon plan du compte (compte requis, code déjà obtenu par POST /deals/{id}/redeem) : QR = qrPayload validé en caisse",
+                "operationId": "get_deals_id_wallet_pass",
+                "x-handler": "WalletController::deal",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "not_configured",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/devices": {
             "post": {
                 "tags": [
@@ -11094,6 +12198,91 @@
                     },
                     "429": {
                         "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{id}/wallet-pass": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /events/{id}/wallet-pass               billet de la sortie (date, lieu, position pour l'écran verrouillé, QR = lien de l'événement)",
+                "operationId": "get_events_id_wallet_pass",
+                "x-handler": "WalletController::event",
+                "security": [
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "event_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "not_configured",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -31858,6 +33047,61 @@
                     },
                     "429": {
                         "description": "too_many_photos · rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallet/status": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /wallet/status                         { available } : l'app affiche le bouton seulement si true",
+                "operationId": "get_wallet_status",
+                "x-handler": "WalletController::status",
+                "security": [
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
                         "content": {
                             "application/json": {
                                 "schema": {

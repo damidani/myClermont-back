@@ -85,7 +85,7 @@ final class VisitorPhotos
         return $out;
     }
 
-    public const SELECT = 'SELECT v.*, u.handle FROM place_visitor_photos v LEFT JOIN users u ON u.id = v.user_id';
+    public const SELECT = 'SELECT v.*, u.handle, u.is_staff FROM place_visitor_photos v LEFT JOIN users u ON u.id = v.user_id';
 
     /**
      * Validation de photos en attente. $businessId null = équipe (galerie sans limite de formule).

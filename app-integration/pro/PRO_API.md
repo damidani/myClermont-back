@@ -175,3 +175,20 @@ Une inscription n'est plus validée automatiquement : même avec un SIRET actif,
 
 E-mails : au commerçant « Demande reçue · réponse sous 48 h ouvrées » ou « Ajoute ton SIRET » ; aux admins « Nouvelle inscription à valider » avec le lien `https://commercant.myclermont.app/admin/inscriptions?id=…`.
 Les pièces jointes `verification` acceptent pour l'instant des images (JPEG, PNG, WebP, HEIC), pas encore le PDF.
+
+## Envois groupés, réglages, badge staff (c06e670d)
+
+| Méthode | Route | Corps | Réponse |
+|---|---|---|---|
+| GET | `/admin/broadcasts` | | `{ items: Broadcast[], nextCursor }` |
+| POST | `/admin/broadcasts/audience` | `{ audience }` | `{ total, push, email }` (e-mail : comptes avec `marketingOptIn` seulement) |
+| POST | `/admin/broadcasts` | `{ title (120), body (500), channels: ["push","email"], emailSubject?, emailBody? ({prenom}), audience, target? }` | `Broadcast` (brouillon) |
+| PATCH | `/admin/broadcasts/{id}` | idem | brouillon seulement |
+| POST | `/admin/broadcasts/{id}/send` | `{ sendAt? }` | `programme`, envoyé par le cron dans la minute |
+| POST | `/admin/broadcasts/{id}/test` | | envoi aux comptes staff seulement |
+| POST | `/admin/broadcasts/{id}/cancel` | | |
+| GET / PUT | `/admin/settings` | `{ notifications: { dailyPushCap, groupGapMinutes, defaultQuietHours, broadcastsEnabled }, mail: { fromName, replyTo, footer, broadcastsEnabled } }` | |
+| PATCH | `/admin/users/{id ou @pseudo}/staff` | `{ isStaff, staffTitle? }` | badge staff du compte |
+
+`audience` : `platforms`, `cities`, `postalCodes`, `neighborhoods`, `activeWithinDays`, `createdWithinDays`, `plus`, `staffOnly`, `genders`, `favoriteCategories`, `favoritePlaceKeys`, `minPoints` (tous facultatifs, combinés en ET).
+Le push d'un envoi groupé arrive dans la boîte de l'app avec `kind: "system"` et la `target` choisie ; il n'entre pas dans le plafond quotidien.

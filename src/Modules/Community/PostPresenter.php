@@ -136,6 +136,7 @@ final class PostPresenter
         return \App\Modules\Account\Repositories\UserRepository::presentAuthor([
             'uid' => $row['author_uid'], 'handle' => $row['author_handle'] ?? null, 'display_name' => $row['author_first_name'] ?? null, 'username' => $row['author_username'],
             'avatar_kind' => $row['author_avatar_kind'] ?? 'symbol', 'avatar_value' => $row['author_avatar_value'] ?? null, 'status' => $row['author_status'] ?? 'active',
+            'is_staff' => $row['author_is_staff'] ?? 0, 'staff_title' => $row['author_staff_title'] ?? null,
         ]);
     }
 

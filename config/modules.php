@@ -29,4 +29,5 @@ return [
     App\Modules\Subscriptions\SubscriptionsModule::class,
     App\Modules\Games\GamesModule::class,
     App\Modules\Pro\ProModule::class,
+    App\Modules\Wallet\WalletModule::class,
 ];

@@ -26,3 +26,5 @@
 40 4 * * 1 php /var/www/myclermont/bin/console osm:import >> /var/www/myclermont/storage/logs/imports.log 2>&1
 # Alerte s'il reste moins de 10 sorties dans les 21 jours (Événements Flash de l'app)
 0 9 * * * php /var/www/myclermont/bin/console events:coverage >> /var/www/myclermont/storage/logs/imports.log 2>&1
+# Envois groupés programmés depuis l'admin (push / e-mail)
+* * * * * php /var/www/myclermont/bin/console broadcasts:send >> /var/www/myclermont/storage/logs/imports.log 2>&1
