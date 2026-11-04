@@ -22,6 +22,7 @@ final class ExploreModule implements Module
         $r->group(['middleware' => ['auth:optional']], static function (Router $r): void {
             $r->get('/explore', [ExploreController::class, 'home']);
             $r->get('/explore/discover', [ExploreController::class, 'discover']);
+            $r->get('/explore/selections', [ExploreController::class, 'selections']);
             $r->get('/explore/stories/{id}', [ExploreController::class, 'story']);
             $r->get('/explore/offers', [ExploreController::class, 'offers']);
             $r->get('/explore/offers/{id}', [ExploreController::class, 'offer']);

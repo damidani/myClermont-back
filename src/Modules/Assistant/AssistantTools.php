@@ -48,8 +48,8 @@ final class AssistantTools
             ['name' => 'list_deals', 'description' => 'Bons plans des commerçants partenaires en cours.', 'inputSchema' => $obj(['category' => ['type' => 'string']])],
             ['name' => 'list_jobs', 'description' => 'Offres d\'emploi, stages et alternances autour de Clermont.',
              'inputSchema' => $obj(['query' => ['type' => 'string'], 'contract' => ['type' => 'string', 'enum' => ['cdi', 'cdd', 'alternance', 'stage', 'freelance', 'interim', 'saisonnier']]])],
-            ['name' => 'list_housing', 'description' => 'Annonces de logement : location, colocation, achat.',
-             'inputSchema' => $obj(['type' => ['type' => 'string', 'enum' => ['rent', 'colocation', 'sale']], 'max_price' => ['type' => 'integer', 'description' => 'Euros']])],
+            ['name' => 'list_associations', 'description' => 'Annuaire des associations de Clermont (sport, culture, solidarité, environnement, jeunesse, santé).',
+             'inputSchema' => $obj(['query' => ['type' => 'string'], 'category' => ['type' => 'string', 'enum' => ['Sport', 'Culture', 'Solidarité', 'Environnement', 'Jeunesse', 'Santé', 'Vie locale']]])],
             ['name' => 'list_services', 'description' => 'Professionnels et services locaux (artisans, dépannage, santé, beauté…).',
              'inputSchema' => $obj(['query' => ['type' => 'string'], 'category' => ['type' => 'string']])],
             ['name' => 'fuel_prices', 'description' => 'Prix des carburants des stations proches (flux officiel).',
@@ -79,9 +79,9 @@ final class AssistantTools
             'list_jobs'     => $this->rows('job', "SELECT uid, title, company_name, contract, city FROM job_offers WHERE status = 'published'"
                                 . (!empty($in['contract']) ? ' AND contract = :c' : '') . (!empty($in['query']) ? ' AND (title LIKE :q OR company_name LIKE :q2)' : '') . ' ORDER BY published_at DESC LIMIT 6',
                                 array_filter(['c' => $in['contract'] ?? null, 'q' => !empty($in['query']) ? '%' . $in['query'] . '%' : null, 'q2' => !empty($in['query']) ? '%' . $in['query'] . '%' : null])),
-            'list_housing'  => $this->rows('housing', "SELECT uid, title, transaction, price_cents, surface_m2, district_label FROM housing_listings WHERE status = 'published'"
-                                . (!empty($in['type']) ? ' AND transaction = :t' : '') . (!empty($in['max_price']) ? ' AND price_cents <= :p' : '') . ' ORDER BY published_at DESC LIMIT 6',
-                                array_filter(['t' => $in['type'] ?? null, 'p' => !empty($in['max_price']) ? (int) $in['max_price'] * 100 : null])),
+            'list_associations' => $this->rows('association', "SELECT uid, name, category, district, LEFT(description, 200) AS description, website_url FROM associations WHERE status = 'published'"
+                                . (!empty($in['category']) ? ' AND category = :c' : '') . (!empty($in['query']) ? ' AND (name LIKE :q OR description LIKE :q2)' : '') . ' ORDER BY website_url IS NULL, created_on DESC LIMIT 6',
+                                array_filter(['c' => $in['category'] ?? null, 'q' => !empty($in['query']) ? '%' . $in['query'] . '%' : null, 'q2' => !empty($in['query']) ? '%' . $in['query'] . '%' : null])),
             'list_services' => $this->rows('service', "SELECT sp.uid, sp.name, c.name AS category, sp.price_label FROM service_providers sp JOIN service_categories c ON c.id = sp.category_id
                                 WHERE sp.status = 'published'" . (!empty($in['category']) ? ' AND c.slug = :c' : '') . (!empty($in['query']) ? ' AND (sp.name LIKE :q OR sp.keywords LIKE :q2)' : '') . ' LIMIT 6',
                                 array_filter(['c' => $in['category'] ?? null, 'q' => !empty($in['query']) ? '%' . $in['query'] . '%' : null, 'q2' => !empty($in['query']) ? '%' . $in['query'] . '%' : null])),

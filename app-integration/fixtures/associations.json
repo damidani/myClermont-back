@@ -1,0 +1,29 @@
+{
+    "items": [
+        {
+            "id": "aac494c3-742a-4ba9-851b-597c915fd55a",
+            "name": "Help Tech",
+            "category": "Solidarité",
+            "district": "Clermont-Ferrand",
+            "icon": "heart.fill",
+            "description": "Accompagner les personnes, notamment âgées ou éloignées du numérique, dans la prise en main de leurs outils informatiques, ordinateurs, smartphones et tablettes, et dans leurs démarches numériques du quotidien ; réaliser des sites internet simples pour des particuliers, des associations ou de petites structures dépourvues des moyens techniques nécessaires ; intervenir en France et au Québec.",
+            "activities": [
+                "Réseaux internet"
+            ],
+            "website": "https://assohelptech.org/"
+        },
+        {
+            "id": "9ad33bc3-8898-4856-8ab5-6e7e61dd2fcc",
+            "name": "Amis de Ker Netra",
+            "category": "Solidarité",
+            "district": "Clermont-Ferrand",
+            "icon": "heart.fill",
+            "description": "Regrouper les personnes qui souhaitent apporter leur concours, sous quelque forme que ce soit, au fonctionnement de la Maison d'Enfants Ker Netra située aux Sables d'Olonne ; entretenir entre ses membres l'esprit d'équipe, d'amitié et de service qui les unissaient autour de la Maison d'Enfants, notamment en organisant des activités éducatives diverses telles que sorties, excursions, visites, conférences, groupements artistiques, chorale et en proposant des activités fédératrices du groupe d'adhérents et notamment des séjours sur place des membres pour faire un point sur les actions menées ; faciliter, par l'attribution de bourses, en complémentarité avec les organismes publics (CAF, Département, notamment) et privés (CE notamment) , les séjours à Ker Netra que ce soit dans le cadre du centre de vacances ou d'autres séjours (classes de mer notamment) ; réfléchir et proposer des projets novateurs (culturels, sportifs, matériels) , pour le centre en concertation avec le propriétaire et l'équipe éducative en place.",
+            "activities": [
+                "Foyers socio-éducatifs"
+            ],
+            "website": "https://www.amisdekernetra.fr/"
+        }
+    ],
+    "nextCursor": "2"
+}

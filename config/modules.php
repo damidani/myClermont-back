@@ -12,6 +12,7 @@ return [
     App\Modules\Premium\PremiumModule::class,
     App\Modules\Events\EventsModule::class,
     App\Modules\Housing\HousingModule::class,
+    App\Modules\City\CityModule::class,
     App\Modules\Jobs\JobsModule::class,
     App\Modules\Community\CommunityModule::class,
     App\Modules\Services\ServicesModule::class,

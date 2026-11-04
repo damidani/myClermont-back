@@ -62,6 +62,15 @@ return [
             'options'  => ['commune' => '63113'],
         ],
 
+        // Associations de Clermont-Ferrand (Journal officiel, open data sans clé) → Ma Ville › Associations
+        'joafe-associations' => [
+            'target'   => 'associations',
+            'importer' => App\Content\Import\JoafeAssociationsImporter::class,
+            'enabled'  => true,
+            'every'    => 10080,
+            'options'  => ['postal_codes' => ['63000', '63100'], 'since' => '2015-01-01'],
+        ],
+
         // Agrégateurs d'offres (Indeed, HelloWork, Meteojob, sites carrière…) via leurs API officielles.
         // Chaque offre garde son lien : « Postuler » renvoie l'utilisateur vers l'offre d'origine.
         'adzuna' => [

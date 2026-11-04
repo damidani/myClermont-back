@@ -195,6 +195,23 @@ final class IdentityController
         return Response::success(UserRepository::presentSpec($this->current($request)));
     }
 
+    /** PUT /me/avatar {url} : photo envoyée par /uploads, diffusée après modération (avatarPending en attendant) */
+    public function putAvatar(Request $request): Response
+    {
+        $user = $this->current($request);
+        \App\Modules\Account\Avatars::submit((int) $user['id'], $request->json()['url'] ?? null);
+
+        return Response::success(UserRepository::presentSpec($this->current($request)));
+    }
+
+    /** DELETE /me/avatar : retour à l'avatar par défaut */
+    public function deleteAvatar(Request $request): Response
+    {
+        \App\Modules\Account\Avatars::remove((int) $this->current($request)['id']);
+
+        return Response::noContent();
+    }
+
     public function update(Request $request): Response
     {
         $input = $request->json();
@@ -239,8 +256,8 @@ final class IdentityController
                 $fields += ['avatar_kind' => 'symbol', 'avatar_value' => $avatar['value']];
             } elseif (($avatar['kind'] ?? null) === 'photo' && is_string($avatar['url'] ?? null)
                 && str_starts_with($avatar['url'], (string) Config::get('app.media_base_url') . '/')) {
-                // Uniquement une photo déjà envoyée sur nos serveurs (POST /uploads)
-                $fields += ['avatar_kind' => 'photo', 'avatar_value' => $avatar['url']];
+                // Uniquement une photo déjà envoyée sur nos serveurs (POST /uploads), diffusée après modération
+                \App\Modules\Account\Avatars::submit((int) $user['id'], $avatar['url']);
             } else {
                 $errors['avatar'] = 'Avatar non autorisé.';
             }

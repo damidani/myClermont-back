@@ -11,7 +11,7 @@ use App\Security\Crypto;
 final class UserRepository
 {
     private const COLUMNS = 'u.id, u.uid, u.email, u.password_hash, u.username, u.handle, u.handle_changed_at, u.display_name, u.bio, u.neighborhood_id, u.points,
-                             u.avatar_kind, u.avatar_value, u.notifications_enabled, u.role, u.apple_sub, u.google_sub,
+                             u.avatar_kind, u.avatar_value, u.avatar_pending_url, u.notifications_enabled, u.role, u.apple_sub, u.google_sub,
                              u.apple_refresh_encrypted, u.deleted_at, u.first_name, u.phone, u.gender, u.gender_detail, u.pronouns, u.pronouns_detail,
                              u.city, u.postal_code, u.city_served, u.notify_city_launch, u.marketing_opt_in, u.consent_version, u.consented_at,
                              u.premium_until, u.referral_code, u.referred_by, u.status, u.created_at, u.updated_at,
@@ -202,6 +202,8 @@ final class UserRepository
             'avatar'                => $user['avatar_kind'] === 'photo'
                 ? ['kind' => 'photo', 'url' => $user['avatar_value']]
                 : ['kind' => 'symbol', 'value' => $user['avatar_value'] ?? 'person.crop.circle.fill'],
+            // Photo envoyée, pas encore validée : visible du seul utilisateur (d262fe7d)
+            'avatar_pending'        => \App\Modules\Account\Avatars::own($user),
             'notifications_enabled' => (bool) ($user['notifications_enabled'] ?? true),
             'role'                  => $user['role'] ?? 'user',
             'plus'                  => [

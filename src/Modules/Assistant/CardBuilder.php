@@ -29,7 +29,7 @@ final class CardBuilder
         'soiree' => ['#B5427A', '#6B2C91'], 'concert' => ['#FF4F8B', '#7B5CFF'], 'spectacle' => ['#E0457B', '#9B3DDB'],
         'expo' => ['#7B5CFF', '#4A3DDB'], 'famille' => ['#FFB547', '#FF7A59'], 'marche' => ['#3DBE8B', '#C9852B'],
         'festival' => ['#FF6A3D', '#FF4F8B'], 'deals' => ['#FF4F8B', '#FF8A3D'], 'jobs' => ['#2FA8FF', '#6B7AFF'],
-        'housing' => ['#3DBE8B', '#2FA8FF'], 'services' => ['#7B5CFF', '#2FA8FF'],
+        'housing' => ['#3DBE8B', '#2FA8FF'], 'associations' => ['#FF6B6B', '#FFB347'], 'services' => ['#7B5CFF', '#2FA8FF'],
     ];
 
     private const FUELS = ['gazole' => 'Gazole', 'e10' => 'SP95-E10', 'sp95' => 'SP95', 'sp98' => 'SP98', 'e85' => 'E85', 'gplc' => 'GPL'];
@@ -93,6 +93,10 @@ final class CardBuilder
                 'kicker' => ['rent' => 'LOCATION', 'colocation' => 'COLOCATION', 'sale' => 'ACHAT'][$r['transaction']] ?? 'LOGEMENT',
                 'title' => $r['title'], 'detail' => trim(($r['district_label'] ?? '') . ' · ' . number_format((int) $r['price_cents'] / 100, 0, ',', "\u{202F}") . ' €', ' ·'),
                 'link' => ['type' => 'city', 'destination' => 'housing'],
+            ],
+            'association' => $base + [
+                'icon' => \App\Modules\City\CityController::ASSOCIATION_ICONS[$r['category']] ?? 'person.3.fill', 'tone' => 'associations', 'kicker' => mb_strtoupper((string) $r['category']),
+                'title' => $r['name'], 'detail' => (string) $r['district'], 'link' => ['type' => 'city', 'destination' => 'associations', 'id' => $r['uid']],
             ],
             'service' => $base + [
                 'icon' => 'wrench.and.screwdriver.fill', 'tone' => 'services', 'kicker' => mb_strtoupper((string) $r['category']),

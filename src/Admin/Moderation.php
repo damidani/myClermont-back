@@ -24,7 +24,7 @@ final class Moderation
     ];
 
     /** Files de l'espace commerçant => rôles autorisés en plus d'admin */
-    private const PRO = ['pro_place' => ['editor'], 'pro_review' => ['moderator'], 'pro_story' => ['moderator'], 'pro_siret' => [], 'visitor_photo' => ['moderator', 'editor']];
+    private const PRO = ['pro_place' => ['editor'], 'pro_review' => ['moderator'], 'pro_story' => ['moderator'], 'pro_siret' => [], 'visitor_photo' => ['moderator', 'editor'], 'avatar' => ['moderator']];
 
     public static function allows(string $type, string $role): bool
     {
@@ -97,6 +97,11 @@ final class Moderation
             // Photos des visiteurs d'un pin sans commerçant vérifié (ca817cb4)
             $out['visitor_photo'] = $q("SELECT v.uid AS id, v.url AS media_url, v.caption AS text, v.pin_name AS place, v.place_key, v.created_at, CONCAT('@', u.handle) AS author, u.id AS user_id
                                         FROM place_visitor_photos v JOIN users u ON u.id = v.user_id WHERE v.business_id IS NULL AND v.status = 'pending' ORDER BY v.id LIMIT 100");
+        }
+        if (self::allows('avatar', $role)) {
+            // Photos de profil (d262fe7d) : invisibles des autres tant qu'elles ne sont pas validées
+            $out['avatar'] = $q("SELECT u.uid AS id, u.avatar_pending_url AS media_url, u.avatar_pending_at AS created_at, CONCAT('@', u.handle) AS author, u.id AS user_id
+                                 FROM users u WHERE u.avatar_pending_url IS NOT NULL AND u.status = 'active' ORDER BY u.avatar_pending_at LIMIT 100");
         }
         if (self::allows('pro_siret', $role)) {
             $out['pro_siret'] = $q("SELECT uid AS id, trade_name AS title, legal_name, siret, naf_code, COALESCE(verification_submitted_at, created_at) AS created_at, trade_name AS author
@@ -195,6 +200,11 @@ final class Moderation
             \App\Modules\Places\VisitorPhotos::refuse($row, $code ?: 'autre', $code ? null : ($reason !== '' ? mb_substr($reason, 0, 200) : null), \App\Modules\Places\VisitorPhotos::TEAM);
 
             return 'Photo refusée : l\'auteur est prévenu.';
+        }
+        if ($type === 'avatar') {
+            $action === 'publish' ? \App\Modules\Account\Avatars::approve($id) : \App\Modules\Account\Avatars::refuse($id, $reason);
+
+            return $action === 'publish' ? 'Photo de profil validée : elle est visible dans la communauté.' : 'Photo refusée : l\'utilisateur est prévenu.';
         }
         if ($type === 'pro_story') {
             \App\Modules\Pro\StoryController::moderate($id, $action === 'remove', $reason);

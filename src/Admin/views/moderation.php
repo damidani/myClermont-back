@@ -10,6 +10,7 @@ $sections = [
     'pro_review' => ['⭐ Avis signalés par un commerçant', 'L\'avis reste visible mais sort de la moyenne jusqu\'à ta décision.'],
     'pro_story'  => ['📸 Stories des commerçants', 'Déjà en ligne (ou programmées) pour 24 h : retire celles qui ne respectent pas les règles des photos de fiche.'],
     'visitor_photo' => ['📷 Photos des visiteurs', 'Prises depuis un pin sans commerçant vérifié. Validée, la photo rejoint la fiche ; refusée, l\'auteur reçoit le motif (ex. « Photo floue »).'],
+    'avatar'     => ['🙂 Photos de profil', 'Visibles des autres utilisateurs (communauté, avis) seulement après validation. Refusée : l\'utilisateur reçoit le motif.'],
     'pro_siret'  => ['🧾 Inscriptions commerçant à valider', 'Réponse attendue sous 48 h ouvrées. Le commerçant ne peut rien publier avant la validation. « Refuser » demande un complément (le motif lui est envoyé) ; le refus définitif se fait depuis l\'espace /admin du dashboard.'],
 ];
 // Refus avec motif, transmis au commerçant
@@ -58,6 +59,8 @@ $button = static fn (string $type, string $id, string $action, string $label, st
         <?php elseif ($type === 'visitor_photo'): ?>
           <strong><?= Html::e($it['place']) ?></strong> <span class="muted">· <code><?= Html::e($it['place_key']) ?></code></span>
           <div><img src="<?= Html::e($it['media_url']) ?>" alt="" style="max-height:240px"></div>
+        <?php elseif ($type === 'avatar'): ?>
+          <div><img src="<?= Html::e($it['media_url']) ?>" alt="" style="max-height:160px;border-radius:50%"></div>
         <?php elseif ($type === 'pro_siret'): ?>
           <strong><?= Html::e($it['title']) ?></strong> <span class="muted"><?= Html::e($it['legal_name']) ?></span>
           <div class="muted">SIRET <code><?= Html::e($it['siret']) ?></code> · NAF <?= Html::e((string) $it['naf_code']) ?> · <a href="https://annuaire-entreprises.data.gouv.fr/etablissement/<?= Html::e($it['siret']) ?>" target="_blank" rel="noopener">Vérifier dans l'annuaire</a></div>
@@ -74,7 +77,7 @@ $button = static fn (string $type, string $id, string $action, string $label, st
         <?php elseif ($type === 'pro_review'): ?>
           <?= $button($type, $it['id'], 'remove', 'Retirer l\'avis', 'danger') ?>
           <?= $refuse($type, $it['id'], 'dismiss', 'Maintenir') ?>
-        <?php elseif ($type === 'visitor_photo'): ?>
+        <?php elseif ($type === 'visitor_photo' || $type === 'avatar'): ?>
           <?= $button($type, $it['id'], 'publish', 'Valider', 'primary') ?>
           <?= $refuse($type, $it['id']) ?>
         <?php elseif ($type === 'pro_place' || $type === 'pro_siret'): ?>

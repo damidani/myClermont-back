@@ -71,11 +71,16 @@ final class GlobalSearch
                           WHERE sp.status = 'published'", 'order' => 'sp.rating_count DESC',
                 'map' => static fn ($r) => $item('service', $r['uid'], $r['name'], $r['category'], 'wrench'),
             ],
-            'housing' => [
-                'module' => 'HousingModule', 'label' => 'Logement', 'columns' => ['h.title', 'h.district_label', 'h.city'],
-                'sql' => "SELECT h.uid, h.title, h.price_cents, h.transaction FROM housing_listings h WHERE h.status = 'published'", 'order' => 'h.published_at DESC',
-                'map' => static fn ($r) => $item('housing', $r['uid'], $r['title'],
-                    \App\Modules\Housing\HousingPresenter::priceLabel((int) $r['price_cents'], $r['transaction'] !== 'sale'), 'house'),
+            'association' => [
+                'module' => 'CityModule', 'label' => 'Associations', 'columns' => ['a.name', 'a.description', 'a.category'],
+                'sql' => "SELECT a.uid, a.name, a.category, a.district FROM associations a WHERE a.status = 'published'", 'order' => 'a.website_url IS NULL, a.created_on DESC',
+                'map' => static fn ($r) => $item('association', $r['uid'], $r['name'], $r['category'] . ' · ' . $r['district'], 'person.3'),
+            ],
+            'news' => [
+                'module' => 'CityModule', 'label' => 'News', 'columns' => ['n.title', 'n.summary', 'n.category'],
+                'sql' => "SELECT n.uid, n.title, n.kind, n.category FROM news_items n WHERE n.status = 'published' AND (n.published_at IS NULL OR n.published_at <= :snow)",
+                'params' => $now, 'order' => 'n.published_at DESC',
+                'map' => static fn ($r) => $item('news', $r['uid'], $r['title'], ($r['kind'] === 'video' ? 'Vidéo' : 'Article') . ' · ' . $r['category'], 'newspaper'),
             ],
             'job' => [
                 'module' => 'JobsModule', 'label' => 'Emploi & stages', 'columns' => ['j.title', 'j.company_name', 'j.city'],

@@ -1,0 +1,41 @@
+{
+    "id": "e43c6b96-5fb5-4c1c-a97d-5779b5599696",
+    "provider": "email",
+    "firstName": "Camille",
+    "email": "fx6156@exemple.fr",
+    "handle": "fx6156",
+    "handleChangeAvailableAt": null,
+    "emailIsPrivate": false,
+    "phone": null,
+    "gender": null,
+    "genderDetail": null,
+    "pronouns": null,
+    "pronounsDetail": null,
+    "city": "Clermont-Ferrand",
+    "postalCode": null,
+    "cityServed": false,
+    "notifyCityLaunch": false,
+    "marketingOptIn": false,
+    "consentVersion": "2026-10",
+    "consentedAt": "2026-11-04T19:03:35Z",
+    "createdAt": "2026-11-04T19:03:35Z",
+    "displayName": "Camille",
+    "bio": null,
+    "neighborhood": null,
+    "avatar": {
+        "kind": "symbol",
+        "value": "person.crop.circle.fill"
+    },
+    "avatarPending": {
+        "url": "https://api.myclermont.app/media/uploads/2026/11/avatar-exemple.jpg",
+        "status": "pending"
+    },
+    "notificationsEnabled": true,
+    "role": "user",
+    "plus": {
+        "active": false,
+        "expiresAt": null
+    },
+    "membership": null,
+    "points": 0
+}

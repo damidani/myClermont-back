@@ -1,0 +1,17 @@
+{
+    "items": [
+        {
+            "id": "e1",
+            "title": "Exemple : les cafés de la place du Marché Saint-Pierre",
+            "subtitle": "Gastronomie · Centre-ville",
+            "category": "Restaurants",
+            "icon": "fork-knife",
+            "description": "Exemple de fixture (contenu saisi dans /admin › Explorer : à découvrir).",
+            "link": {
+                "type": "screen",
+                "id": "services",
+                "url": null
+            }
+        }
+    ]
+}

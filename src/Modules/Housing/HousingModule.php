@@ -20,15 +20,8 @@ final class HousingModule implements Module
 {
     public function routes(Router $r): void
     {
-        $r->group(['middleware' => ['auth:optional']], static function (Router $r): void {
-            $r->get('/housing', [HousingController::class, 'index']);
-            $r->get('/housing/map', [HousingController::class, 'map']);
-            $r->get('/housing/filters', [HousingController::class, 'filtersCatalog']);
-            $r->get('/housing/{id}', [HousingController::class, 'show']);
-            // Sans compte possible (le formulaire demande nom + e-mail), mais limité par appareil
-            $r->post('/housing/{id}/contact', [HousingController::class, 'contact'], ['throttle:contact,device']);
-            $r->post('/housing/{id}/contacts', [HousingController::class, 'contact'], ['throttle:contact,device']);   // spec v1
-        });
+        // Rubrique retirée de l'app (e3551d70, remplacée par Associations) : plus de routes publiques.
+        // Les annonces des commerçants restent gérées par l'espace pro (RecruitController).
     }
 
     public function listeners(): array

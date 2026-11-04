@@ -32,6 +32,7 @@ final class CommunityModule implements Module
         $r->group(['middleware' => ['auth']], static function (Router $r): void {
             $r->post('/media', [MediaController::class, 'upload'], ['throttle:upload,device']);
             $r->post('/community/posts', [CommunityController::class, 'create'], ['throttle:post,device']);
+            $r->patch('/community/posts/{id}', [CommunityController::class, 'update'], ['throttle:post,device']);
             $r->delete('/community/posts/{id}', [CommunityController::class, 'delete']);
             $r->put('/community/posts/{id}/like', [CommunityController::class, 'like']);
             $r->delete('/community/posts/{id}/like', [CommunityController::class, 'unlike']);

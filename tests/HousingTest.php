@@ -85,11 +85,9 @@ return [
         }
     },
 
-    'routes logement : identifiant invalide => 404, contact validé avant tout' => function () {
+    'rubrique logement retirée de l\'app (e3551d70) : plus de routes publiques' => function () {
         seed_device();
-        $res = app()->handle(signed_request('GET', '/v1/housing/pas-un-uuid'));
-        assert_same('listing_not_found', err($res));
-        $res = app()->handle(signed_request('POST', '/v1/housing/pas-un-uuid/contact', '{}'));
-        assert_same('listing_not_found', err($res));
+        assert_same('not_found', err(app()->handle(signed_request('GET', '/v1/housing'))));
+        assert_same('not_found', err(app()->handle(signed_request('POST', '/v1/housing/pas-un-uuid/contact', '{}'))));
     },
 ];

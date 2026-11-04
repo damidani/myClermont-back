@@ -48,6 +48,8 @@ final class AccountModule implements Module
             $r->get('/me', [IdentityController::class, 'me']);
             $r->patch('/me', [IdentityController::class, 'update']);
             $r->delete('/me', [IdentityController::class, 'delete']);
+            $r->put('/me/avatar', [IdentityController::class, 'putAvatar']);
+            $r->delete('/me/avatar', [IdentityController::class, 'deleteAvatar']);
             $r->get('/me/export', [ExportController::class, 'export'], ['throttle:contact']);
             $r->get('/users/me', [ProfileController::class, 'me']);
             $r->patch('/users/me', [ProfileController::class, 'update']);

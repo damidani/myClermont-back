@@ -21,6 +21,9 @@ final class MobilityModule implements Module
         // Appels à un service externe (quota) : limités par appareil
         $r->get('/mobility/journeys', [MobilityController::class, 'journeys'], ['throttle:mobility,device']);
         $r->get('/mobility/places', [MobilityController::class, 'places'], ['throttle:mobility,device']);
+        // T2C : horaires théoriques GTFS calculés sur le serveur (bin/console transit:import)
+        $r->get('/transit/journeys', [Transit\TransitController::class, 'journeys'], ['throttle:mobility,device']);
+        $r->get('/transit/lines', [Transit\TransitController::class, 'lines']);
     }
 
     public function listeners(): array

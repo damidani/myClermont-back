@@ -1,0 +1,31 @@
+{
+    "items": [
+        {
+            "id": "a7c0e2b4-0000-4000-8000-000000000001",
+            "title": "Exemple : la vidéo de la semaine",
+            "kind": "video",
+            "category": "Actu",
+            "summary": "Exemple de fixture : contenu fictif pour le contrat.",
+            "body": null,
+            "image": "https://api.myclermont.app/media/news/exemple.jpg",
+            "videoUrl": "https://media.myclermont.app/news/exemple.m3u8",
+            "author": "MyClermont",
+            "publishedAt": "2026-11-04T09:00:00Z",
+            "readingMinutes": null
+        },
+        {
+            "id": "a7c0e2b4-0000-4000-8000-000000000000",
+            "title": "Exemple : le marché Saint-Joseph fait peau neuve",
+            "kind": "article",
+            "category": "Actu",
+            "summary": "Exemple de fixture : contenu fictif pour le contrat.",
+            "body": "Texte de l'article (exemple).",
+            "image": "https://api.myclermont.app/media/news/exemple.jpg",
+            "videoUrl": null,
+            "author": "MyClermont",
+            "publishedAt": "2026-11-04T09:00:00Z",
+            "readingMinutes": 3
+        }
+    ],
+    "nextCursor": null
+}

@@ -1,0 +1,25 @@
+{
+    "id": "b1a1ade0-0000-4000-8000-000000000001",
+    "title": "Le cœur historique de Clermont",
+    "subtitle": "De la place de Jaude à la cathédrale, puis le jardin Lecoq",
+    "stops": [
+        {
+            "name": "Place de Jaude",
+            "latitude": 45.7765,
+            "longitude": 3.0821,
+            "placeId": "af506751-8902-485e-919d-a21dbc7123dc"
+        },
+        {
+            "name": "Cathédrale",
+            "latitude": 45.7785,
+            "longitude": 3.0853,
+            "placeId": "4e16b576-c7dc-4fad-835a-8957d5b2dba3"
+        },
+        {
+            "name": "Jardin Lecoq",
+            "latitude": 45.7706,
+            "longitude": 3.0897,
+            "placeId": "b4c18e02-1416-4f71-8e37-7197e26b828c"
+        }
+    ]
+}

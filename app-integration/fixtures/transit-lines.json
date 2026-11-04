@@ -1,0 +1,104 @@
+{
+    "lines": [
+        {
+            "id": "A",
+            "name": "A",
+            "mode": "tram",
+            "color": "A81815",
+            "textColor": "FFFFFF",
+            "shape": [
+                [
+                    45.812787,
+                    3.127602
+                ],
+                [
+                    45.812747,
+                    3.12631
+                ],
+                [
+                    45.813024,
+                    3.125081
+                ],
+                [
+                    45.813086,
+                    3.120428
+                ],
+                [
+                    45.812454,
+                    3.118729
+                ],
+                [
+                    45.812032,
+                    3.116756
+                ]
+            ],
+            "stops": [
+                {
+                    "name": "Les Vergnes",
+                    "latitude": 45.81278736,
+                    "longitude": 3.127601639
+                },
+                {
+                    "name": "Stade G. Montpied",
+                    "latitude": 45.81310512,
+                    "longitude": 3.121072063
+                },
+                {
+                    "name": "La Plaine",
+                    "latitude": 45.81178845,
+                    "longitude": 3.114734119
+                }
+            ]
+        },
+        {
+            "id": "B",
+            "name": "B",
+            "mode": "bus",
+            "color": "0069B4",
+            "textColor": "FFFFFF",
+            "shape": [
+                [
+                    45.795419,
+                    3.171274
+                ],
+                [
+                    45.795348,
+                    3.171515
+                ],
+                [
+                    45.795151,
+                    3.171746
+                ],
+                [
+                    45.795121,
+                    3.17187
+                ],
+                [
+                    45.795173,
+                    3.172117
+                ],
+                [
+                    45.795337,
+                    3.172227
+                ]
+            ],
+            "stops": [
+                {
+                    "name": "Parking AULNAT St Exupéry",
+                    "latitude": 45.79537,
+                    "longitude": 3.171230009
+                },
+                {
+                    "name": "AULNAT St Exupéry",
+                    "latitude": 45.7959446,
+                    "longitude": 3.171999609
+                },
+                {
+                    "name": "Edmond Rostand",
+                    "latitude": 45.7989831,
+                    "longitude": 3.171132509
+                }
+            ]
+        }
+    ]
+}

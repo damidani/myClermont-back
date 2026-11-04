@@ -17,7 +17,7 @@ final class Notices
 {
     /** kind => famille des préférences de l'app */
     public const FAMILIES = [
-        'photo_approved' => 'photos', 'photo_rejected' => 'photos',
+        'photo_approved' => 'photos', 'photo_rejected' => 'photos', 'avatar_rejected' => 'photos',
         'post_liked' => 'community', 'post_commented' => 'community', 'comment_replied' => 'community', 'comment_liked' => 'community',
         'mentioned' => 'community', 'post_published' => 'community', 'post_removed' => 'community',
         'review_published' => 'replies', 'review_removed' => 'replies', 'review_replied' => 'replies', 'classified_message' => 'replies',

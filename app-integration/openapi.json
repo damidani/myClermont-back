@@ -3,7 +3,7 @@
     "info": {
         "title": "API My Clermont",
         "version": "1.4.0",
-        "description": "Générée à partir du code (routes, middlewares, règles de validation, schémas vérifiés par schema:check, fixtures).\n\nRéponses : clés en camelCase, dates ISO 8601. Listes : `{ items, nextCursor }`. Erreurs : `{ error: { code, message, details } }` (message en français, affichable tel quel).\n\nSignature des requêtes de l'app : voir app-integration/SIGNATURE.md.\n\n## Changements\n- **1.4.0 (03/11/2026)** : Validation des inscriptions commerçant (/admin/merchants, 403 not_verified), avis de la team (/admin/team-reviews, teamReview), session /admin du dashboard.\n- **1.3.0 (03/11/2026)** : Photos des visiteurs (/visitor-photos, /pro/visitor-photos), fiche /places/{id}/sheet au format Place, notifications (/me/notifications, préférences, j'aime sur les commentaires).\n- **1.2.0 (03/11/2026)** : Clermont IA : recherche de proximité OpenStreetMap, champ conversation (questions de suite).\n- **1.1.0 (02/11/2026)** : Pseudos, mentions, stories des établissements, limite /pro à 600 requêtes par minute."
+        "description": "Générée à partir du code (routes, middlewares, règles de validation, schémas vérifiés par schema:check, fixtures).\n\nRéponses : clés en camelCase, dates ISO 8601. Listes : `{ items, nextCursor }`. Erreurs : `{ error: { code, message, details } }` (message en français, affichable tel quel).\n\nSignature des requêtes de l'app : voir app-integration/SIGNATURE.md.\n\n## Changements\n- **1.5.0 (04/11/2026)** : Ma Ville : /news, /associations (remplace /housing, retiré), balade du jour /itineraries/featured, /explore/selections ; T2C : /transit/journeys et /transit/lines ; PATCH /community/posts/{id} ; photo de profil modérée PUT/DELETE /me/avatar (avatarPending).\n- **1.4.0 (03/11/2026)** : Validation des inscriptions commerçant (/admin/merchants, 403 not_verified), avis de la team (/admin/team-reviews, teamReview), session /admin du dashboard.\n- **1.3.0 (03/11/2026)** : Photos des visiteurs (/visitor-photos, /pro/visitor-photos), fiche /places/{id}/sheet au format Place, notifications (/me/notifications, préférences, j'aime sur les commentaires).\n- **1.2.0 (03/11/2026)** : Clermont IA : recherche de proximité OpenStreetMap, champ conversation (questions de suite).\n- **1.1.0 (02/11/2026)** : Pseudos, mentions, stories des établissements, limite /pro à 600 requêtes par minute."
     },
     "servers": [
         {
@@ -5193,6 +5193,253 @@
                 }
             }
         },
+        "/associations": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /associations",
+                "operationId": "get_associations",
+                "x-handler": "CityController::associations",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "items"
+                                    ],
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Association"
+                                            }
+                                        },
+                                        "nextCursor": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "items": [
+                                        {
+                                            "id": "aac494c3-742a-4ba9-851b-597c915fd55a",
+                                            "name": "Help Tech",
+                                            "category": "Solidarité",
+                                            "district": "Clermont-Ferrand",
+                                            "icon": "heart.fill",
+                                            "description": "Accompagner les personnes, notamment âgées ou éloignées du numérique, dans la prise en main de leurs outils informatiques, ordinateurs, smartphones et tablettes, et dans leurs démarches numériques du quotidien ; réaliser des sites internet simples pour des particuliers, des associations ou de petites structures dépourvues des moyens techniques nécessaires ; intervenir en France et au Québec.",
+                                            "activities": [
+                                                "Réseaux internet"
+                                            ],
+                                            "website": "https://assohelptech.org/"
+                                        },
+                                        {
+                                            "id": "9ad33bc3-8898-4856-8ab5-6e7e61dd2fcc",
+                                            "name": "Amis de Ker Netra",
+                                            "category": "Solidarité",
+                                            "district": "Clermont-Ferrand",
+                                            "icon": "heart.fill",
+                                            "description": "Regrouper les personnes qui souhaitent apporter leur concours, sous quelque forme que ce soit, au fonctionnement de la Maison d'Enfants Ker Netra située aux Sables d'Olonne ; entretenir entre ses membres l'esprit d'équipe, d'amitié et de service qui les unissaient autour de la Maison d'Enfants, notamment en organisant des activités éducatives diverses telles que sorties, excursions, visites, conférences, groupements artistiques, chorale et en proposant des activités fédératrices du groupe d'adhérents et notamment des séjours sur place des membres pour faire un point sur les actions menées ; faciliter, par l'attribution de bourses, en complémentarité avec les organismes publics (CAF, Département, notamment) et privés (CE notamment) , les séjours à Ker Netra que ce soit dans le cadre du centre de vacances ou d'autres séjours (classes de mer notamment) ; réfléchir et proposer des projets novateurs (culturels, sportifs, matériels) , pour le centre en concertation avec le propriétaire et l'équipe éducative en place.",
+                                            "activities": [
+                                                "Foyers socio-éducatifs"
+                                            ],
+                                            "website": "https://www.amisdekernetra.fr/"
+                                        }
+                                    ],
+                                    "nextCursor": "2"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/associations/{id}": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /associations/{id}",
+                "operationId": "get_associations_id",
+                "x-handler": "CityController::association",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Association"
+                                },
+                                "example": {
+                                    "items": [
+                                        {
+                                            "id": "aac494c3-742a-4ba9-851b-597c915fd55a",
+                                            "name": "Help Tech",
+                                            "category": "Solidarité",
+                                            "district": "Clermont-Ferrand",
+                                            "icon": "heart.fill",
+                                            "description": "Accompagner les personnes, notamment âgées ou éloignées du numérique, dans la prise en main de leurs outils informatiques, ordinateurs, smartphones et tablettes, et dans leurs démarches numériques du quotidien ; réaliser des sites internet simples pour des particuliers, des associations ou de petites structures dépourvues des moyens techniques nécessaires ; intervenir en France et au Québec.",
+                                            "activities": [
+                                                "Réseaux internet"
+                                            ],
+                                            "website": "https://assohelptech.org/"
+                                        },
+                                        {
+                                            "id": "9ad33bc3-8898-4856-8ab5-6e7e61dd2fcc",
+                                            "name": "Amis de Ker Netra",
+                                            "category": "Solidarité",
+                                            "district": "Clermont-Ferrand",
+                                            "icon": "heart.fill",
+                                            "description": "Regrouper les personnes qui souhaitent apporter leur concours, sous quelque forme que ce soit, au fonctionnement de la Maison d'Enfants Ker Netra située aux Sables d'Olonne ; entretenir entre ses membres l'esprit d'équipe, d'amitié et de service qui les unissaient autour de la Maison d'Enfants, notamment en organisant des activités éducatives diverses telles que sorties, excursions, visites, conférences, groupements artistiques, chorale et en proposant des activités fédératrices du groupe d'adhérents et notamment des séjours sur place des membres pour faire un point sur les actions menées ; faciliter, par l'attribution de bourses, en complémentarité avec les organismes publics (CAF, Département, notamment) et privés (CE notamment) , les séjours à Ker Netra que ce soit dans le cadre du centre de vacances ou d'autres séjours (classes de mer notamment) ; réfléchir et proposer des projets novateurs (culturels, sportifs, matériels) , pour le centre en concertation avec le propriétaire et l'équipe éducative en place.",
+                                            "activities": [
+                                                "Foyers socio-éducatifs"
+                                            ],
+                                            "website": "https://www.amisdekernetra.fr/"
+                                        }
+                                    ],
+                                    "nextCursor": "2"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "association_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/apple": {
             "post": {
                 "tags": [
@@ -8018,6 +8265,168 @@
                     },
                     "401": {
                         "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "post_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "* PATCH /v1/community/posts/{id} {text, question?} — par son auteur :",
+                "operationId": "patch_community_posts_id",
+                "x-handler": "CommunityController::update",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    },
+                    {
+                        "name": "post",
+                        "max": 10,
+                        "windowSeconds": 3600,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "text": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "body": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "question": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "pollQuestion": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "id": "6f5ffb28-4d0d-40a6-bfdf-9345906724ce",
+                                    "author": "fx6156",
+                                    "authorId": "e43c6b96-5fb5-4c1c-a97d-5779b5599696",
+                                    "authorIsMember": false,
+                                    "neighborhood": "",
+                                    "date": "2026-11-04T19:03:35Z",
+                                    "kind": "Texte",
+                                    "text": "Quelqu'un connaît un bon cours de théâtre amateur à Clermont ?",
+                                    "mediaFiles": [],
+                                    "pollOptions": [],
+                                    "votes": [],
+                                    "myVote": null,
+                                    "pollQuestion": null,
+                                    "likes": 0,
+                                    "liked": false,
+                                    "comments": [],
+                                    "authorInfo": {
+                                        "id": "e43c6b96-5fb5-4c1c-a97d-5779b5599696",
+                                        "displayName": "fx6156",
+                                        "handle": "fx6156",
+                                        "isStaff": false,
+                                        "staffTitle": null,
+                                        "avatar": {
+                                            "kind": "symbol",
+                                            "value": "person.crop.circle.fill"
+                                        }
+                                    },
+                                    "createdAt": "2026-11-04T19:03:35Z",
+                                    "specKind": "text",
+                                    "media": [],
+                                    "poll": null,
+                                    "commentsCount": 0,
+                                    "mediaItems": [],
+                                    "isMine": true,
+                                    "shareUrl": "https://myclermont.app/communaute/6f5ffb28-4d0d-40a6-bfdf-9345906724ce",
+                                    "mentions": []
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "not_author",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -13147,6 +13556,82 @@
                 }
             }
         },
+        "/explore/selections": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "* GET /v1/explore/selections (4220897f §3) :",
+                "operationId": "get_explore_selections",
+                "x-handler": "ExploreController::selections",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "items": [
+                                        {
+                                            "id": "e1",
+                                            "title": "Exemple : les cafés de la place du Marché Saint-Pierre",
+                                            "subtitle": "Gastronomie · Centre-ville",
+                                            "category": "Restaurants",
+                                            "icon": "fork-knife",
+                                            "description": "Exemple de fixture (contenu saisi dans /admin › Explorer : à découvrir).",
+                                            "link": {
+                                                "type": "screen",
+                                                "id": "services",
+                                                "url": null
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/explore/stories/{id}": {
             "get": {
                 "tags": [
@@ -13664,6 +14149,10 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    },
                                     "score": {
                                         "description": "Voir la validation de la route"
                                     },
@@ -13772,14 +14261,14 @@
                 }
             }
         },
-        "/housing": {
+        "/itineraries/featured": {
             "get": {
                 "tags": [
                     "app"
                 ],
-                "summary": "* GET /v1/housing — écran « Logement » (mode liste)",
-                "operationId": "get_housing",
-                "x-handler": "HousingController::index",
+                "summary": "Balade du jour :",
+                "operationId": "get_itineraries_featured",
+                "x-handler": "CityController::featuredItinerary",
                 "security": [
                     {
                         "deviceSignature": [],
@@ -13797,497 +14286,38 @@
                         "per": "device"
                     }
                 ],
-                "parameters": [
-                    {
-                        "name": "sort",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "cursor",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "transaction",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "propertyType",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "bbox",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "furnished",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "maxPrice",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "minRooms",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "rooms",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "minSurface",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "district",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "neighborhoodId",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "q",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Succès",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "items"
-                                    ],
-                                    "properties": {
-                                        "items": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/HousingListing"
-                                            }
-                                        },
-                                        "nextCursor": {
-                                            "type": [
-                                                "string",
-                                                "null"
-                                            ]
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/Itinerary"
                                 },
                                 "example": {
-                                    "items": [
+                                    "id": "b1a1ade0-0000-4000-8000-000000000001",
+                                    "title": "Le cœur historique de Clermont",
+                                    "subtitle": "De la place de Jaude à la cathédrale, puis le jardin Lecoq",
+                                    "stops": [
                                         {
-                                            "id": "6b043657-2615-4ee5-9336-550a44a2a9ba",
-                                            "title": "T2 lumineux proche Jaude",
-                                            "district": "Centre-ville · Clermont-Ferrand",
-                                            "price": 690,
-                                            "priceLabel": "690 € / mois",
-                                            "surface": 44,
-                                            "rooms": 2,
-                                            "bedrooms": 1,
-                                            "type": "Location",
-                                            "furnished": false,
-                                            "images": [
-                                                "https://img/1.jpg"
-                                            ],
-                                            "features": [
-                                                "Balcon",
-                                                "Cuisine équipée",
-                                                "Proche tram",
-                                                "Double vitrage"
-                                            ],
-                                            "description": "Appartement lumineux.",
-                                            "latitude": 45.777,
-                                            "longitude": 3.082,
-                                            "city": "Clermont-Ferrand",
-                                            "propertyType": "apartment",
-                                            "imageCount": 3,
-                                            "contact": {
-                                                "mode": "form",
-                                                "url": null,
-                                                "label": "Contacter"
-                                            },
-                                            "source": null,
-                                            "isFavorite": null,
-                                            "publishedAt": "2026-10-27T22:00:00Z"
+                                            "name": "Place de Jaude",
+                                            "latitude": 45.7765,
+                                            "longitude": 3.0821,
+                                            "placeId": "af506751-8902-485e-919d-a21dbc7123dc"
+                                        },
+                                        {
+                                            "name": "Cathédrale",
+                                            "latitude": 45.7785,
+                                            "longitude": 3.0853,
+                                            "placeId": "4e16b576-c7dc-4fad-835a-8957d5b2dba3"
+                                        },
+                                        {
+                                            "name": "Jardin Lecoq",
+                                            "latitude": 45.7706,
+                                            "longitude": 3.0897,
+                                            "placeId": "b4c18e02-1416-4f71-8e37-7197e26b828c"
                                         }
-                                    ],
-                                    "nextCursor": null
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "validation_failed (details.fields)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "rate_limited (en-tête Retry-After)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/housing/filters": {
-            "get": {
-                "tags": [
-                    "app"
-                ],
-                "summary": "GET /v1/housing/filters — valeurs possibles des filtres et libellés (évite de les coder en dur dans l'app)",
-                "operationId": "get_housing_filters",
-                "x-handler": "HousingController::filtersCatalog",
-                "security": [
-                    {
-                        "deviceSignature": [],
-                        "bearerUser": []
-                    },
-                    {
-                        "deviceSignature": []
-                    }
-                ],
-                "x-rate-limit": [
-                    {
-                        "name": "device",
-                        "max": 120,
-                        "windowSeconds": 60,
-                        "per": "device"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "rate_limited (en-tête Retry-After)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/housing/map": {
-            "get": {
-                "tags": [
-                    "app"
-                ],
-                "summary": "GET /v1/housing/map — mode carte :",
-                "operationId": "get_housing_map",
-                "x-handler": "HousingController::map",
-                "security": [
-                    {
-                        "deviceSignature": [],
-                        "bearerUser": []
-                    },
-                    {
-                        "deviceSignature": []
-                    }
-                ],
-                "x-rate-limit": [
-                    {
-                        "name": "device",
-                        "max": 120,
-                        "windowSeconds": 60,
-                        "per": "device"
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "transaction",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "propertyType",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "bbox",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "furnished",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "maxPrice",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "minRooms",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "rooms",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "minSurface",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "district",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "neighborhoodId",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "q",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "validation_failed (details.fields)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "rate_limited (en-tête Retry-After)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/housing/{id}": {
-            "get": {
-                "tags": [
-                    "app"
-                ],
-                "summary": "GET /v1/housing/{id} — fiche annonce",
-                "operationId": "get_housing_id",
-                "x-handler": "HousingController::show",
-                "security": [
-                    {
-                        "deviceSignature": [],
-                        "bearerUser": []
-                    },
-                    {
-                        "deviceSignature": []
-                    }
-                ],
-                "x-rate-limit": [
-                    {
-                        "name": "device",
-                        "max": 120,
-                        "windowSeconds": 60,
-                        "per": "device"
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
+                                    ]
                                 }
                             }
                         }
@@ -14303,7 +14333,7 @@
                         }
                     },
                     "404": {
-                        "description": "listing_not_found",
+                        "description": "no_itinerary",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -14314,300 +14344,6 @@
                     },
                     "429": {
                         "description": "rate_limited (en-tête Retry-After)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/housing/{id}/contact": {
-            "post": {
-                "tags": [
-                    "app"
-                ],
-                "summary": "* POST /v1/housing/{id}/contact — formulaire « Contacter l'annonceur » La demande est enregistrée puis transmise par e-mail (php bin/console housing:send-contac",
-                "operationId": "post_housing_id_contact",
-                "x-handler": "HousingController::contact",
-                "security": [
-                    {
-                        "deviceSignature": [],
-                        "bearerUser": []
-                    },
-                    {
-                        "deviceSignature": []
-                    }
-                ],
-                "x-rate-limit": [
-                    {
-                        "name": "device",
-                        "max": 120,
-                        "windowSeconds": 60,
-                        "per": "device"
-                    },
-                    {
-                        "name": "contact",
-                        "max": 10,
-                        "windowSeconds": 3600,
-                        "per": "device"
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 120
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "maxLength": 191
-                                    },
-                                    "phone": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maximum": 30
-                                    },
-                                    "message": {
-                                        "type": "string",
-                                        "minLength": 10,
-                                        "maxLength": 2000
-                                    },
-                                    "fullName": {
-                                        "description": "Voir la validation de la route"
-                                    }
-                                },
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "message"
-                                ]
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "validation_failed (details.fields)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "listing_not_found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "listing_inactive · contact_external",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "contact_already_sent · rate_limited (en-tête Retry-After)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/housing/{id}/contacts": {
-            "post": {
-                "tags": [
-                    "app"
-                ],
-                "summary": "* POST /v1/housing/{id}/contact — formulaire « Contacter l'annonceur » La demande est enregistrée puis transmise par e-mail (php bin/console housing:send-contac",
-                "operationId": "post_housing_id_contacts",
-                "x-handler": "HousingController::contact",
-                "security": [
-                    {
-                        "deviceSignature": [],
-                        "bearerUser": []
-                    },
-                    {
-                        "deviceSignature": []
-                    }
-                ],
-                "x-rate-limit": [
-                    {
-                        "name": "device",
-                        "max": 120,
-                        "windowSeconds": 60,
-                        "per": "device"
-                    },
-                    {
-                        "name": "contact",
-                        "max": 10,
-                        "windowSeconds": 3600,
-                        "per": "device"
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 120
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "maxLength": 191
-                                    },
-                                    "phone": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maximum": 30
-                                    },
-                                    "message": {
-                                        "type": "string",
-                                        "minLength": 10,
-                                        "maxLength": 2000
-                                    },
-                                    "fullName": {
-                                        "description": "Voir la validation de la route"
-                                    }
-                                },
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "message"
-                                ]
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "validation_failed (details.fields)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "listing_not_found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "listing_inactive · contact_external",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "contact_already_sent · rate_limited (en-tête Retry-After)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -15682,6 +15418,175 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "unauthenticated · unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/me/avatar": {
+            "put": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "PUT /me/avatar {url} :",
+                "operationId": "put_me_avatar",
+                "x-handler": "IdentityController::putAvatar",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "url": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Me"
+                                },
+                                "example": {
+                                    "id": "e43c6b96-5fb5-4c1c-a97d-5779b5599696",
+                                    "provider": "email",
+                                    "firstName": "Camille",
+                                    "email": "fx6156@exemple.fr",
+                                    "handle": "fx6156",
+                                    "handleChangeAvailableAt": null,
+                                    "emailIsPrivate": false,
+                                    "phone": null,
+                                    "gender": null,
+                                    "genderDetail": null,
+                                    "pronouns": null,
+                                    "pronounsDetail": null,
+                                    "city": "Clermont-Ferrand",
+                                    "postalCode": null,
+                                    "cityServed": false,
+                                    "notifyCityLaunch": false,
+                                    "marketingOptIn": false,
+                                    "consentVersion": "2026-10",
+                                    "consentedAt": "2026-11-04T19:03:35Z",
+                                    "createdAt": "2026-11-04T19:03:35Z",
+                                    "displayName": "Camille",
+                                    "bio": null,
+                                    "neighborhood": null,
+                                    "avatar": {
+                                        "kind": "symbol",
+                                        "value": "person.crop.circle.fill"
+                                    },
+                                    "avatarPending": {
+                                        "url": "https://api.myclermont.app/media/uploads/2026/11/avatar-exemple.jpg",
+                                        "status": "pending"
+                                    },
+                                    "notificationsEnabled": true,
+                                    "role": "user",
+                                    "plus": {
+                                        "active": false,
+                                        "expiresAt": null
+                                    },
+                                    "membership": null,
+                                    "points": 0
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated · unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "DELETE /me/avatar :",
+                "operationId": "delete_me_avatar",
+                "x-handler": "IdentityController::deleteAvatar",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Fait, sans contenu"
                     },
                     "401": {
                         "description": "unauthenticated · unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
@@ -18339,6 +18244,275 @@
                 }
             }
         },
+        "/news": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /news",
+                "operationId": "get_news",
+                "x-handler": "CityController::news",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "kind",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "items"
+                                    ],
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/NewsItem"
+                                            }
+                                        },
+                                        "nextCursor": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "items": [
+                                        {
+                                            "id": "a7c0e2b4-0000-4000-8000-000000000001",
+                                            "title": "Exemple : la vidéo de la semaine",
+                                            "kind": "video",
+                                            "category": "Actu",
+                                            "summary": "Exemple de fixture : contenu fictif pour le contrat.",
+                                            "body": null,
+                                            "image": "https://api.myclermont.app/media/news/exemple.jpg",
+                                            "videoUrl": "https://media.myclermont.app/news/exemple.m3u8",
+                                            "author": "MyClermont",
+                                            "publishedAt": "2026-11-04T09:00:00Z",
+                                            "readingMinutes": null
+                                        },
+                                        {
+                                            "id": "a7c0e2b4-0000-4000-8000-000000000000",
+                                            "title": "Exemple : le marché Saint-Joseph fait peau neuve",
+                                            "kind": "article",
+                                            "category": "Actu",
+                                            "summary": "Exemple de fixture : contenu fictif pour le contrat.",
+                                            "body": "Texte de l'article (exemple).",
+                                            "image": "https://api.myclermont.app/media/news/exemple.jpg",
+                                            "videoUrl": null,
+                                            "author": "MyClermont",
+                                            "publishedAt": "2026-11-04T09:00:00Z",
+                                            "readingMinutes": 3
+                                        }
+                                    ],
+                                    "nextCursor": null
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/news/{id}": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /news/{id}",
+                "operationId": "get_news_id",
+                "x-handler": "CityController::newsItem",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NewsItem"
+                                },
+                                "example": {
+                                    "items": [
+                                        {
+                                            "id": "a7c0e2b4-0000-4000-8000-000000000001",
+                                            "title": "Exemple : la vidéo de la semaine",
+                                            "kind": "video",
+                                            "category": "Actu",
+                                            "summary": "Exemple de fixture : contenu fictif pour le contrat.",
+                                            "body": null,
+                                            "image": "https://api.myclermont.app/media/news/exemple.jpg",
+                                            "videoUrl": "https://media.myclermont.app/news/exemple.m3u8",
+                                            "author": "MyClermont",
+                                            "publishedAt": "2026-11-04T09:00:00Z",
+                                            "readingMinutes": null
+                                        },
+                                        {
+                                            "id": "a7c0e2b4-0000-4000-8000-000000000000",
+                                            "title": "Exemple : le marché Saint-Joseph fait peau neuve",
+                                            "kind": "article",
+                                            "category": "Actu",
+                                            "summary": "Exemple de fixture : contenu fictif pour le contrat.",
+                                            "body": "Texte de l'article (exemple).",
+                                            "image": "https://api.myclermont.app/media/news/exemple.jpg",
+                                            "videoUrl": null,
+                                            "author": "MyClermont",
+                                            "publishedAt": "2026-11-04T09:00:00Z",
+                                            "readingMinutes": 3
+                                        }
+                                    ],
+                                    "nextCursor": null
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "news_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/openapi.json": {
             "get": {
                 "tags": [
@@ -19224,6 +19398,85 @@
                 }
             }
         },
+        "/places/{id}/google-reviews": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /places/{id}/google-reviews (303b2796) :",
+                "operationId": "get_places_id_google_reviews",
+                "x-handler": "MapController::googleReviews",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found · place_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/places/{id}/messages": {
             "post": {
                 "tags": [
@@ -19383,6 +19636,22 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -19391,7 +19660,137 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "required": [
+                                        "items"
+                                    ],
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PlacePhoto"
+                                            }
+                                        },
+                                        "nextCursor": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "items": [
+                                        {
+                                            "id": "cover_42",
+                                            "url": "https://api.myclermont.app/media/2026/11/3c1f0c55-7d1e-4a7b-9b0e-2f7a8d6e1c10.jpg",
+                                            "author": null,
+                                            "caption": null,
+                                            "createdAt": null
+                                        },
+                                        {
+                                            "id": "pp_7",
+                                            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Exemple.jpg/1280px-Exemple.jpg",
+                                            "author": "Photo : Jean Dupont, CC BY-SA 4.0, via Wikimedia Commons",
+                                            "caption": null,
+                                            "createdAt": "2026-11-04T16:00:00Z"
+                                        }
+                                    ],
+                                    "nextCursor": null
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "place_not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/places/{id}/rating": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "* GET /places/{id}/rating (799dadde) :",
+                "operationId": "get_places_id_rating",
+                "x-handler": "ReviewController::rating",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlaceRating"
+                                },
+                                "example": {
+                                    "average": 4.6,
+                                    "count": 12,
+                                    "mine": 5
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
                                 }
                             }
                         }
@@ -22199,6 +22598,9 @@
                                     "exclusive": {
                                         "description": "Voir la validation de la route"
                                     },
+                                    "membersOnly": {
+                                        "description": "Voir la validation de la route"
+                                    },
                                     "image": {
                                         "description": "Voir la validation de la route"
                                     },
@@ -22331,6 +22733,9 @@
                                         "description": "Voir la validation de la route"
                                     },
                                     "exclusive": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "membersOnly": {
                                         "description": "Voir la validation de la route"
                                     },
                                     "image": {
@@ -30489,6 +30894,75 @@
                 }
             }
         },
+        "/routes/daily": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "Balade du jour :",
+                "operationId": "get_routes_daily",
+                "x-handler": "CityController::featuredItinerary",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    },
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "no_itinerary",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/services": {
             "get": {
                 "tags": [
@@ -31787,6 +32261,391 @@
                     },
                     "429": {
                         "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transit/journeys": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /transit/journeys?fromLat=&fromLon=&toLat=&toLon=&datetime=&arriveBy=   → { journeys: [...] } (5b642919)",
+                "operationId": "get_transit_journeys",
+                "x-handler": "TransitController::journeys",
+                "security": [
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    },
+                    {
+                        "name": "mobility",
+                        "max": 60,
+                        "windowSeconds": 3600,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "datetime",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "arriveBy",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TransitJourneys"
+                                },
+                                "example": {
+                                    "journeys": [
+                                        {
+                                            "id": "92b61bc1e2873230",
+                                            "departure": "2026-11-05T07:15:00Z",
+                                            "arrival": "2026-11-05T07:55:13Z",
+                                            "duration": 2413,
+                                            "walkingDuration": 613,
+                                            "transfers": 0,
+                                            "sections": [
+                                                {
+                                                    "id": "s1",
+                                                    "type": "walk",
+                                                    "mode": "walk",
+                                                    "duration": 240,
+                                                    "from": "Départ",
+                                                    "to": "Cézeaux Pellez"
+                                                },
+                                                {
+                                                    "id": "s2",
+                                                    "type": "transit",
+                                                    "mode": "tram",
+                                                    "line": "A",
+                                                    "lineColor": "A81815",
+                                                    "lineTextColor": "FFFFFF",
+                                                    "direction": "Les Vergnes",
+                                                    "from": "Cézeaux Pellez",
+                                                    "to": "Musée d'Art Roger Quilliot",
+                                                    "departure": "2026-11-05T07:19:00Z",
+                                                    "arrival": "2026-11-05T07:49:00Z",
+                                                    "duration": 1800,
+                                                    "stops": 18
+                                                },
+                                                {
+                                                    "id": "s3",
+                                                    "type": "walk",
+                                                    "mode": "walk",
+                                                    "duration": 373,
+                                                    "from": "Musée d'Art Roger Quilliot",
+                                                    "to": "Arrivée"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "id": "d16f6d05b6dbdb76",
+                                            "departure": "2026-11-05T07:22:58Z",
+                                            "arrival": "2026-11-05T08:05:13Z",
+                                            "duration": 2535,
+                                            "walkingDuration": 615,
+                                            "transfers": 0,
+                                            "sections": [
+                                                {
+                                                    "id": "s1",
+                                                    "type": "walk",
+                                                    "mode": "walk",
+                                                    "duration": 242,
+                                                    "from": "Départ",
+                                                    "to": "UCA - Campus Cézeaux"
+                                                },
+                                                {
+                                                    "id": "s2",
+                                                    "type": "transit",
+                                                    "mode": "tram",
+                                                    "line": "A",
+                                                    "lineColor": "A81815",
+                                                    "lineTextColor": "FFFFFF",
+                                                    "direction": "Les Vergnes",
+                                                    "from": "UCA - Campus Cézeaux",
+                                                    "to": "Musée d'Art Roger Quilliot",
+                                                    "departure": "2026-11-05T07:27:00Z",
+                                                    "arrival": "2026-11-05T07:59:00Z",
+                                                    "duration": 1920,
+                                                    "stops": 19
+                                                },
+                                                {
+                                                    "id": "s3",
+                                                    "type": "walk",
+                                                    "mode": "walk",
+                                                    "duration": 373,
+                                                    "from": "Musée d'Art Roger Quilliot",
+                                                    "to": "Arrivée"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "id": "4d5f6f9d9a834eb4",
+                                            "departure": "2026-11-05T07:29:00Z",
+                                            "arrival": "2026-11-05T08:10:13Z",
+                                            "duration": 2473,
+                                            "walkingDuration": 613,
+                                            "transfers": 0,
+                                            "sections": [
+                                                {
+                                                    "id": "s1",
+                                                    "type": "walk",
+                                                    "mode": "walk",
+                                                    "duration": 240,
+                                                    "from": "Départ",
+                                                    "to": "Cézeaux Pellez"
+                                                },
+                                                {
+                                                    "id": "s2",
+                                                    "type": "transit",
+                                                    "mode": "tram",
+                                                    "line": "A",
+                                                    "lineColor": "A81815",
+                                                    "lineTextColor": "FFFFFF",
+                                                    "direction": "Les Vergnes",
+                                                    "from": "Cézeaux Pellez",
+                                                    "to": "Musée d'Art Roger Quilliot",
+                                                    "departure": "2026-11-05T07:33:00Z",
+                                                    "arrival": "2026-11-05T08:04:00Z",
+                                                    "duration": 1860,
+                                                    "stops": 18
+                                                },
+                                                {
+                                                    "id": "s3",
+                                                    "type": "walk",
+                                                    "mode": "walk",
+                                                    "duration": 373,
+                                                    "from": "Musée d'Art Roger Quilliot",
+                                                    "to": "Arrivée"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transit/lines": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "GET /transit/lines                                                         → { lines: [{ id, name, mode, color, textColor, shape, stops }] } (4220897f §4)",
+                "operationId": "get_transit_lines",
+                "x-handler": "TransitController::lines",
+                "security": [
+                    {
+                        "deviceSignature": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TransitLines"
+                                },
+                                "example": {
+                                    "lines": [
+                                        {
+                                            "id": "A",
+                                            "name": "A",
+                                            "mode": "tram",
+                                            "color": "A81815",
+                                            "textColor": "FFFFFF",
+                                            "shape": [
+                                                [
+                                                    45.812787,
+                                                    3.127602
+                                                ],
+                                                [
+                                                    45.812747,
+                                                    3.12631
+                                                ],
+                                                [
+                                                    45.813024,
+                                                    3.125081
+                                                ],
+                                                [
+                                                    45.813086,
+                                                    3.120428
+                                                ],
+                                                [
+                                                    45.812454,
+                                                    3.118729
+                                                ],
+                                                [
+                                                    45.812032,
+                                                    3.116756
+                                                ]
+                                            ],
+                                            "stops": [
+                                                {
+                                                    "name": "Les Vergnes",
+                                                    "latitude": 45.81278736,
+                                                    "longitude": 3.127601639
+                                                },
+                                                {
+                                                    "name": "Stade G. Montpied",
+                                                    "latitude": 45.81310512,
+                                                    "longitude": 3.121072063
+                                                },
+                                                {
+                                                    "name": "La Plaine",
+                                                    "latitude": 45.81178845,
+                                                    "longitude": 3.114734119
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "id": "B",
+                                            "name": "B",
+                                            "mode": "bus",
+                                            "color": "0069B4",
+                                            "textColor": "FFFFFF",
+                                            "shape": [
+                                                [
+                                                    45.795419,
+                                                    3.171274
+                                                ],
+                                                [
+                                                    45.795348,
+                                                    3.171515
+                                                ],
+                                                [
+                                                    45.795151,
+                                                    3.171746
+                                                ],
+                                                [
+                                                    45.795121,
+                                                    3.17187
+                                                ],
+                                                [
+                                                    45.795173,
+                                                    3.172117
+                                                ],
+                                                [
+                                                    45.795337,
+                                                    3.172227
+                                                ]
+                                            ],
+                                            "stops": [
+                                                {
+                                                    "name": "Parking AULNAT St Exupéry",
+                                                    "latitude": 45.79537,
+                                                    "longitude": 3.171230009
+                                                },
+                                                {
+                                                    "name": "AULNAT St Exupéry",
+                                                    "latitude": 45.7959446,
+                                                    "longitude": 3.171999609
+                                                },
+                                                {
+                                                    "name": "Edmond Rostand",
+                                                    "latitude": 45.7989831,
+                                                    "longitude": 3.171132509
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "transit_unavailable",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -33683,6 +34542,75 @@
                 }
             }
         },
+        "/visitor-photos/{id}": {
+            "delete": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "* DELETE /visitor-photos/{id} :",
+                "operationId": "delete_visitor_photos_id",
+                "x-handler": "VisitorPhotoController::destroy",
+                "security": [
+                    {
+                        "deviceSignature": [],
+                        "bearerUser": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "device",
+                        "max": 120,
+                        "windowSeconds": 60,
+                        "per": "device"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Fait, sans contenu"
+                    },
+                    "401": {
+                        "description": "unauthenticated (details.reason : invalid_device, invalid_signature, expired_timestamp, replayed_nonce) · unauthenticated (token_expired, invalid_token)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/wallet/status": {
             "get": {
                 "tags": [
@@ -34752,6 +35680,9 @@
                     "exclusive": {
                         "type": "boolean"
                     },
+                    "membersOnly": {
+                        "type": "boolean"
+                    },
                     "image": {
                         "type": "string",
                         "format": "uri"
@@ -34776,6 +35707,7 @@
                     "reduced",
                     "discount",
                     "exclusive",
+                    "membersOnly",
                     "image",
                     "description",
                     "conditions",
@@ -35250,6 +36182,321 @@
                     }
                 },
                 "x-source": "app-integration/fixtures/visitor-photos.json"
+            },
+            "PlacePhoto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "author": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "caption": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "x-source": "app-integration/fixtures/place-photos.json"
+            },
+            "PlaceRating": {
+                "type": "object",
+                "properties": {
+                    "average": {
+                        "type": "number"
+                    },
+                    "count": {
+                        "type": "integer"
+                    },
+                    "mine": {
+                        "type": "integer"
+                    }
+                },
+                "x-source": "app-integration/fixtures/place-rating.json"
+            },
+            "NewsItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "image": {
+                        "type": "string"
+                    },
+                    "videoUrl": {
+                        "type": "string"
+                    },
+                    "author": {
+                        "type": "string"
+                    },
+                    "publishedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "readingMinutes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "x-source": "app-integration/fixtures/news.json"
+            },
+            "Association": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "district": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "activities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "website": {
+                        "type": "string"
+                    }
+                },
+                "x-source": "app-integration/fixtures/associations.json"
+            },
+            "Itinerary": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "subtitle": {
+                        "type": "string"
+                    },
+                    "stops": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "latitude": {
+                                    "type": "number"
+                                },
+                                "longitude": {
+                                    "type": "number"
+                                },
+                                "placeId": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-source": "app-integration/fixtures/itinerary-featured.json"
+            },
+            "ExploreSelection": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "subtitle": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "link": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "x-source": "app-integration/fixtures/explore-selections.json"
+            },
+            "TransitJourneys": {
+                "type": "object",
+                "properties": {
+                    "journeys": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "departure": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "arrival": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "duration": {
+                                    "type": "integer"
+                                },
+                                "walkingDuration": {
+                                    "type": "integer"
+                                },
+                                "transfers": {
+                                    "type": "integer"
+                                },
+                                "sections": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "mode": {
+                                                "type": "string"
+                                            },
+                                            "duration": {
+                                                "type": "integer"
+                                            },
+                                            "from": {
+                                                "type": "string"
+                                            },
+                                            "to": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-source": "app-integration/fixtures/transit-journeys.json"
+            },
+            "TransitLines": {
+                "type": "object",
+                "properties": {
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "mode": {
+                                    "type": "string"
+                                },
+                                "color": {
+                                    "type": "string"
+                                },
+                                "textColor": {
+                                    "type": "string"
+                                },
+                                "shape": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number"
+                                        }
+                                    }
+                                },
+                                "stops": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "latitude": {
+                                                "type": "number"
+                                            },
+                                            "longitude": {
+                                                "type": "number"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-source": "app-integration/fixtures/transit-lines.json"
             },
             "MyVisitorPhoto": {
                 "type": "object",
@@ -37314,6 +38561,7 @@
                 "enum": [
                     "photo_approved",
                     "photo_rejected",
+                    "avatar_rejected",
                     "post_liked",
                     "post_commented",
                     "comment_replied",
@@ -37333,7 +38581,7 @@
                     "leaderboard_passed",
                     "system"
                 ],
-                "description": "Famille de chaque type : photo_approved → photos, photo_rejected → photos, post_liked → community, post_commented → community, comment_replied → community, comment_liked → community, mentioned → community, post_published → community, post_removed → community, review_published → replies, review_removed → replies, review_replied → replies, classified_message → replies, request_replied → replies, application_update → replies, favorite_story → favorites, favorite_deal → favorites, favorite_event → favorites, leaderboard_passed → games, system → aucune"
+                "description": "Famille de chaque type : photo_approved → photos, photo_rejected → photos, avatar_rejected → photos, post_liked → community, post_commented → community, comment_replied → community, comment_liked → community, mentioned → community, post_published → community, post_removed → community, review_published → replies, review_removed → replies, review_replied → replies, classified_message → replies, request_replied → replies, application_update → replies, favorite_story → favorites, favorite_deal → favorites, favorite_event → favorites, leaderboard_passed → games, system → aucune"
             },
             "ApnsPayload": {
                 "type": "object",

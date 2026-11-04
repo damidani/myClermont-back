@@ -354,6 +354,11 @@ switch ($command) {
         $out('openapi.json : ' . count($spec['paths']) . ' chemins');
         break;
 
+    case 'transit:import':
+        // Horaires T2C (GTFS open data) pour /transit/journeys et /transit/lines   php bin/console transit:import [--url=…]
+        $out('T2C : ' . \App\Modules\Mobility\Transit\GtfsFeed::import($options['url'] ?? null));
+        break;
+
     case 'osm:import':
         // Commerces et services OpenStreetMap de la métropole pour Clermont IA (« le coiffeur le plus proche »)
         $out('Lieux OpenStreetMap importés : ' . \App\Modules\Assistant\Nearby::import($out));

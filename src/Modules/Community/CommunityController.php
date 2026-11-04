@@ -193,6 +193,58 @@ final class CommunityController
         return Response::success(PostPresenter::post($created, $this->posts->related([$created], $userId), $userId), 201);
     }
 
+    /**
+     * PATCH /v1/community/posts/{id} {text, question?} — par son auteur : texte (ou légende) et question du sondage.
+     * Options, votes, médias, likes et commentaires restent inchangés ; le texte repasse par le filtre automatique.
+     */
+    public function update(Request $request): Response
+    {
+        $uid = (string) $request->param('id');
+        $userId = (int) $request->attributes['user_id'];
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uid) || ($post = $this->posts->find($uid, true)) === null) {
+            throw new HttpException(404, 'post_not_found', 'Publication introuvable.');
+        }
+        if ((int) $post['user_id'] !== $userId) {
+            throw HttpException::forbidden('not_author', 'Seul l\'auteur peut modifier cette publication.');
+        }
+        $json = $request->json();
+        $max = (int) Config::get('community.limits')['body_max'];
+        $text = is_string($json['text'] ?? $json['body'] ?? null) ? trim($json['text'] ?? $json['body']) : null;
+        $question = is_string($json['question'] ?? $json['poll_question'] ?? null) ? trim($json['question'] ?? $json['poll_question']) : null;
+        $errors = [];
+        if ($text !== null && mb_strlen($text) > $max) {
+            $errors['text'] = "{$max} caractères maximum.";
+        }
+        [$body, $caption] = [$post['body'], $post['media_caption']];
+        switch ($post['type']) {
+            case 'poll':
+                if ($question !== null) {
+                    $question === '' || mb_strlen($question) > 300 ? $errors['question'] = 'Pose ta question (300 caractères max).' : $body = $question;
+                }
+                if ($text !== null) {
+                    $caption = $text !== '' && $text !== trim((string) $body) ? $text : null;
+                }
+                break;
+            case 'photo':
+                $caption = $text ?? $caption;
+                break;
+            default:
+                if ($text !== null) {
+                    $text === '' && $post['type'] === 'text' ? $errors['text'] = 'Écris quelque chose.' : $body = ($text === '' ? null : $text);
+                }
+        }
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+        $status = \App\Modules\Moderation\ContentFilter::check(trim(($body ?? '') . ' ' . ($caption ?? ''))) === null ? $post['status'] : 'pending';
+        Database::execute('UPDATE community_posts SET body = :b, media_caption = :c, status = :s, updated_at = UTC_TIMESTAMP() WHERE id = :id',
+            ['b' => $body, 'c' => $caption, 's' => $status, 'id' => $post['id']]);
+        $this->posts->forgetCounts();
+        $updated = $this->posts->find($post['uid'], true);
+
+        return Response::success(PostPresenter::post($updated, $this->posts->related([$updated], $userId), $userId));
+    }
+
     /** DELETE /v1/community/posts/{id} — par son auteur */
     public function delete(Request $request): Response
     {

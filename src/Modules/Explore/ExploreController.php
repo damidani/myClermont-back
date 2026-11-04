@@ -93,6 +93,27 @@ final class ExploreController
         );
     }
 
+    /**
+     * GET /v1/explore/selections (4220897f §3) : catalogue éditorial « À découvrir » + exclusivités en cours, saisis dans /admin.
+     * → { items: [{ id, title, subtitle, category, icon?, image?, description, link? }] }
+     */
+    public function selections(Request $request): Response
+    {
+        $items = array_map(static fn (array $i) => array_filter([
+            'id' => $i['uid'], 'title' => $i['title'], 'subtitle' => (string) $i['subtitle'], 'category' => $i['section_name'],
+            'icon' => $i['icon'] ?? $i['section_icon'], 'image' => $i['image_url'], 'description' => (string) ($i['description'] ?? ''),
+            'link' => Link::from($i['link_type'], $i['link_id'], $i['link_url']),
+        ], static fn ($v) => $v !== null), $this->explore->items(null, 100, 0));
+        foreach ($this->explore->offers(null, 50) as $o) {
+            $items[] = array_filter([
+                'id' => $o['uid'], 'title' => $o['title'], 'subtitle' => trim($o['partner_name'] . ' · ' . $o['discount_label'], ' ·'), 'category' => 'Exclusivités',
+                'icon' => $o['icon'], 'image' => $o['image_url'], 'description' => (string) $o['description'], 'link' => ['type' => 'offer', 'id' => $o['uid'], 'url' => null],
+            ], static fn ($v) => $v !== null);
+        }
+
+        return Response::success(['items' => $items]);
+    }
+
     /** GET /v1/explore/stories/{id} — diapositives d'une story */
     public function story(Request $request): Response
     {

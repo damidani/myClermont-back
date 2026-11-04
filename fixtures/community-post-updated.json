@@ -1,0 +1,38 @@
+{
+    "id": "6f5ffb28-4d0d-40a6-bfdf-9345906724ce",
+    "author": "fx6156",
+    "authorId": "e43c6b96-5fb5-4c1c-a97d-5779b5599696",
+    "authorIsMember": false,
+    "neighborhood": "",
+    "date": "2026-11-04T19:03:35Z",
+    "kind": "Texte",
+    "text": "Quelqu'un connaît un bon cours de théâtre amateur à Clermont ?",
+    "mediaFiles": [],
+    "pollOptions": [],
+    "votes": [],
+    "myVote": null,
+    "pollQuestion": null,
+    "likes": 0,
+    "liked": false,
+    "comments": [],
+    "authorInfo": {
+        "id": "e43c6b96-5fb5-4c1c-a97d-5779b5599696",
+        "displayName": "fx6156",
+        "handle": "fx6156",
+        "isStaff": false,
+        "staffTitle": null,
+        "avatar": {
+            "kind": "symbol",
+            "value": "person.crop.circle.fill"
+        }
+    },
+    "createdAt": "2026-11-04T19:03:35Z",
+    "specKind": "text",
+    "media": [],
+    "poll": null,
+    "commentsCount": 0,
+    "mediaItems": [],
+    "isMine": true,
+    "shareUrl": "https://myclermont.app/communaute/6f5ffb28-4d0d-40a6-bfdf-9345906724ce",
+    "mentions": []
+}
