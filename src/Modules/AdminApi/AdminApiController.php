@@ -240,15 +240,20 @@ final class AdminApiController
     private function hideTarget(string $type, string $id): void
     {
         match ($type) {
-            'post'       => Database::execute("UPDATE community_posts SET status = 'hidden' WHERE uid = :id", ['id' => $id]),
+            'post'       => (function () use ($id): void {
+                $p = Database::fetch('SELECT * FROM community_posts WHERE uid = :id', ['id' => $id]);
+                Database::execute("UPDATE community_posts SET status = 'hidden' WHERE uid = :id", ['id' => $id]);
+                $p && $p['status'] !== 'hidden' && \App\Modules\Notifications\ContentNotices::moderated('community_posts', $p, false);
+            })(),
             'comment'    => Database::execute("UPDATE community_comments SET status = 'deleted' WHERE uid = :id", ['id' => $id]),
             'classified' => Database::execute("UPDATE classifieds SET status = 'hidden' WHERE uid = :id", ['id' => $id]),
             'event'      => Database::execute("UPDATE events SET status = 'rejected' WHERE slug = :id", ['id' => $id]),
             'review'     => (function () use ($id): void {
-                $r = Database::fetch('SELECT place_id FROM place_reviews WHERE uid = :id', ['id' => $id]);
+                $r = Database::fetch('SELECT * FROM place_reviews WHERE uid = :id', ['id' => $id]);
                 Database::execute("UPDATE place_reviews SET status = 'hidden' WHERE uid = :id", ['id' => $id]);
                 if ($r) {
                     ReviewController::recompute((int) $r['place_id']);
+                    $r['status'] !== 'hidden' && \App\Modules\Notifications\ContentNotices::moderated('place_reviews', $r, false);
                 }
             })(),
             'user'       => ($u = Database::fetch('SELECT id FROM users WHERE uid = :id', ['id' => $id])) ? $this->banUser((int) $u['id']) : null,

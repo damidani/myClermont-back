@@ -53,6 +53,15 @@ return [
             ],
         ],
 
+        // Services publics de Clermont-Ferrand (Annuaire de l'administration, open data sans clé) → module Services
+        'service-public' => [
+            'target'   => 'services',
+            'importer' => App\Content\Import\ServicePublicImporter::class,
+            'enabled'  => true,
+            'every'    => 1440,
+            'options'  => ['commune' => '63113'],
+        ],
+
         // Agrégateurs d'offres (Indeed, HelloWork, Meteojob, sites carrière…) via leurs API officielles.
         // Chaque offre garde son lien : « Postuler » renvoie l'utilisateur vers l'offre d'origine.
         'adzuna' => [

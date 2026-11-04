@@ -149,6 +149,9 @@ final class Moderation
         if ($type === 'review' && $row['place_id'] !== null) {
             \App\Modules\Places\ReviewController::recompute((int) $row['place_id']);
         }
+        if ($action !== 'ban') {
+            \App\Modules\Notifications\ContentNotices::moderated($table, $row, $action === 'publish', $reason);
+        }
         $userId = $row['user_id'] ?? $row['author_user_id'] ?? null;
         if ($action === 'ban' && $userId !== null) {
             self::ban((int) $userId);
@@ -205,6 +208,9 @@ final class Moderation
             Database::execute('UPDATE place_reviews SET status = IF(:rm = 1, \'hidden\', status), reported_at = NULL, reported_reason = NULL, reported_details = NULL WHERE id = :id',
                 ['rm' => (int) $remove, 'id' => $r['id']]);
             \App\Modules\Places\ReviewController::recompute((int) $r['place_id']);
+            if ($remove) {
+                \App\Modules\Notifications\ContentNotices::moderated('place_reviews', Database::fetch('SELECT * FROM place_reviews WHERE id = :id', ['id' => $r['id']]), false, $reason);
+            }
             $notify(['id' => $r['b_id']], $remove ? 'Avis retiré' : 'Avis maintenu', $remove ? 'L\'avis que tu as signalé a été retiré.'
                 : ($reason ?: 'Après vérification, l\'avis que tu as signalé respecte les règles : il reste en ligne.'), '/avis');
 
@@ -237,6 +243,9 @@ final class Moderation
                 $row = Database::fetch("SELECT * FROM {$table} WHERE {$key} = :k", ['k' => $report['target_id']]);
                 if ($row !== null) {
                     Database::execute("UPDATE {$table} SET status = :s WHERE {$key} = :k", ['s' => $hidden, 'k' => $report['target_id']]);
+                    if ($resolution === 'removed') {
+                        \App\Modules\Notifications\ContentNotices::moderated($table, $row, false);
+                    }
                     if ($resolution === 'user_banned' && $row[$userColumn] !== null) {
                         self::ban((int) $row[$userColumn]);
                     }

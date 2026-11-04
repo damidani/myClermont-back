@@ -70,6 +70,7 @@ final class GamesModule implements Module
             throw $e;
         }
         $board = self::board($game, 'day', $day);
+        \App\Modules\Notifications\ContentNotices::leaderboardPassed($game, $userId, $board, $day);
 
         return Response::json(['rank' => $board[$userId]['rank'] ?? null], 201);
     }
