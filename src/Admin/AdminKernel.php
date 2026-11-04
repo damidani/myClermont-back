@@ -102,6 +102,10 @@ final class AdminKernel
             // Spec OpenAPI complète (pro, admin, agents) pour /docs (65abb5dc) : réservée à une session du back-office
             $path === '/openapi.json' && $m === 'GET'        => [200, ['Content-Type' => 'application/json; charset=utf-8'], \App\Docs\DocsPage::spec(true)],
             $path === '/moderation' && $m === 'POST'         => $c->moderate(),
+            $path === '/broadcasts' && $m === 'GET'          => (new AdminTools($req))->broadcasts(),
+            $path === '/broadcasts' && $m === 'POST'         => (new AdminTools($req))->broadcastAction(),
+            $path === '/merchants' && $m === 'GET'           => (new AdminTools($req))->merchants(),
+            $path === '/merchants' && $m === 'POST'          => (new AdminTools($req))->merchantAction(),
             (bool) preg_match('#^/r/(\w+)(?:/(new|edit|delete|export\.csv))?$#', $path, $p) => $c->resource($p[1], $p[2] ?? 'list'),
             default => [404, [], AdminController::page('Introuvable', '<div class="card"><p>Page introuvable.</p></div>', $req)],
         };

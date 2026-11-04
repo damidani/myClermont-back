@@ -337,6 +337,11 @@ switch ($command) {
         }
         break;
 
+    case 'pro:plans':
+        // Formules Partenaire offertes arrivées à échéance → gratuit
+        $out('Offres expirées : ' . \App\Modules\Pro\OfferedPlans::expire());
+        break;
+
     case 'openapi:build':
         // Spec OpenAPI 3.1 générée à partir du code (65abb5dc) : complète dans app-integration/openapi.json
         $spec = (new \App\Docs\OpenApi())->build(true);

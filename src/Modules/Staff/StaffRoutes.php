@@ -23,6 +23,7 @@ final class StaffRoutes
                 $r->post('/merchants/{id}/approve', [MerchantController::class, 'approve']);
                 $r->post('/merchants/{id}/request-info', [MerchantController::class, 'requestInfo']);
                 $r->post('/merchants/{id}/reject', [MerchantController::class, 'reject']);
+                $r->post('/merchants/{id}/plan', [MerchantController::class, 'plan']);
 
                 $r->get('/broadcasts', [BroadcastController::class, 'index']);
                 $r->post('/broadcasts', [BroadcastController::class, 'create']);

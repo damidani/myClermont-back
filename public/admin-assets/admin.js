@@ -11,6 +11,10 @@
   document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (e) { if (!window.confirm(form.dataset.confirm)) e.preventDefault(); });
   });
+  // Bouton d'envoi avec confirmation (notifications)
+  document.querySelectorAll('button[data-confirm]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { if (!window.confirm(btn.dataset.confirm)) e.preventDefault(); });
+  });
 
   // Filtres appliqués dès qu'on change une liste déroulante
   document.querySelectorAll('[data-autosubmit]').forEach(function (el) {

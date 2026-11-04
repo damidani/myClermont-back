@@ -28,3 +28,4 @@
 0 9 * * * php /var/www/myclermont/bin/console events:coverage >> /var/www/myclermont/storage/logs/imports.log 2>&1
 # Envois groupés programmés depuis l'admin (push / e-mail)
 * * * * * php /var/www/myclermont/bin/console broadcasts:send >> /var/www/myclermont/storage/logs/imports.log 2>&1
+15 * * * * php /var/www/myclermont/bin/console pro:plans >> /var/www/myclermont/storage/logs/imports.log 2>&1

@@ -375,7 +375,9 @@ final class AccountController
     {
         $b = Pro::business($request);
 
-        return Response::success(['plan' => $b['plan'], 'plan_since' => Pro::iso($b['plan_since']), 'limits' => ProPresenter::limits($b)]);
+        return Response::success(['plan' => $b['plan'], 'plan_since' => Pro::iso($b['plan_since']), 'limits' => ProPresenter::limits($b),
+            // Formule offerte par l'équipe : date de fin (null = sans limite ou payante)
+            'offered' => $b['plan_offered_by'] !== null, 'plan_until' => Pro::iso($b['plan_until'])]);
     }
 
     public function subscribe(Request $request): Response

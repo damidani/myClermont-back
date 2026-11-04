@@ -79,6 +79,26 @@ final class MerchantController
         return Response::success(self::application($this->find($request)));
     }
 
+    /** POST /admin/merchants/{id}/plan { months: 1|3|6|12|0 (sans limite), note? } offre la formule Partenaire ; { plan: "gratuit" } la retire */
+    public function plan(Request $request): Response
+    {
+        $b = $this->find($request);
+        $j = $request->json();
+        if (($j['plan'] ?? null) === 'gratuit') {
+            \App\Modules\Pro\OfferedPlans::revoke($b);
+        } else {
+            try {
+                \App\Modules\Pro\OfferedPlans::offer($b, (int) ($j['months'] ?? -1), (string) $request->attributes['staff']['name'], (string) ($j['note'] ?? ''));
+            } catch (\DomainException) {
+                throw new ValidationException(['months' => 'Durée : 1, 3, 6, 12 ou 0 (sans limite).']);
+            }
+        }
+        Audit::log((int) $request->attributes['staff']['id'], 'merchant.plan', $request->ip, 'pro_businesses', $b['uid'], $j);
+        $b = $this->find($request);
+
+        return Response::success(['plan' => $b['plan'], 'plan_until' => Pro::iso($b['plan_until']), 'offered_by' => $b['plan_offered_by'], 'note' => $b['plan_note']]);
+    }
+
     public function requestInfo(Request $request): Response
     {
         $message = trim((string) ($request->json()['message'] ?? ''));

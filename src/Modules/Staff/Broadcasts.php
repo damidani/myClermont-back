@@ -14,12 +14,13 @@ use App\Support\Mailer;
  * à une audience filtrée. L'e-mail ne part qu'aux comptes qui ont accepté les communications (marketing_opt_in).
  *
  * Audience : { platforms?: [ios, android], cities?: [..], postalCodes?: [..], neighborhoods?: [ids], activeWithinDays?, createdWithinDays?,
- *              plus?: bool, staffOnly?: bool, genders?: [..], favoriteCategories?: [MapCategory], favoritePlaceKeys?: [..], minPoints? }
+ *              plus?: bool, staffOnly?: bool, genders?: [..], favoriteCategories?: [MapCategory], favoritePlaceKeys?: [..], minPoints?,
+ *              inactiveForDays? (pas ouvert l'app depuis N jours), pushOnly? (joignable en push), communityActiveDays? (a publié ou commenté depuis N jours) }
  */
 final class Broadcasts
 {
     public const FILTERS = ['platforms', 'cities', 'postal_codes', 'neighborhoods', 'active_within_days', 'created_within_days', 'plus', 'staff_only', 'genders',
-                            'favorite_categories', 'favorite_place_keys', 'min_points'];
+                            'favorite_categories', 'favorite_place_keys', 'min_points', 'inactive_for_days', 'push_only', 'community_active_days'];
 
     /** @return array{0: string, 1: array} clause WHERE (alias u) et paramètres */
     public static function where(array $a): array
@@ -55,6 +56,18 @@ final class Broadcasts
         if (!empty($a['active_within_days'])) {
             $w[] = "EXISTS (SELECT 1 FROM devices d2 WHERE d2.user_id = u.id AND d2.last_seen_at > UTC_TIMESTAMP() - INTERVAL :act DAY)";
             $p['act'] = max(1, (int) $a['active_within_days']);
+        }
+        if (!empty($a['inactive_for_days'])) {
+            $w[] = 'NOT EXISTS (SELECT 1 FROM devices d3 WHERE d3.user_id = u.id AND d3.last_seen_at > UTC_TIMESTAMP() - INTERVAL :inact DAY)';
+            $p['inact'] = max(1, (int) $a['inactive_for_days']);
+        }
+        if (!empty($a['push_only'])) {
+            $w[] = "u.notifications_enabled = 1 AND EXISTS (SELECT 1 FROM devices d4 WHERE d4.user_id = u.id AND d4.push_token IS NOT NULL AND d4.status = 'active')";
+        }
+        if (!empty($a['community_active_days'])) {
+            $w[] = '(EXISTS (SELECT 1 FROM community_posts cp WHERE cp.user_id = u.id AND cp.created_at > UTC_TIMESTAMP() - INTERVAL :ca1 DAY)
+                     OR EXISTS (SELECT 1 FROM community_comments cc WHERE cc.user_id = u.id AND cc.created_at > UTC_TIMESTAMP() - INTERVAL :ca2 DAY))';
+            $p['ca1'] = $p['ca2'] = max(1, (int) $a['community_active_days']);
         }
         if (!empty($a['created_within_days'])) {
             $w[] = 'u.created_at > UTC_TIMESTAMP() - INTERVAL :cr DAY';

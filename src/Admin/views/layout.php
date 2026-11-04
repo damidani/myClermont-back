@@ -22,6 +22,10 @@
 <nav class="sidebar" id="sidebar">
   <a class="nav-item<?= $path === '/admin' ? ' active' : '' ?>" href="/admin"><span class="ico">🏠</span>Accueil</a>
   <a class="nav-item<?= $path === '/admin/moderation' ? ' active' : '' ?>" href="/admin/moderation"><span class="ico">✅</span>À modérer<?php if ($pending > 0): ?> <span class="badge"><?= $pending ?></span><?php endif; ?></a>
+  <?php if (($admin['role'] ?? '') === 'admin'): ?>
+  <a class="nav-item<?= $path === '/admin/broadcasts' ? ' active' : '' ?>" href="/admin/broadcasts"><span class="ico">📣</span>Notifications</a>
+  <a class="nav-item<?= $path === '/admin/merchants' ? ' active' : '' ?>" href="/admin/merchants"><span class="ico">🎁</span>Offrir Partenaire</a>
+  <?php endif; ?>
   <?php foreach ($menu as $group => $resources):
     $isActive = false;
     foreach ($resources as $table => $r) { $isActive = $isActive || $path === '/admin/r/' . $table || str_starts_with($path, '/admin/r/' . $table . '/'); }
