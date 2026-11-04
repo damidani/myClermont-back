@@ -159,7 +159,11 @@ final class RecruitController
             throw new HttpException(404, 'not_found', 'CV introuvable.');
         }
 
-        return Response::raw($doc['content'], 'application/pdf')->withHeader('Content-Disposition', 'inline; filename="cv.pdf"');
+        $name = trim((string) preg_replace('/[^A-Za-z0-9._ -]+/', '_', (string) $doc['filename'])) ?: 'cv.pdf';
+
+        return Response::raw($doc['content'], 'application/pdf')
+            ->withHeader('Content-Disposition', 'inline; filename="' . (str_ends_with(strtolower($name), '.pdf') ? $name : $name . '.pdf') . '"')
+            ->withHeader('Cache-Control', 'private, no-store');
     }
 
     // --- Prestations et devis ----------------------------------------------
