@@ -51,6 +51,25 @@ final class ReviewController
         ]);
     }
 
+    /**
+     * GET /places/{id}/rating (799dadde) : agrégat léger pour les cartes de pin → { average, count, mine }.
+     * Sans avis : average null et count 0, jamais de note inventée. mine = note du compte connecté, sinon null.
+     */
+    public function rating(Request $request): Response
+    {
+        $place = $this->place((string) $request->param('id'));
+        $mine = null;
+        if (isset($request->attributes['user_id'])) {
+            [$where, $params] = self::scope($place);
+            $mine = Database::fetch("SELECT r.rating FROM place_reviews r WHERE {$where} AND r.user_id = :u", $params + ['u' => $request->attributes['user_id']])['rating'] ?? null;
+        }
+        $count = (int) $place['rating_count'];
+
+        return Response::success(['average' => $count > 0 ? round((float) $place['rating_avg'], 1) : null, 'count' => $count,
+                                  'mine' => $mine === null ? null : (int) $mine])
+            ->withHeader('Cache-Control', 'private, max-age=60');
+    }
+
     public function put(Request $request): Response
     {
         $place = $this->place((string) $request->param('id'));

@@ -31,7 +31,10 @@ Tu es Clermont IA, l'assistant de l'application My Clermont pour Clermont-Ferran
 
 Règles :
 - Réponds en français, en tutoyant, en 120 mots maximum, sur un ton chaleureux et concret.
-- N'affirme aucun fait (adresse, prix, horaire, date, disponibilité) qui ne vienne pas d'un outil. Si les outils ne donnent rien, dis-le simplement et propose une alternative.
+- Données de l'app d'abord : si la question touche aux sorties, lieux, bons plans, emplois, logements, services, carburants ou à la météo, appuie-toi sur les outils et montre leurs cartes.
+- Si la réponse n'est pas dans les données de l'app (question pratique, démarche, conseil, culture générale, histoire ou géographie de Clermont et de l'Auvergne…), réponds quand même, utilement, avec tes connaissances générales. Ne dis jamais « je réponds avec les données de l'app » ni n'esquive une question générale.
+- Mais n'invente jamais un fait propre à l'app ou à l'actualité : bon plan, prix, horaire, adresse, fiche de commerçant, événement précis, chiffre récent. Si cette donnée manque, dis-le clairement (« je n'ai pas cette info dans l'app ») et oriente vers une piste fiable.
+- Dates : n'écris un jour de semaine qu'en le recopiant du calendrier fourni ou d'un outil (« mercredi 5 novembre »), jamais calculé de tête. « Aujourd'hui » et « demain » s'entendent à l'heure de Paris.
 - Utilise les outils pour toute question sur les sorties, lieux, bons plans, emplois, logements, services, carburants ou la météo.
 - Pour un commerce ou service courant autour de l'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…), utilise nearby_search : il renvoie les adresses réelles les plus proches (OpenStreetMap) à citer dans cards.
 - Le « Contexte de la conversation » décrit les échanges précédents et les derniers résultats affichés : « il », « elle », « ses », « y », « le premier » renvoient au n° 1, « le deuxième » au n° 2. Ne relance pas une recherche « le plus proche » pour une question de suite. N'invente jamais d'horaires absents.
@@ -161,8 +164,8 @@ TXT;
             $messages[] = ['role' => 'assistant', 'content' => $turn['a']];
         }
         $messages[] = ['role' => 'user', 'content' => sprintf(
-            "[%s · écran : %s · position approximative : %.3f, %.3f]\n%s",
-            self::frenchDate($paris), $screen, $lat, $lon, $question,
+            "[%s (heure de Paris) · calendrier : %s · écran : %s · position approximative : %.3f, %.3f]\n%s",
+            self::frenchDate($paris), self::calendar($paris), $screen, $lat, $lon, $question,
         )];
 
         $used = [];
@@ -318,11 +321,29 @@ TXT;
         );
     }
 
-    private static function frenchDate(\DateTimeImmutable $d): string
+    /** Jour de semaine et numéro tirés de la même date (8202abb7) */
+    public static function frenchDate(\DateTimeImmutable $d, string $timeSep = ', '): string
+    {
+        return self::frenchDay($d) . ' ' . $d->format('Y') . $timeSep . $d->format('H:i');
+    }
+
+    private static function frenchDay(\DateTimeImmutable $d): string
     {
         $days = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
         $months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
-        return $days[(int) $d->format('N') - 1] . ' ' . $d->format('j') . ' ' . $months[(int) $d->format('n') - 1] . ' ' . $d->format('Y, H:i');
+        return $days[(int) $d->format('N') - 1] . ' ' . $d->format('j') . ' ' . $months[(int) $d->format('n') - 1];
+    }
+
+    /** Les 8 prochains jours de Paris, pour que le modèle ne calcule jamais un jour de semaine lui-même */
+    private static function calendar(\DateTimeImmutable $today): string
+    {
+        $labels = [];
+        for ($i = 0; $i < 8; $i++) {
+            $d = $today->modify("+{$i} day");
+            $labels[] = ($i === 0 ? "aujourd'hui " : ($i === 1 ? 'demain ' : '')) . self::frenchDay($d);
+        }
+
+        return implode(' ; ', $labels);
     }
 }

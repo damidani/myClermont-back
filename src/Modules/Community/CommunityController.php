@@ -243,7 +243,7 @@ final class CommunityController
             ['c' => $comment['id'], 'u' => $userId, 'd' => gmdate('Y-m-d H:i:s')]) > 0) {
             $who = Notices::handle($userId);
             Notices::send((int) $comment['user_id'], 'comment_liked', "❤️ {$who} aime ton commentaire", '« ' . Notices::excerpt((string) $comment['body'], 60) . ' »',
-                ['type' => 'post', 'id' => $post['uid']], [
+                ['type' => 'comment', 'id' => $post['uid'], 'commentId' => $comment['uid']], [
                     'actor_id' => $userId, 'actor' => $who, 'group' => 'comment_liked:' . $comment['uid'],
                     'group_title' => static fn (int $n) => "❤️ {$who} et " . ($n - 1) . ' autre' . ($n > 2 ? 's' : '') . ' aiment ton commentaire',
                 ]);
@@ -324,7 +324,7 @@ final class CommunityController
         if ($status === 'visible') {
             Events::dispatch('community.comment_created', ['user_id' => $userId, 'post_uid' => $post['uid'], 'post_author_id' => (int) $post['user_id']]);
             $mentioned = self::notifyMentions($data['body'], (int) $userId, (int) $post['id'], $post['uid'], (int) $comment['id'], $comment['uid']);
-            self::notifyComment($post, (int) $userId, $data['body'], $mentioned);
+            self::notifyComment($post, (int) $userId, $data['body'], $mentioned, $comment['uid']);
         }
 
         return Response::success(PostPresenter::comment($comment, $userId), 201);
@@ -405,7 +405,7 @@ final class CommunityController
                 ['p' => $postId, 'c' => $commentId, 'u' => $m['id'], 'd' => gmdate('Y-m-d H:i:s')]);
             if ($new > 0) {
                 Notices::send($m['id'], 'mentioned', "@{$author} t'a mentionné·e", '« ' . Notices::excerpt($text) . ' »',
-                    array_filter(['type' => 'post', 'id' => $postUid, 'commentId' => $commentUid]), ['actor_id' => $authorId, 'actor' => $author]);
+                    array_filter(['type' => $commentUid ? 'comment' : 'post', 'id' => $postUid, 'commentId' => $commentUid]), ['actor_id' => $authorId, 'actor' => $author]);
                 $done[] = $m['id'];
             }
         }
@@ -417,10 +417,11 @@ final class CommunityController
      * post_commented à l'auteur de la publication ; comment_replied aux autres personnes de la discussion
      * (1 par publication et par heure), sauf celles déjà mentionnées dans ce commentaire.
      */
-    private static function notifyComment(array $post, int $authorId, string $text, array $mentioned): void
+    private static function notifyComment(array $post, int $authorId, string $text, array $mentioned, string $commentUid): void
     {
         $who = Notices::handle($authorId);
-        $target = ['type' => 'post', 'id' => $post['uid']];
+        // 4dc1de5e : id = la publication, commentId = le commentaire à mettre en évidence
+        $target = ['type' => 'comment', 'id' => $post['uid'], 'commentId' => $commentUid];
         if (!in_array((int) $post['user_id'], $mentioned, true)) {
             Notices::send((int) $post['user_id'], 'post_commented', "💬 {$who} a commenté ta publication", Notices::excerpt($text), $target,
                 ['actor_id' => $authorId, 'actor' => $who]);

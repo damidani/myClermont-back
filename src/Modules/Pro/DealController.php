@@ -166,7 +166,7 @@ final class DealController
         $p = json_decode((string) ($d['pro'] ?? ''), true) ?: [];
 
         return array_replace(self::blank(), [
-            'title' => $d['title'], 'area' => (string) $d['area'], 'exclusive' => (bool) $d['exclusive_plus'], 'image' => $d['image_url'],
+            'title' => $d['title'], 'area' => (string) $d['area'], 'exclusive' => (bool) $d['exclusive_plus'], 'members_only' => (bool) $d['members_only'], 'image' => $d['image_url'],
             'description' => (string) $d['description'], 'conditions' => (string) $d['conditions'], 'starts_at' => Pro::iso($d['starts_at']),
             'expires_at' => Pro::iso($d['expires_at']), 'quantity' => $d['max_redemptions'] !== null ? (int) $d['max_redemptions'] : null, 'per_person' => (int) $d['per_person'],
             'status' => $d['pro_status'] ?? 'brouillon',
@@ -175,7 +175,7 @@ final class DealController
 
     private static function blank(): array
     {
-        return ['title' => '', 'category' => 'Restaurants', 'area' => '', 'original' => '', 'reduced' => '', 'discount' => '', 'exclusive' => false, 'image' => null,
+        return ['title' => '', 'category' => 'Restaurants', 'area' => '', 'original' => '', 'reduced' => '', 'discount' => '', 'exclusive' => false, 'members_only' => false, 'image' => null,
                 'description' => '', 'conditions' => '', 'starts_at' => null, 'expires_at' => null, 'quantity' => null, 'per_person' => 1, 'status' => 'brouillon'];
     }
 
@@ -193,6 +193,9 @@ final class DealController
         }
         if (array_key_exists('exclusive', $j)) {
             $d['exclusive'] = $j['exclusive'] === true;
+        }
+        if (array_key_exists('members_only', $j)) {
+            $d['members_only'] = $j['members_only'] === true;
         }
         if (array_key_exists('image', $j)) {
             Pro::url($j['image']) ? $d['image'] = $j['image'] ?: null : $errors['image'] = 'Image invalide.';
@@ -251,11 +254,11 @@ final class DealController
         $original = Pro::cents($d['original']);
         $reduced = Pro::cents($d['reduced']);
         Database::execute(
-            'UPDATE deals SET title = :t, category = :c, area = :a, original_cents = :o, reduced_cents = :r, discount_label = :dl, exclusive_plus = :x, image_url = :img,
+            'UPDATE deals SET title = :t, category = :c, area = :a, original_cents = :o, reduced_cents = :r, discount_label = :dl, exclusive_plus = :x, members_only = :mo, image_url = :img,
                     description = :ds, conditions = :cd, starts_at = :sa, expires_at = :ea, max_redemptions = :q, per_person = :pp, merchant = :m,
                     pro_status = :ps, status = :s, pro = :pro, updated_at = :up WHERE id = :id',
             ['t' => $d['title'] ?: 'Bon plan', 'c' => $d['category'], 'a' => $d['area'] ?: null, 'o' => $original, 'r' => $reduced, 'dl' => $d['discount'] ?: null,
-             'x' => (int) $d['exclusive'], 'img' => $d['image'], 'ds' => $d['description'] ?: null, 'cd' => $d['conditions'] ?: null,
+             'x' => (int) $d['exclusive'], 'mo' => (int) $d['members_only'], 'img' => $d['image'], 'ds' => $d['description'] ?: null, 'cd' => $d['conditions'] ?: null,
              'sa' => Pro::toUtc($d['starts_at'], 'starts_at'), 'ea' => Pro::toUtc($d['expires_at'], 'expires_at'), 'q' => $d['quantity'], 'pp' => $d['per_person'],
              'm' => Pro::displayName($business), 'ps' => $d['status'], 's' => match ($d['status']) { 'actif' => 'published', 'termine' => 'archived', default => 'draft' },
              'pro' => json_encode(['category' => $d['category'], 'original' => $d['original'], 'reduced' => $d['reduced'], 'discount' => $d['discount']], JSON_UNESCAPED_UNICODE),

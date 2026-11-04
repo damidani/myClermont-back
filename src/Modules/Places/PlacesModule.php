@@ -30,6 +30,7 @@ final class PlacesModule implements Module
             $r->get('/partners', [MapController::class, 'partners']);
             $r->get('/places/{id}', [MapController::class, 'show']);
             $r->get('/places/{id}/photos', [MapController::class, 'photosOf']);
+            $r->get('/places/{id}/google-reviews', [MapController::class, 'googleReviews']);
             // Fiche au format Place du dashboard (b6496778) ; l'ancienne fiche enrichie reste sur /places/{id}/detail
             $r->get('/places/{id}/sheet', [SheetController::class, 'show']);
             $r->get('/places/{id}/detail', [PlaceController::class, 'show']);
@@ -38,6 +39,7 @@ final class PlacesModule implements Module
 
         // Avis (spec v1)
         $r->get('/places/{id}/reviews', [ReviewController::class, 'index']);
+        $r->get('/places/{id}/rating', [ReviewController::class, 'rating'], ['auth:optional']);
         $r->get('/visitor-photos', [VisitorPhotoController::class, 'index']);
         $r->group(['middleware' => ['auth']], static function (Router $r): void {
             $r->put('/places/{id}/reviews/me', [ReviewController::class, 'put'], ['throttle:post']);

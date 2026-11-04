@@ -115,8 +115,26 @@ final class MapController
     public function photosOf(Request $request): Response
     {
         $p = $this->find((string) $request->param('id'));
+        $q = $request->query();
+        $limit = min(50, max(1, (int) ($q['limit'] ?? 20)));
+        $offset = isset($q['cursor']) && ctype_digit((string) $q['cursor']) ? (int) $q['cursor'] : 0;
+        $all = self::officialPhotos((int) $p['id']);
 
-        return Response::success(self::photos((int) $p['id']))->withHeader('Cache-Control', 'private, max-age=3600');
+        return Response::success(array_slice($all, $offset, $limit), 200, ['next_cursor' => count($all) > $offset + $limit ? (string) ($offset + $limit) : null])
+            ->withHeader('Cache-Control', 'private, max-age=300');
+    }
+
+    /** GET /places/{id}/google-reviews (303b2796) : note et avis Google ; 404 sans correspondance Google (l'app masque la section) */
+    public function googleReviews(Request $request): Response
+    {
+        $p = $this->find((string) $request->param('id'));
+        $place = Database::fetch('SELECT id, name, city, latitude, longitude, google_place_id, google_checked_at FROM places WHERE id = :id', ['id' => $p['id']]);
+        $out = $place !== null && $place['latitude'] !== null ? GoogleReviews::forPlace($place) : null;
+        if ($out === null) {
+            throw new HttpException(404, 'not_found', 'Pas d\'avis Google pour ce lieu.');
+        }
+
+        return Response::success($out)->withHeader('Cache-Control', 'private, max-age=3600');
     }
 
     public function partners(Request $request): Response
@@ -217,6 +235,34 @@ final class MapController
             'url' => $r['url'], 'credit' => $r['credit'], 'source' => $r['source'],
             'width' => $r['width'] === null ? null : (int) $r['width'], 'height' => $r['height'] === null ? null : (int) $r['height'],
         ], Database::fetchAll('SELECT url, credit, source, width, height FROM place_photos WHERE place_id = :p ORDER BY position, id', ['p' => $placeId]));
+    }
+
+    /**
+     * Photos officielles d'un lieu (a9273154) : photos de l'équipe (place_photos), galerie publiée du commerçant, puis la couverture.
+     * Dédoublonnées par URL. @return list<array{id: string, url: string, author: ?string, caption: ?string, created_at: ?string}>
+     */
+    private static function officialPhotos(int $placeId): array
+    {
+        $out = [];
+        foreach (Database::fetchAll('SELECT id, url, credit, created_at FROM place_photos WHERE place_id = :p ORDER BY position, id', ['p' => $placeId]) as $r) {
+            $out[$r['url']] = ['id' => 'pp_' . $r['id'], 'url' => $r['url'], 'author' => $r['credit'], 'caption' => null,
+                               'created_at' => gmdate('Y-m-d\TH:i:s\Z', strtotime($r['created_at'] . ' UTC'))];
+        }
+        $place = Database::fetch('SELECT pro, cover_url, business_id, updated_at FROM places WHERE id = :p', ['p' => $placeId]);
+        if (($place['pro'] ?? null) !== null && $place['business_id'] !== null) {
+            foreach ((array) (\App\Modules\Pro\PlaceController::data($place)['photos'] ?? []) as $ph) {
+                if (is_string($ph['src'] ?? null) && str_starts_with($ph['src'], 'https://')) {
+                    $out[$ph['src']] ??= ['id' => (string) $ph['id'], 'url' => $ph['src'], 'author' => ($ph['credit'] ?? null) ?: null,
+                                          'caption' => ($ph['caption'] ?? null) ?: null, 'created_at' => null];
+                }
+            }
+        }
+        $cover = (string) ($place['cover_url'] ?? '');
+        if (str_starts_with($cover, 'https://') && !isset($out[$cover])) {
+            $out = [$cover => ['id' => 'cover_' . $placeId, 'url' => $cover, 'author' => null, 'caption' => null, 'created_at' => null]] + $out;
+        }
+
+        return array_values($out);
     }
 
     /** @return list<string> */

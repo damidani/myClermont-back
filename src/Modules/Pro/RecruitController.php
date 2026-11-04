@@ -102,7 +102,7 @@ final class RecruitController
         if (!empty($a['user_id']) && isset($texts[$status]) && $status !== ($a['pro_status'] ?? null)) {
             $o = Database::fetch('SELECT title, company_name FROM job_offers WHERE id = :id', ['id' => $a['offer_id']]);
             \App\Modules\Notifications\Notices::send((int) $a['user_id'], 'application_update', '💼 ' . ($o['company_name'] ?? 'Le recruteur') . ' ' . $texts[$status],
-                '« ' . ($o['title'] ?? 'Ton offre') . ' »', ['type' => 'application', 'id' => $a['uid']]);
+                '« ' . ($o['title'] ?? 'Ton offre') . ' »', ['type' => 'application', 'id' => $a['uid'], 'jobId' => $a['job_uid']]);
         }
 
         return Response::success(self::application($this->application_($request)));

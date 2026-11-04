@@ -71,7 +71,7 @@ final class DealController
         if ($row = $existing()) {
             return Response::success(self::redemption($deal, $row['code']));
         }
-        if ($deal['exclusive_plus'] && !PremiumService::isActiveById($userId)) {
+        if ($deal['members_only'] && !PremiumService::isActiveById($userId)) {
             throw new HttpException(403, 'plus_required', 'Ce bon plan est réservé aux membres My Clermont+.');
         }
 
@@ -187,6 +187,7 @@ final class DealController
             'discount'    => (string) ($d['discount_label'] ?? ($d['original_cents'] && $d['reduced_cents'] !== null
                                 ? '-' . (int) round(100 - $d['reduced_cents'] * 100 / $d['original_cents']) . ' %' : '')),
             'exclusive'   => (bool) $d['exclusive_plus'],
+            'members_only' => (bool) $d['members_only'],
             'image'       => \App\Support\DefaultImage::urls([$d['image_url']], 'deal-' . \App\Support\DefaultImage::slug($category))[0],
             'image_url'   => $d['image_url'],
             'description' => (string) ($d['description'] ?? ''),

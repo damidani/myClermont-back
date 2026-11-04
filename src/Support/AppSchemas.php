@@ -121,7 +121,7 @@ final class AppSchemas
         return [
             'id' => 'string', 'title' => 'string', 'merchant' => 'string', 'area' => 'string',
             'category' => 'enum:Restaurants|Bien-être|Sorties|Sport', 'original' => 'string', 'reduced' => 'string',
-            'discount' => 'string', 'exclusive' => 'bool', 'image' => 'url', 'description' => 'string', 'conditions' => 'string',
+            'discount' => 'string', 'exclusive' => 'bool', 'membersOnly' => 'bool', 'image' => 'url', 'description' => 'string', 'conditions' => 'string',
             'expires' => 'string',
         ];
     }

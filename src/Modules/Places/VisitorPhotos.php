@@ -189,7 +189,10 @@ final class VisitorPhotos
             + ($spot ? ['latitude' => $spot['latitude'], 'longitude' => $spot['longitude'], 'category' => $spot['category']] : []);
         $approved
             ? Notices::send((int) $r['user_id'], 'photo_approved', "Ta photo de {$r['pin_name']} est en ligne 🎉", 'Merci pour ta contribution !', $target, ['image_url' => $r['url']])
-            : Notices::send((int) $r['user_id'], 'photo_rejected', "Ta photo de {$r['pin_name']} n'a pas été retenue", self::reasonText($r['refusal_reason'] ?? null, $r['refusal_note'] ?? null), $target, ['image_url' => $r['url']]);
+            : Notices::send((int) $r['user_id'], 'photo_rejected', "Ta photo de {$r['pin_name']} n'a pas été retenue",
+                ($reason = self::reasonText($r['refusal_reason'] ?? null, $r['refusal_note'] ?? null)) !== null
+                    ? 'Motif : ' . rtrim($reason, '. ') . '. Tu peux en proposer une autre.' : 'Tu peux en proposer une autre.',
+                $target + ['reason' => $reason, 'reasonCode' => $r['refusal_reason'] ?? null], ['image_url' => $r['url']]);
     }
 
     public static function reasonText(?string $reason, ?string $note): ?string

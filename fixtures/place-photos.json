@@ -1,0 +1,19 @@
+{
+    "items": [
+        {
+            "id": "cover_42",
+            "url": "https://api.myclermont.app/media/2026/11/3c1f0c55-7d1e-4a7b-9b0e-2f7a8d6e1c10.jpg",
+            "author": null,
+            "caption": null,
+            "createdAt": null
+        },
+        {
+            "id": "pp_7",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Exemple.jpg/1280px-Exemple.jpg",
+            "author": "Photo : Jean Dupont, CC BY-SA 4.0, via Wikimedia Commons",
+            "caption": null,
+            "createdAt": "2026-11-04T16:00:00Z"
+        }
+    ],
+    "nextCursor": null
+}

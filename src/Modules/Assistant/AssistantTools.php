@@ -73,7 +73,7 @@ final class AssistantTools
             // Mots-clés trop précis du modèle (« belle vue », « truffade ») : sans résultat, on relance sans eux
             'search_events' => ($r = $this->events($in))['events'] === [] && !empty($in['query']) ? $this->events(['query' => null] + $in) : $r,
             'search_places' => ($r = $this->places($in))['places'] === [] && !empty($in['query']) ? $this->places(['query' => null] + $in) : $r,
-            'list_deals'    => $this->rows('deal', "SELECT uid, title, merchant, discount_label, area, exclusive_plus FROM deals WHERE status = 'published' AND deleted_at IS NULL
+            'list_deals'    => $this->rows('deal', "SELECT uid, title, merchant, discount_label, area, exclusive_plus, members_only FROM deals WHERE status = 'published' AND deleted_at IS NULL
                                 AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())" . (!empty($in['category']) ? ' AND category = :c' : '') . ' ORDER BY id DESC LIMIT 6',
                                 !empty($in['category']) ? ['c' => $in['category']] : []),
             'list_jobs'     => $this->rows('job', "SELECT uid, title, company_name, contract, city FROM job_offers WHERE status = 'published'"
@@ -124,11 +124,23 @@ final class AssistantTools
             $ref = 'event:' . $e['slug'];
             $this->seen[$ref] = ['type' => 'event'] + $e;
             $out[] = ['ref' => $ref, 'title' => $e['title'], 'kind' => $e['kind'], 'venue' => $e['venue_name'],
-                      'start' => SpecEventController::iso($e['starts_at']), 'end' => SpecEventController::iso($e['ends_at']),
+                      // 8202abb7 : date et jour de semaine calculés ici, en heure de Paris, pour que le modèle ne les recalcule pas
+                      'start' => self::parisLabel($e['starts_at']), 'end' => self::parisLabel($e['ends_at']),
                       'price' => $e['price_label'], 'schedule' => $e['schedule_label']];
         }
 
         return ['events' => $out];
+    }
+
+    /** « mercredi 5 novembre 2026 à 20:00 (heure de Paris) » depuis une date UTC de la base */
+    private static function parisLabel(?string $utc): ?string
+    {
+        if ($utc === null) {
+            return null;
+        }
+        $d = (new \DateTimeImmutable($utc, new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone('Europe/Paris'));
+
+        return AssistantController::frenchDate($d, ' à ');
     }
 
     private function places(array $in): array

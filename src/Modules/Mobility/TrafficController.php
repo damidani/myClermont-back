@@ -51,9 +51,10 @@ final class TrafficController
     {
         $lat = isset($q['lat']) && is_numeric($q['lat']) ? (float) $q['lat'] : 45.7772;
         $lon = isset($q['lon']) && is_numeric($q['lon']) ? (float) $q['lon'] : 3.0870;
+        // f286b01f : l'app envoie le rayon de la zone regardée (900 m à 10 km) ; seuls les incidents de ce cercle sont renvoyés
         $radius = isset($q['r']) && is_numeric($q['r']) ? (int) $q['r'] : 2500;
-        if ($radius < 300 || $radius > 6000) {
-            throw new ValidationException(['r' => 'Le rayon doit être compris entre 300 et 6 000 m.']);
+        if ($radius < 300 || $radius > 10000) {
+            throw new ValidationException(['r' => 'Le rayon doit être compris entre 300 et 10 000 m.']);
         }
 
         $data = $this->metropolis();

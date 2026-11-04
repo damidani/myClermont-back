@@ -16,5 +16,9 @@ return [
 
     'nearby_limit_max' => 100,
     'timezone' => 'Europe/Paris',
+    // Avis Google (303b2796) : clé de l'API Places (New), restreinte à l'IP du serveur ; sans clé, /places/{id}/google-reviews répond 404
+    'google_api_key' => Env::get('GOOGLE_PLACES_API_KEY', ''),
+    'google_cache_seconds' => 86400,
+
     'share_url' => Env::get('PLACES_SHARE_URL', 'https://myclermont.app/lieux/{id}'),
 ];

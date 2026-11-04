@@ -81,7 +81,7 @@ final class CardBuilder
                 ]],
             ],
             'deal' => $base + [
-                'icon' => 'tag.fill', 'tone' => 'deals', 'kicker' => $r['exclusive_plus'] ? 'BON PLAN · MY CLERMONT+' : 'BON PLAN',
+                'icon' => 'tag.fill', 'tone' => 'deals', 'kicker' => $r['members_only'] ? 'BON PLAN · MY CLERMONT+' : 'BON PLAN',
                 'title' => $r['title'], 'detail' => (string) $r['merchant'], 'badge' => $r['discount_label'], 'link' => ['type' => 'city', 'destination' => 'deals'],
             ],
             'job' => $base + [

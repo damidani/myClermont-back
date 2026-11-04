@@ -52,7 +52,7 @@ final class Html
             'is_must_see' => 'Incontournable', 'is_featured' => 'À la une', 'reports_count' => 'Signalements', 'last_login_at' => 'Dernière connexion',
             'first_name' => 'Prénom', 'display_name' => 'Nom affiché', 'kind' => 'Type', 'venue_name' => 'Lieu', 'app_category' => 'Catégorie (app)',
             'rating_avg' => 'Note moyenne', 'rating_count' => 'Nombre d\'avis', 'merchant' => 'Commerçant', 'category' => 'Catégorie',
-            'original_cents' => 'Prix normal', 'reduced_cents' => 'Prix bon plan', 'discount_label' => 'Réduction affichée', 'exclusive_plus' => 'Réservé My Clermont+',
+            'original_cents' => 'Prix normal', 'reduced_cents' => 'Prix bon plan', 'discount_label' => 'Réduction affichée', 'exclusive_plus' => 'Exclusivité MyClermont (mise en avant)', 'members_only' => 'Réservé aux membres My Clermont+',
             'conditions' => 'Conditions', 'area' => 'Quartier', 'company_name' => 'Entreprise', 'contract' => 'Contrat', 'work_mode' => 'Rythme',
             'transaction' => 'Type d\'annonce', 'district_label' => 'Quartier', 'surface_m2' => 'Surface (m²)', 'rooms' => 'Pièces', 'bedrooms' => 'Chambres',
             'furnished' => 'Meublé', 'summary' => 'Résumé', 'type' => 'Type', 'likes_count' => 'J\'aime', 'comments_count' => 'Commentaires',

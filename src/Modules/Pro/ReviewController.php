@@ -134,7 +134,7 @@ final class ReviewController
         }
         $spot = \App\Modules\Places\MapController::place($p);
         \App\Modules\Notifications\Notices::send($userId, 'review_replied', "💬 {$spot['name']} a répondu à ton avis", \App\Modules\Notifications\Notices::excerpt($text), [
-            'type' => 'place', 'placeKey' => 'spot-' . $spot['id'], 'name' => $spot['name'], 'latitude' => $spot['latitude'], 'longitude' => $spot['longitude'], 'category' => $spot['category'],
+            'type' => 'review', 'id' => $spot['id'], 'placeKey' => 'spot-' . $spot['id'], 'name' => $spot['name'], 'latitude' => $spot['latitude'], 'longitude' => $spot['longitude'], 'category' => $spot['category'],
         ]);
     }
 
