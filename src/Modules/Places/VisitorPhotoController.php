@@ -68,6 +68,32 @@ final class VisitorPhotoController
         return Response::success(['id' => $uid, 'status' => 'pending', 'reviewer' => $businessId !== null ? 'merchant' : 'myclermont'], 201);
     }
 
+    /**
+     * DELETE /visitor-photos/{id} : l'auteur retire sa photo, quel que soit son statut (même validée).
+     * Elle quitte la fiche (galerie et couverture du commerçant), la file de modération, l'espace pro et l'admin ;
+     * le fichier est effacé. Idempotent : un id inconnu ou déjà supprimé répond aussi 204.
+     */
+    public function destroy(Request $request): Response
+    {
+        $userId = (int) $request->attributes['user_id'];
+        $row = Database::fetch(VisitorPhotos::SELECT . ' WHERE v.uid = :id', ['id' => (string) $request->param('id')]);
+        if ($row === null) {
+            return Response::noContent();
+        }
+        if ((int) $row['user_id'] !== $userId) {
+            throw new HttpException(404, 'not_found', 'Photo introuvable.');
+        }
+        if ((int) $row['in_gallery'] === 1) {
+            VisitorPhotos::gallery($row, false, $row['business_id'] !== null ? (int) $row['business_id'] : null);
+        }
+        Database::execute('DELETE FROM place_visitor_photos WHERE id = :id', ['id' => $row['id']]);
+        $media = Database::fetchAll("SELECT m.id FROM uploads u JOIN media m ON m.uid = u.uid WHERE u.url = :url AND u.user_id = :u AND u.purpose = 'visitor_photo'",
+            ['url' => $row['url'], 'u' => $userId]);
+        (new \App\Content\Media\MediaStore())->deleteByIds(array_column($media, 'id'));
+
+        return Response::noContent();
+    }
+
     public function mine(Request $request): Response
     {
         [$limit, $offset] = self::page($request);

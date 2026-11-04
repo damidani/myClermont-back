@@ -46,6 +46,7 @@ final class PlacesModule implements Module
             // Photos des visiteurs (ca817cb4)
             $r->post('/visitor-photos', [VisitorPhotoController::class, 'store'], ['throttle:upload']);
             $r->get('/me/visitor-photos', [VisitorPhotoController::class, 'mine']);
+            $r->delete('/visitor-photos/{id}', [VisitorPhotoController::class, 'destroy']);
         });
     }
 
