@@ -106,6 +106,8 @@ final class AdminKernel
             $path === '/broadcasts' && $m === 'POST'         => (new AdminTools($req))->broadcastAction(),
             $path === '/merchants' && $m === 'GET'           => (new AdminTools($req))->merchants(),
             $path === '/merchants' && $m === 'POST'          => (new AdminTools($req))->merchantAction(),
+            $path === '/plus' && $m === 'GET'                => (new AdminTools($req))->plus(),
+            $path === '/plus' && $m === 'POST'               => (new AdminTools($req))->plusAction(),
             (bool) preg_match('#^/r/(\w+)(?:/(new|edit|delete|export\.csv))?$#', $path, $p) => $c->resource($p[1], $p[2] ?? 'list'),
             default => [404, [], AdminController::page('Introuvable', '<div class="card"><p>Page introuvable.</p></div>', $req)],
         };

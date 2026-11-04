@@ -35,6 +35,7 @@ final class StaffRoutes
                 $r->get('/settings', [BroadcastController::class, 'settings']);
                 $r->put('/settings', [BroadcastController::class, 'updateSettings']);
                 $r->patch('/users/{id}/staff', [BroadcastController::class, 'staff']);
+                $r->post('/users/{id}/plus', [BroadcastController::class, 'plus']);
 
                 $r->get('/team-reviews', [TeamReviewController::class, 'index']);
                 $r->get('/places/search', [TeamReviewController::class, 'search']);

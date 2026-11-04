@@ -13,6 +13,7 @@ use App\Security\Crypto;
  * Écrans du back-office demandés le 04/11 (rôle admin) :
  *   /admin/broadcasts  notifications push / e-mails à une audience filtrée (aperçu du nombre, test à l'équipe, envoi ou programmation)
  *   /admin/merchants   offrir (ou retirer) la formule Partenaire à un commerçant
+ *   /admin/plus        offrir (ou retirer) My Clermont+ à un utilisateur de l'app
  */
 final class AdminTools
 {
@@ -191,6 +192,65 @@ final class AdminTools
         }
 
         return AdminController::redirect('/merchants', array_filter(['q' => $this->req->input('q')]));
+    }
+
+    // ---------------------------------------------------------------- My Clermont+ offert
+
+    public function plus(): array
+    {
+        if (!$this->allowed()) {
+            return $this->forbidden();
+        }
+        $q = trim($this->req->input('q'));
+        $filter = $this->req->input('filter');
+        $where = "u.status = 'active'";
+        $params = [];
+        if ($q !== '') {
+            $where .= ' AND (u.handle LIKE :q OR u.email LIKE :q2 OR u.first_name LIKE :q3 OR u.uid = :q4)';
+            $params += ['q' => '%' . ltrim($q, '@') . '%', 'q2' => "%{$q}%", 'q3' => "%{$q}%", 'q4' => $q];
+        }
+        if ($filter === 'gift') {
+            $where .= ' AND u.plus_gift_until > UTC_TIMESTAMP()';
+        } elseif ($filter === 'member') {
+            $where .= ' AND u.premium_until > UTC_TIMESTAMP()';
+        }
+        $rows = $q === '' && $filter === '' ? [] : Database::fetchAll(
+            "SELECT u.id, u.uid, u.handle, u.email, u.first_name, u.city, u.created_at, u.premium_until, u.premium_source, u.plus_gift_until, u.plus_gift_by, u.plus_gift_note
+             FROM users u WHERE {$where} ORDER BY u.premium_until > UTC_TIMESTAMP() DESC, u.id DESC LIMIT 100", $params);
+        $stats = Database::fetch("SELECT SUM(premium_until > UTC_TIMESTAMP()) AS members, SUM(plus_gift_until > UTC_TIMESTAMP()) AS gifts FROM users WHERE status = 'active'");
+
+        return [200, [], AdminController::page('My Clermont+', Html::render('plus', ['rows' => $rows, 'q' => $q, 'filter' => $filter, 'stats' => $stats, 'csrf' => $this->req->session['csrf']]), $this->req)];
+    }
+
+    /** POST /admin/plus {id, action: offer | revoke, months, note} */
+    public function plusAction(): array
+    {
+        if (!$this->allowed()) {
+            return $this->forbidden();
+        }
+        $u = Database::fetch("SELECT * FROM users WHERE uid = :u AND status = 'active'", ['u' => $this->req->input('id')]);
+        $back = AdminController::redirect('/plus', array_filter(['q' => $this->req->input('q'), 'filter' => $this->req->input('filter')]));
+        if ($u === null) {
+            $this->flash('error', 'Utilisateur introuvable.');
+            return $back;
+        }
+        $name = $u['handle'] ? '@' . $u['handle'] : (string) $u['email'];
+        try {
+            if ($this->req->input('action') === 'revoke') {
+                \App\Modules\Premium\PlusGifts::revoke($u);
+                $this->flash('success', "My Clermont+ offert retiré à {$name} (un abonnement App Store éventuel reste actif).");
+            } else {
+                $months = (int) $this->req->input('months', '1');
+                \App\Modules\Premium\PlusGifts::offer($u, $months, (string) $this->req->admin['name'], $this->req->input('note'));
+                $this->flash('success', "My Clermont+ offert à {$name} (" . \App\Modules\Premium\PlusGifts::DURATIONS[$months] . ') : il reçoit une notification.');
+            }
+            Audit::log((int) $this->req->admin['id'], 'user.plus.' . $this->req->input('action', 'offer'), $this->req->ip, 'users', $u['uid'],
+                ['months' => $this->req->input('months'), 'note' => $this->req->input('note')]);
+        } catch (\DomainException $e) {
+            $this->flash('error', $e->getMessage());
+        }
+
+        return $back;
     }
 
     private function allowed(): bool

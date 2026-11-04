@@ -141,6 +141,26 @@ final class BroadcastController
         return Response::success(['id' => $u['uid'], 'handle' => $u['handle'], 'is_staff' => $j['is_staff'], 'staff_title' => $j['is_staff'] ? ($title ?? 'Équipe MyClermont') : null]);
     }
 
+    /** POST /admin/users/{id ou pseudo}/plus { months: 1|3|6|12|0 (sans limite), note? } offre My Clermont+ ; { revoke: true } le retire */
+    public function plus(Request $request): Response
+    {
+        $j = $request->json();
+        $id = rawurldecode((string) $request->param('id'));
+        $u = Database::fetch("SELECT * FROM users WHERE (uid = :u OR handle = :h) AND status = 'active'", ['u' => $id, 'h' => ltrim($id, '@')]) ?? throw new HttpException(404, 'not_found', 'Compte introuvable.');
+        if (($j['revoke'] ?? false) === true) {
+            \App\Modules\Premium\PlusGifts::revoke($u);
+        } else {
+            try {
+                \App\Modules\Premium\PlusGifts::offer($u, (int) ($j['months'] ?? -1), (string) $request->attributes['staff']['name'], (string) ($j['note'] ?? ''));
+            } catch (\DomainException) {
+                throw new ValidationException(['months' => 'Durée : 1, 3, 6, 12 ou 0 (sans limite).']);
+            }
+        }
+        Audit::log((int) $request->attributes['staff']['id'], 'user.plus', $request->ip, 'users', $u['uid'], $j);
+
+        return Response::success(['id' => $u['uid'], 'handle' => $u['handle'], 'membership' => \App\Modules\Subscriptions\SubscriptionsModule::membership((int) $u['id'])]);
+    }
+
     private function find(string $uid): array
     {
         return Database::fetch('SELECT * FROM broadcasts WHERE uid = :u', ['u' => $uid]) ?? throw new HttpException(404, 'not_found', 'Envoi introuvable.');

@@ -111,12 +111,20 @@ final class SubscriptionsModule implements Module
     public static function membership(int $userId): ?array
     {
         $s = Database::fetch("SELECT * FROM subscriptions WHERE user_id = :u AND store = 'apple' ORDER BY expires_at DESC LIMIT 1", ['u' => $userId]);
-        if ($s === null) {
-            return null;
+        $p = $s === null ? null : self::present($s);
+        if ($p === null || !$p['active']) {
+            // My Clermont+ offert par l'équipe (ou abonnement terminé)
+            $u = Database::fetch('SELECT premium_until FROM users WHERE id = :u', ['u' => $userId]);
+            if ($u !== null && \App\Modules\Premium\PremiumService::isActive($u)) {
+                return ['is_member' => true, 'product_id' => null, 'expires_at' => \App\Modules\Premium\PlusGifts::forever($u['premium_until']) ? null : gmdate('Y-m-d\TH:i:s\Z', strtotime($u['premium_until'] . ' UTC')),
+                        'in_trial' => false, 'will_renew' => false, 'gifted' => true];
+            }
+            if ($s === null) {
+                return null;
+            }
         }
-        $p = self::present($s);
 
-        return ['is_member' => $p['active'], 'product_id' => $p['product_id'], 'expires_at' => $p['expires_at'], 'in_trial' => $p['active'] && (bool) $s['in_trial'],
+        return ['is_member' => $p['active'], 'product_id' => $p['product_id'], 'expires_at' => $p['expires_at'], 'in_trial' => $p['active'] && (bool) $s['in_trial'], 'gifted' => false,
                 'will_renew' => $p['active'] && $p['auto_renew']];
     }
 
@@ -161,6 +169,7 @@ final class SubscriptionsModule implements Module
     public static function detach(int $userId): void
     {
         Database::execute("UPDATE subscriptions SET user_id = NULL, updated_at = :d WHERE user_id = :u", ['d' => gmdate('Y-m-d H:i:s'), 'u' => $userId]);
+        \App\Modules\Premium\PlusGifts::sync($userId);
     }
 
     private static function invalidTransaction(string $why): HttpException
@@ -250,9 +259,8 @@ final class SubscriptionsModule implements Module
             );
         }
         if ($fields['user_id'] !== null) {
-            // Remboursement / révocation : accès retiré tout de suite. Délai de grâce : l'accès continue jusqu'à expires_at.
-            $until = in_array($status, ['revoked', 'refunded'], true) ? $now : $fields['expires_at'];
-            Database::execute("UPDATE users SET premium_until = :p, premium_source = 'apple', updated_at = :d WHERE id = :id", ['p' => $until, 'd' => $now, 'id' => $fields['user_id']]);
+            // Remboursement / révocation : accès retiré tout de suite (sauf My Clermont+ offert). Délai de grâce : l'accès continue jusqu'à expires_at.
+            \App\Modules\Premium\PlusGifts::sync((int) $fields['user_id']);
         }
 
         return Database::fetch("SELECT * FROM subscriptions WHERE store = 'apple' AND original_transaction_id = :o", ['o' => (string) $tx['originalTransactionId']]);

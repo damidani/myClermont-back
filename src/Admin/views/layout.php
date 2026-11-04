@@ -25,6 +25,7 @@
   <?php if (($admin['role'] ?? '') === 'admin'): ?>
   <a class="nav-item<?= $path === '/admin/broadcasts' ? ' active' : '' ?>" href="/admin/broadcasts"><span class="ico">📣</span>Notifications</a>
   <a class="nav-item<?= $path === '/admin/merchants' ? ' active' : '' ?>" href="/admin/merchants"><span class="ico">🎁</span>Offrir Partenaire</a>
+  <a class="nav-item<?= $path === '/admin/plus' ? ' active' : '' ?>" href="/admin/plus"><span class="ico">⭐</span>Offrir My Clermont+</a>
   <?php endif; ?>
   <?php foreach ($menu as $group => $resources):
     $isActive = false;

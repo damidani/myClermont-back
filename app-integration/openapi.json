@@ -2903,6 +2903,122 @@
                 }
             }
         },
+        "/admin/users/{id}/plus": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "summary": "POST /admin/users/{id ou pseudo}/plus { months:",
+                "operationId": "post_admin_users_id_plus",
+                "x-handler": "BroadcastController::plus",
+                "security": [
+                    {
+                        "bearerStaff": []
+                    }
+                ],
+                "x-rate-limit": [
+                    {
+                        "name": "pro",
+                        "max": 600,
+                        "windowSeconds": 60,
+                        "per": "ip"
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "revoke": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "months": {
+                                        "description": "Voir la validation de la route"
+                                    },
+                                    "note": {
+                                        "description": "Voir la validation de la route"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "validation_failed (details.fields)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthenticated (invalid_session)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden (jeton commerçant ou de l'app)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "not_found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "rate_limited (en-tête Retry-After)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users/{id}/role": {
             "patch": {
                 "tags": [
