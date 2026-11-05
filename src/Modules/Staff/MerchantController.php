@@ -82,6 +82,7 @@ final class MerchantController
     /** POST /admin/merchants/{id}/plan { months: 1|3|6|12|0 (sans limite), note? } offre la formule Partenaire ; { plan: "gratuit" } la retire */
     public function plan(Request $request): Response
     {
+        StaffAuthMiddleware::requireAdmin($request);
         $b = $this->find($request);
         $j = $request->json();
         if (($j['plan'] ?? null) === 'gratuit') {

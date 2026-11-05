@@ -40,7 +40,7 @@ final class Logger
             'request' => Context::$requestId,
             'context' => $context,
             'ip'      => $_SERVER['REMOTE_ADDR'] ?? null,
-            'uri'     => $_SERVER['REQUEST_URI'] ?? null,
+            'uri'     => isset($_SERVER['REQUEST_URI']) ? strtok((string) $_SERVER['REQUEST_URI'], '?') : null,   // sans la requête : jamais de jeton dans les journaux
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
 
         $dir = dirname(__DIR__, 2) . '/storage/logs';

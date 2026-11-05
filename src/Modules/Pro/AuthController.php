@@ -139,9 +139,18 @@ final class AuthController
     {
         $j = $request->json();
         $email = is_string($j['email'] ?? null) ? mb_strtolower(trim($j['email'])) : '';
+        // Anti-force brute par compte (audit a1954478) : 8 échecs en 15 min verrouillent l'e-mail 15 min
+        $key = sha1($email);
+        if (\App\Cache\Cache::store()->get('pro:login:lock:' . $key) !== null) {
+            throw new HttpException(429, 'too_many_attempts', 'Trop de tentatives. Réessaie dans 15 minutes ou réinitialise ton mot de passe.');
+        }
         $member = $email !== '' ? Database::fetch("SELECT * FROM pro_members WHERE email = :e AND status = 'actif'", ['e' => $email]) : null;
         $ok = $member !== null && is_string($j['password'] ?? null) && password_verify($j['password'], (string) $member['password_hash']);
         if (!$ok) {
+            if ($email !== '' && \App\Cache\Cache::store()->increment('pro:login:fail:' . $key, 900) >= 8) {
+                \App\Cache\Cache::store()->set('pro:login:lock:' . $key, 1, 900);
+                \App\Core\Logger::security('Pro : e-mail verrouillé 15 min après trop d\'échecs', ['email_sha1' => $key]);
+            }
             static $dummy = null;
             password_verify('x', $dummy ??= password_hash(random_bytes(8), PASSWORD_DEFAULT)); // même durée qu'un vrai essai
             throw new HttpException(401, 'unauthenticated', 'E-mail ou mot de passe incorrect.', ['reason' => 'invalid_credentials']);

@@ -68,6 +68,7 @@ final class BroadcastController
 
     public function send(Request $request): Response
     {
+        StaffAuthMiddleware::requireAdmin($request);
         $b = $this->find((string) $request->param('id'));
         if ($b['status'] !== 'brouillon') {
             throw new HttpException(409, 'conflict', 'Cet envoi est déjà programmé ou parti.');
@@ -110,6 +111,7 @@ final class BroadcastController
 
     public function updateSettings(Request $request): Response
     {
+        StaffAuthMiddleware::requireAdmin($request);
         $j = $request->json();
         $by = (string) $request->attributes['staff']['name'];
         $n = is_array($j['notifications'] ?? null) ? $j['notifications'] : [];
@@ -128,6 +130,7 @@ final class BroadcastController
 
     public function staff(Request $request): Response
     {
+        StaffAuthMiddleware::requireAdmin($request);
         $j = $request->json();
         if (!is_bool($j['is_staff'] ?? null)) {
             throw new ValidationException(['isStaff' => 'Booléen attendu.']);
@@ -144,6 +147,7 @@ final class BroadcastController
     /** POST /admin/users/{id ou pseudo}/plus { months: 1|3|6|12|0 (sans limite), note? } offre My Clermont+ ; { revoke: true } le retire */
     public function plus(Request $request): Response
     {
+        StaffAuthMiddleware::requireAdmin($request);
         $j = $request->json();
         $id = rawurldecode((string) $request->param('id'));
         $u = Database::fetch("SELECT * FROM users WHERE (uid = :u OR handle = :h) AND status = 'active'", ['u' => $id, 'h' => ltrim($id, '@')]) ?? throw new HttpException(404, 'not_found', 'Compte introuvable.');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Account\Controllers;
 
+use App\Cache\Cache;
 use App\Core\Config;
 use App\Core\Database;
 use App\Core\Events;
@@ -78,12 +79,22 @@ final class AuthController
             'password' => 'required|string|max:128',
         ]);
 
+        // Anti-force brute par compte (audit a1954478) : 8 échecs en 15 min verrouillent l'e-mail 15 min, qu'il existe ou non
+        $key = sha1(mb_strtolower($data['email']));
+        if (Cache::store()->get('login:lock:' . $key) !== null) {
+            throw new HttpException(429, 'too_many_attempts', 'Trop de tentatives. Réessaie dans 15 minutes ou réinitialise ton mot de passe.');
+        }
         $user = $this->users->findByEmail($data['email']);
         $valid = password_verify($data['password'], $user['password_hash'] ?? self::DUMMY_HASH);
 
         if ($user === null || !$valid) {
+            if (Cache::store()->increment('login:fail:' . $key, 900) >= 8) {
+                Cache::store()->set('login:lock:' . $key, 1, 900);
+                Logger::security('Connexion : e-mail verrouillé 15 min après trop d\'échecs', ['email_sha1' => $key]);
+            }
             throw HttpException::unauthorized('invalid_credentials', 'E-mail ou mot de passe incorrect.');
         }
+        Cache::store()->delete('login:fail:' . $key);
         if ($user['status'] !== 'active') {
             throw HttpException::forbidden('account_disabled', $user['status'] === 'deleted' ? 'Ce compte a été supprimé.' : 'Ce compte est suspendu.');
         }
@@ -109,7 +120,9 @@ final class AuthController
             throw new ValidationException(['email' => 'Ton adresse e-mail n\'est pas valide.'], 422);
         }
         $user = $this->users->findByEmail($email);
-        if ($user !== null && $user['status'] === 'active') {
+        // Au plus 3 e-mails de réinitialisation par adresse et par heure ; la réponse reste 204 dans tous les cas
+        $quota = Cache::store()->increment('forgot:' . sha1($email), 3600) <= 3;
+        if ($quota && $user !== null && $user['status'] === 'active') {
             $token = bin2hex(random_bytes(32));
             $now = gmdate('Y-m-d H:i:s');
             Database::execute('UPDATE password_resets SET used_at = :d WHERE user_id = :u AND used_at IS NULL', ['d' => $now, 'u' => $user['id']]);

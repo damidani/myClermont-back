@@ -35,6 +35,14 @@ final class StaffAuthMiddleware implements Middleware
         return $next($request);
     }
 
+    /** Actions sensibles (badge équipe, My Clermont+ offert, réglages, envoi à tous, offre commerçant) : rôle admin seulement (audit a1954478) */
+    public static function requireAdmin(\App\Core\Request $request): void
+    {
+        if (($request->attributes['staff']['role'] ?? null) !== 'admin') {
+            throw new HttpException(403, 'forbidden', 'Action réservée aux administrateurs.', ['reason' => 'admin_required']);
+        }
+    }
+
     public static function invalid(): HttpException
     {
         return new HttpException(401, 'unauthenticated', 'Ta session a expiré, reconnecte-toi.', ['reason' => 'invalid_session']);

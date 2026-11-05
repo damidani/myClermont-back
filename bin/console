@@ -378,7 +378,7 @@ switch ($command) {
         // pour que ses posts et commentaires restent visibles sous « Compte supprimé ».
         $days = (int) Config::get('auth.deletion_days', 30);
         $rows = Database::fetchAll(
-            "SELECT id, apple_refresh_encrypted FROM users WHERE status = 'deleted' AND deleted_at < :d AND (email IS NOT NULL OR apple_sub IS NOT NULL OR google_sub IS NOT NULL OR display_name IS NOT NULL)",
+            "SELECT id, apple_refresh_encrypted FROM users WHERE status = 'deleted' AND deleted_at < :d AND (email IS NOT NULL OR apple_sub IS NOT NULL OR google_sub IS NOT NULL OR display_name IS NOT NULL OR first_name IS NOT NULL OR phone IS NOT NULL OR handle IS NOT NULL)",
             ['d' => gmdate('Y-m-d H:i:s', time() - $days * 86400)],
         );
         foreach ($rows as $u) {
@@ -390,22 +390,51 @@ switch ($command) {
             }
             Database::transaction(static function () use ($u): void {
                 $id = (int) $u['id'];
-                foreach (['favorites', 'documents', 'classifieds', 'point_transactions', 'user_badges', 'user_events', 'user_stats', 'push_outbox', 'refresh_tokens', 'event_participants'] as $table) {
+                // Données privées supprimées ; posts, commentaires et avis restent publiés sous « Compte supprimé » (audit a1954478 : liste complétée)
+                foreach (['favorites', 'documents', 'classifieds', 'point_transactions', 'user_badges', 'user_events', 'user_stats', 'push_outbox', 'refresh_tokens', 'event_participants',
+                          'user_notices', 'app_favorites', 'game_scores', 'ai_questions', 'ai_usage', 'password_resets', 'user_handle_history', 'explore_story_views',
+                          'community_likes', 'community_comment_likes', 'community_poll_votes', 'community_mentions', 'job_applications', 'service_quote_requests',
+                          'housing_contact_requests', 'offer_claims', 'deal_redemptions', 'uploads'] as $table) {
                     try {
                         Database::execute("DELETE FROM {$table} WHERE user_id = :u", ['u' => $id]);
                     } catch (PDOException) {
                         // table absente selon les modules activés
                     }
                 }
+                Database::execute('UPDATE devices SET user_id = NULL, push_token = NULL, last_ip = NULL WHERE user_id = :u', ['u' => $id]);
+                Database::execute('UPDATE subscriptions SET user_id = NULL WHERE user_id = :u', ['u' => $id]);   // trace comptable de l'achat, sans lien au compte
                 Database::execute(
                     "UPDATE users SET email = NULL, password_hash = NULL, display_name = NULL, bio = NULL, neighborhood_id = NULL,
                             avatar_kind = 'symbol', avatar_value = 'person.crop.circle.fill', apple_sub = NULL, google_sub = NULL,
-                            apple_refresh_encrypted = NULL, premium_until = NULL, referral_code = NULL, points = 0, updated_at = :d WHERE id = :id",
+                            apple_refresh_encrypted = NULL, premium_until = NULL, referral_code = NULL, points = 0,
+                            username = CONCAT('supprime-', id), handle = NULL, handle_changed_at = NULL, first_name = NULL, phone = NULL, gender = NULL, gender_detail = NULL,
+                            pronouns = NULL, pronouns_detail = NULL, city = NULL, postal_code = NULL, avatar_pending_url = NULL, avatar_pending_at = NULL,
+                            notification_prefs = NULL, staff_title = NULL, plus_gift_note = NULL, plus_gift_by = NULL, referred_by = NULL, marketing_opt_in = 0, updated_at = :d WHERE id = :id",
                     ['d' => gmdate('Y-m-d H:i:s'), 'id' => $id],
                 );
             });
         }
         $out('Comptes effacés : ' . count($rows));
+        break;
+
+    case 'commercant:csp':
+        // CSP du dashboard sans 'unsafe-inline' dans script-src (audit a1954478) : empreintes sha256 des scripts inline de l'export Next.
+        // À lancer SUR L'HÔTE après chaque mise à jour de commercant/out, puis : docker compose exec web nginx -s reload
+        //   php bin/console commercant:csp [--dir=commercant]
+        $dir = rtrim((string) ($options['dir'] ?? dirname(__DIR__) . '/commercant'), '/');
+        $hashes = [];
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator("{$dir}/out", FilesystemIterator::SKIP_DOTS)) as $file) {
+            if ($file->getExtension() === 'html' && preg_match_all('#<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>#s', (string) file_get_contents($file->getPathname()), $m)) {
+                foreach ($m[1] as $js) {
+                    $hashes["'sha256-" . base64_encode(hash('sha256', $js, true)) . "'"] = true;
+                }
+            }
+        }
+        $script = "'self' " . implode(' ', array_keys($hashes));
+        $csp = "default-src 'self'; script-src {$script}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.myclermont.app; font-src 'self' data:; "
+            . "connect-src 'self' data: blob: https://api.myclermont.app https://recherche-entreprises.api.gouv.fr https://data.geopf.fr; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'";
+        file_put_contents("{$dir}/csp.conf", "# Généré par php bin/console commercant:csp, ne pas modifier\nset \$csp \"{$csp}\";\n");
+        $out(count($hashes) . " empreintes écrites dans {$dir}/csp.conf");
         break;
 
     case 'cache:prune':
