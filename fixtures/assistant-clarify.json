@@ -1,0 +1,12 @@
+{
+    "conversationId": "7f0c2d1e-1111-4a2b-9c3d-000000000001",
+    "text": "Tu cherches plutôt quoi comme ambiance ?",
+    "cards": [],
+    "nearbySearches": [],
+    "followUps": [],
+    "clarify": {
+        "question": "Tu cherches plutôt quoi comme ambiance ?",
+        "style": "single",
+        "options": ["Calme", "Animé", "En famille", "Pas cher"]
+    }
+}
