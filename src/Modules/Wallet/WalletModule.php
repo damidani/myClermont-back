@@ -14,6 +14,7 @@ final class WalletModule implements Module
     {
         $r->get('/wallet/status', [WalletController::class, 'status']);
         $r->get('/events/{id}/wallet-pass', [WalletController::class, 'event']);
+        $r->get('/me/wallet-pass', [WalletController::class, 'member'], ['auth']);
         $r->get('/deals/{id}/wallet-pass', [WalletController::class, 'deal'], ['auth']);
     }
 

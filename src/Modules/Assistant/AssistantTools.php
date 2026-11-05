@@ -63,6 +63,9 @@ final class AssistantTools
                  'text'       => ['type' => 'string', 'description' => '120 mots maximum, tutoiement'],
                  'cards'      => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Références des résultats à afficher en cartes (ex. event:…, place:…), 6 maximum'],
                  'follow_ups' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => '2 ou 3 relances courtes'],
+                 'clarify'    => ['type' => 'object', 'description' => 'Facultatif, rare : UNE question de clarification si la demande est trop vague',
+                                  'properties' => ['question' => ['type' => 'string'], 'style' => ['type' => 'string', 'enum' => ['single', 'multi', 'text']],
+                                                   'options' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => '3 à 6 options courtes (vide pour text)']]],
              ]]],
         ];
     }
@@ -152,7 +155,7 @@ final class AssistantTools
             $params['cat'] = $in['category'];
         }
         if (!empty($in['query'])) {
-            $where .= ' AND (p.name LIKE :q OR p.keywords LIKE :q2 OR p.tags LIKE :q3)';
+            $where .= ' AND (p.name LIKE :q OR p.keywords LIKE :q2 OR CONVERT(p.tags USING utf8mb4) LIKE :q3)';
             $params['q'] = $params['q2'] = $params['q3'] = '%' . $in['query'] . '%';
         }
         if (!empty($in['partner_only'])) {

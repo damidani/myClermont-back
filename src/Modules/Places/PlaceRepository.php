@@ -107,7 +107,7 @@ final class PlaceRepository
         $params = ['limit' => $limit];
         foreach (array_slice(preg_split('/\s+/', trim($query)) ?: [], 0, 5) as $i => $word) {
             $like = '%' . addcslashes($word, '%_\\') . '%';
-            $where .= " AND (p.name LIKE :q{$i}a OR c.name LIKE :q{$i}b OR p.keywords LIKE :q{$i}c OR p.address LIKE :q{$i}d OR p.tags LIKE :q{$i}e)";
+            $where .= " AND (p.name LIKE :q{$i}a OR c.name LIKE :q{$i}b OR p.keywords LIKE :q{$i}c OR p.address LIKE :q{$i}d OR CONVERT(p.tags USING utf8mb4) LIKE :q{$i}e)";
             $params += ["q{$i}a" => $like, "q{$i}b" => $like, "q{$i}c" => $like, "q{$i}d" => $like, "q{$i}e" => $like];
         }
 

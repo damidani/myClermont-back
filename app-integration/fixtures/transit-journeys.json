@@ -1,102 +1,284 @@
 {
     "journeys": [
         {
-            "id": "92b61bc1e2873230",
-            "departure": "2026-11-05T07:15:00Z",
-            "arrival": "2026-11-05T07:55:13Z",
-            "duration": 2413,
-            "walkingDuration": 613,
+            "id": "9fbb0b3c689c04c5",
+            "departure": "2026-11-05T10:22:07Z",
+            "arrival": "2026-11-05T10:45:34Z",
+            "duration": 1407,
+            "walkingDuration": 387,
             "transfers": 0,
             "sections": [
                 {
                     "id": "s1",
                     "type": "walk",
                     "mode": "walk",
-                    "duration": 240,
+                    "duration": 53,
                     "from": "Départ",
-                    "to": "Cézeaux Pellez"
+                    "to": "Jaude",
+                    "fromLat": 45.7772,
+                    "fromLon": 3.0819,
+                    "toLat": 45.777049,
+                    "toLon": 3.081283,
+                    "shape": [
+                        [
+                            45.7772,
+                            3.0819
+                        ],
+                        [
+                            45.777049,
+                            3.081283
+                        ]
+                    ]
                 },
                 {
                     "id": "s2",
                     "type": "transit",
-                    "mode": "tram",
-                    "line": "A",
-                    "lineColor": "A81815",
+                    "mode": "bus",
+                    "line": "C",
+                    "lineColor": "008C3C",
                     "lineTextColor": "FFFFFF",
-                    "direction": "Les Vergnes",
-                    "from": "Cézeaux Pellez",
-                    "to": "Musée d'Art Roger Quilliot",
-                    "departure": "2026-11-05T07:19:00Z",
-                    "arrival": "2026-11-05T07:49:00Z",
-                    "duration": 1800,
-                    "stops": 18
+                    "direction": "COURNON Allier",
+                    "from": "Jaude",
+                    "to": "Lycée La Fayette",
+                    "departure": "2026-11-05T10:23:00Z",
+                    "arrival": "2026-11-05T10:40:00Z",
+                    "duration": 1020,
+                    "stops": 11,
+                    "fromLat": 45.777049,
+                    "fromLon": 3.081283,
+                    "toLat": 45.762504,
+                    "toLon": 3.129573,
+                    "shape": [
+                        [
+                            45.777049,
+                            3.081283
+                        ],
+                        [
+                            45.775757,
+                            3.086267
+                        ],
+                        [
+                            45.77629,
+                            3.09125
+                        ],
+                        [
+                            45.776202,
+                            3.094991
+                        ],
+                        [
+                            45.773156,
+                            3.098394
+                        ],
+                        [
+                            45.770883,
+                            3.102715
+                        ],
+                        [
+                            45.770032,
+                            3.107852
+                        ],
+                        [
+                            45.769834,
+                            3.110536
+                        ],
+                        [
+                            45.76945,
+                            3.115313
+                        ],
+                        [
+                            45.766206,
+                            3.121194
+                        ],
+                        [
+                            45.764673,
+                            3.12436
+                        ],
+                        [
+                            45.762504,
+                            3.129573
+                        ]
+                    ]
                 },
                 {
                     "id": "s3",
                     "type": "walk",
                     "mode": "walk",
-                    "duration": 373,
-                    "from": "Musée d'Art Roger Quilliot",
-                    "to": "Arrivée"
+                    "duration": 334,
+                    "from": "Lycée La Fayette",
+                    "to": "Arrivée",
+                    "fromLat": 45.762504,
+                    "fromLon": 3.129573,
+                    "toLat": 45.7597,
+                    "toLon": 3.1305,
+                    "shape": [
+                        [
+                            45.762504,
+                            3.129573
+                        ],
+                        [
+                            45.7597,
+                            3.1305
+                        ]
+                    ]
                 }
             ]
         },
         {
-            "id": "d16f6d05b6dbdb76",
-            "departure": "2026-11-05T07:22:58Z",
-            "arrival": "2026-11-05T08:05:13Z",
-            "duration": 2535,
-            "walkingDuration": 615,
+            "id": "ae74c63aaa05658f",
+            "departure": "2026-11-05T10:24:31Z",
+            "arrival": "2026-11-05T10:53:34Z",
+            "duration": 1743,
+            "walkingDuration": 663,
             "transfers": 0,
             "sections": [
                 {
                     "id": "s1",
                     "type": "walk",
                     "mode": "walk",
-                    "duration": 242,
+                    "duration": 329,
                     "from": "Départ",
-                    "to": "UCA - Campus Cézeaux"
+                    "to": "Alexandre Varenne",
+                    "fromLat": 45.7772,
+                    "fromLon": 3.0819,
+                    "toLat": 45.776703,
+                    "toLon": 3.077897,
+                    "shape": [
+                        [
+                            45.7772,
+                            3.0819
+                        ],
+                        [
+                            45.776703,
+                            3.077897
+                        ]
+                    ]
                 },
                 {
                     "id": "s2",
                     "type": "transit",
-                    "mode": "tram",
-                    "line": "A",
-                    "lineColor": "A81815",
+                    "mode": "bus",
+                    "line": "C",
+                    "lineColor": "008C3C",
                     "lineTextColor": "FFFFFF",
-                    "direction": "Les Vergnes",
-                    "from": "UCA - Campus Cézeaux",
-                    "to": "Musée d'Art Roger Quilliot",
-                    "departure": "2026-11-05T07:27:00Z",
-                    "arrival": "2026-11-05T07:59:00Z",
-                    "duration": 1920,
-                    "stops": 19
+                    "direction": "COURNON Allier",
+                    "from": "Alexandre Varenne",
+                    "to": "Lycée La Fayette",
+                    "departure": "2026-11-05T10:30:00Z",
+                    "arrival": "2026-11-05T10:48:00Z",
+                    "duration": 1080,
+                    "stops": 12,
+                    "fromLat": 45.776703,
+                    "fromLon": 3.077897,
+                    "toLat": 45.762504,
+                    "toLon": 3.129573,
+                    "shape": [
+                        [
+                            45.776703,
+                            3.077897
+                        ],
+                        [
+                            45.777049,
+                            3.081283
+                        ],
+                        [
+                            45.775757,
+                            3.086267
+                        ],
+                        [
+                            45.77629,
+                            3.09125
+                        ],
+                        [
+                            45.776202,
+                            3.094991
+                        ],
+                        [
+                            45.773156,
+                            3.098394
+                        ],
+                        [
+                            45.770883,
+                            3.102715
+                        ],
+                        [
+                            45.770032,
+                            3.107852
+                        ],
+                        [
+                            45.769834,
+                            3.110536
+                        ],
+                        [
+                            45.76945,
+                            3.115313
+                        ],
+                        [
+                            45.766206,
+                            3.121194
+                        ],
+                        [
+                            45.764673,
+                            3.12436
+                        ],
+                        [
+                            45.762504,
+                            3.129573
+                        ]
+                    ]
                 },
                 {
                     "id": "s3",
                     "type": "walk",
                     "mode": "walk",
-                    "duration": 373,
-                    "from": "Musée d'Art Roger Quilliot",
-                    "to": "Arrivée"
+                    "duration": 334,
+                    "from": "Lycée La Fayette",
+                    "to": "Arrivée",
+                    "fromLat": 45.762504,
+                    "fromLon": 3.129573,
+                    "toLat": 45.7597,
+                    "toLon": 3.1305,
+                    "shape": [
+                        [
+                            45.762504,
+                            3.129573
+                        ],
+                        [
+                            45.7597,
+                            3.1305
+                        ]
+                    ]
                 }
             ]
         },
         {
-            "id": "4d5f6f9d9a834eb4",
-            "departure": "2026-11-05T07:29:00Z",
-            "arrival": "2026-11-05T08:10:13Z",
-            "duration": 2473,
-            "walkingDuration": 613,
+            "id": "031850e2cb3f1409",
+            "departure": "2026-11-05T10:32:07Z",
+            "arrival": "2026-11-05T11:01:29Z",
+            "duration": 1762,
+            "walkingDuration": 502,
             "transfers": 0,
             "sections": [
                 {
                     "id": "s1",
                     "type": "walk",
                     "mode": "walk",
-                    "duration": 240,
+                    "duration": 53,
                     "from": "Départ",
-                    "to": "Cézeaux Pellez"
+                    "to": "Jaude",
+                    "fromLat": 45.7772,
+                    "fromLon": 3.0819,
+                    "toLat": 45.776758,
+                    "toLon": 3.081772,
+                    "shape": [
+                        [
+                            45.7772,
+                            3.0819
+                        ],
+                        [
+                            45.776758,
+                            3.081772
+                        ]
+                    ]
                 },
                 {
                     "id": "s2",
@@ -105,21 +287,97 @@
                     "line": "A",
                     "lineColor": "A81815",
                     "lineTextColor": "FFFFFF",
-                    "direction": "Les Vergnes",
-                    "from": "Cézeaux Pellez",
-                    "to": "Musée d'Art Roger Quilliot",
-                    "departure": "2026-11-05T07:33:00Z",
-                    "arrival": "2026-11-05T08:04:00Z",
-                    "duration": 1860,
-                    "stops": 18
+                    "direction": "La Pardieu Gare",
+                    "from": "Jaude",
+                    "to": "Lycée La Fayette",
+                    "departure": "2026-11-05T10:33:00Z",
+                    "arrival": "2026-11-05T10:54:00Z",
+                    "duration": 1260,
+                    "stops": 13,
+                    "fromLat": 45.776758,
+                    "fromLon": 3.081772,
+                    "toLat": 45.763514,
+                    "toLon": 3.129555,
+                    "shape": [
+                        [
+                            45.776758,
+                            3.081772
+                        ],
+                        [
+                            45.773226,
+                            3.08262
+                        ],
+                        [
+                            45.770861,
+                            3.08498
+                        ],
+                        [
+                            45.771168,
+                            3.088982
+                        ],
+                        [
+                            45.764844,
+                            3.089036
+                        ],
+                        [
+                            45.761333,
+                            3.089559
+                        ],
+                        [
+                            45.761251,
+                            3.09469
+                        ],
+                        [
+                            45.762808,
+                            3.098488
+                        ],
+                        [
+                            45.760757,
+                            3.104141
+                        ],
+                        [
+                            45.76113,
+                            3.108915
+                        ],
+                        [
+                            45.7589,
+                            3.113858
+                        ],
+                        [
+                            45.760855,
+                            3.11994
+                        ],
+                        [
+                            45.762298,
+                            3.122017
+                        ],
+                        [
+                            45.763514,
+                            3.129555
+                        ]
+                    ]
                 },
                 {
                     "id": "s3",
                     "type": "walk",
                     "mode": "walk",
-                    "duration": 373,
-                    "from": "Musée d'Art Roger Quilliot",
-                    "to": "Arrivée"
+                    "duration": 449,
+                    "from": "Lycée La Fayette",
+                    "to": "Arrivée",
+                    "fromLat": 45.763514,
+                    "fromLon": 3.129555,
+                    "toLat": 45.7597,
+                    "toLon": 3.1305,
+                    "shape": [
+                        [
+                            45.763514,
+                            3.129555
+                        ],
+                        [
+                            45.7597,
+                            3.1305
+                        ]
+                    ]
                 }
             ]
         }

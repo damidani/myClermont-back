@@ -8,11 +8,13 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Exceptions\HttpException;
+use App\Modules\Premium\PremiumService;
 
 /**
  * Cartes Apple Wallet (c06e670d), téléchargées par l'app (application/vnd.apple.pkpass) :
  *   GET /events/{id}/wallet-pass               billet de la sortie (date, lieu, position pour l'écran verrouillé, QR = lien de l'événement)
  *   GET /deals/{id}/wallet-pass                bon plan du compte (compte requis, code déjà obtenu par POST /deals/{id}/redeem) : QR = qrPayload validé en caisse
+ *   GET /me/wallet-pass                        carte membre (c9906a22) : réservée aux membres My Clermont+ actifs (403 plus_required), QR = myclermont.app/m/<id>
  *   GET /wallet/status                         { available } : l'app affiche le bouton seulement si true
  */
 final class WalletController
@@ -74,6 +76,36 @@ final class WalletController
         }
 
         return self::file(PassKit::build($pass), 'bon-plan-' . $r['code']);
+    }
+
+    public function member(Request $request): Response
+    {
+        $userId = (int) $request->attributes['user_id'];
+        if (!PremiumService::isActiveById($userId)) {
+            throw new HttpException(403, 'plus_required', 'La carte membre est réservée aux membres My Clermont+.');
+        }
+        if (!PassKit::configured()) {
+            throw new HttpException(404, 'not_configured', 'La carte Apple Wallet sera bientôt disponible.');
+        }
+        $u = Database::fetch('SELECT uid, first_name, display_name, handle, city, created_at FROM users WHERE id = :id', ['id' => $userId])
+            ?? throw new HttpException(404, 'not_found', 'Compte introuvable.');
+        $url = 'https://myclermont.app/m/' . $u['uid'];
+        $pass = [
+            'serialNumber' => 'member-' . $u['uid'], 'description' => 'Carte membre MyClermont',
+            'backgroundColor' => 'rgb(14,19,43)', 'foregroundColor' => 'rgb(255,255,255)', 'labelColor' => 'rgb(246,33,92)',
+            'storeCard' => [
+                'headerFields' => [['key' => 'status', 'label' => 'STATUT', 'value' => 'MEMBRE +']],
+                'primaryFields' => [['key' => 'name', 'label' => 'MEMBRE', 'value' => (string) ($u['first_name'] ?: $u['display_name'] ?: $u['handle'])]],
+                'secondaryFields' => array_values(array_filter([
+                    $u['handle'] ? ['key' => 'handle', 'label' => 'PSEUDO', 'value' => '@' . $u['handle']] : null,
+                    ['key' => 'since', 'label' => 'MEMBRE DEPUIS', 'value' => gmdate('Y-m-d\TH:i:s\Z', strtotime($u['created_at'] . ' UTC')), 'dateStyle' => 'PKDateStyleMedium'],
+                ])),
+                'auxiliaryFields' => array_values(array_filter([$u['city'] ? ['key' => 'city', 'label' => 'VILLE', 'value' => $u['city']] : null])),
+            ],
+            'barcodes' => [['format' => 'PKBarcodeFormatQR', 'message' => $url, 'messageEncoding' => 'iso-8859-1']],
+        ];
+
+        return self::file(PassKit::build($pass), 'carte-membre');
     }
 
     private static function file(string $bytes, string $name): Response

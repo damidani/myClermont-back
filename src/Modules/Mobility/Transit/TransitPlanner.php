@@ -168,13 +168,15 @@ final class TransitPlanner
             switch ($leg[0]) {
                 case 'access':
                     $walking += $leg[2];
-                    $sections[] = ['id' => 's' . ++$n, 'type' => 'walk', 'mode' => 'walk', 'duration' => $leg[2], 'from' => 'Départ', 'to' => $stopName($leg[1])];
+                    $sections[] = ['id' => 's' . ++$n, 'type' => 'walk', 'mode' => 'walk', 'duration' => $leg[2], 'from' => 'Départ', 'to' => $stopName($leg[1])]
+                        + $this->geo([$fromLat, $fromLon], $this->at($leg[1]));
                     $clock += $leg[2];
                     break;
                 case 'ride':
                     $dep = $day['dep'][$leg[1]];
                     if ($dep > $clock + 30) {
-                        $sections[] = ['id' => 's' . ++$n, 'type' => 'wait', 'mode' => 'walk', 'duration' => $dep - $clock, 'from' => $stopName($day['from'][$leg[1]]), 'to' => $stopName($day['from'][$leg[1]])];
+                        $sections[] = ['id' => 's' . ++$n, 'type' => 'wait', 'mode' => 'walk', 'duration' => $dep - $clock, 'from' => $stopName($day['from'][$leg[1]]), 'to' => $stopName($day['from'][$leg[1]])]
+                            + $this->geo($this->at($day['from'][$leg[1]]), $this->at($day['from'][$leg[1]]));
                     }
                     $trip = $this->feed['trips'][$day['trip'][$leg[1]]];
                     $route = $this->feed['routes'][$trip['route']];
@@ -183,18 +185,20 @@ final class TransitPlanner
                         'id' => 's' . ++$n, 'type' => 'transit', 'mode' => $route['mode'], 'line' => $route['name'], 'line_color' => $route['color'],
                         'line_text_color' => $route['text'], 'direction' => $trip['headsign'], 'from' => $stopName($day['from'][$leg[1]]), 'to' => $stopName($day['to'][$leg[2]]),
                         'departure' => $iso($dep), 'arrival' => $iso($arr), 'duration' => $arr - $dep, 'stops' => $this->countStops($day, $leg[1], $leg[2]),
-                    ];
+                    ] + $this->geo($this->at($day['from'][$leg[1]]), $this->at($day['to'][$leg[2]]), $this->rideShape($day, $leg[1], $leg[2]));
                     $clock = $arr;
                     break;
                 case 'transfer':
                     $walking += $leg[3];
-                    $sections[] = ['id' => 's' . ++$n, 'type' => 'walk', 'mode' => 'walk', 'duration' => $leg[3], 'from' => $stopName($leg[1]), 'to' => $stopName($leg[2])];
+                    $sections[] = ['id' => 's' . ++$n, 'type' => 'walk', 'mode' => 'walk', 'duration' => $leg[3], 'from' => $stopName($leg[1]), 'to' => $stopName($leg[2])]
+                        + $this->geo($this->at($leg[1]), $this->at($leg[2]));
                     $clock += $leg[3];
                     break;
                 case 'walk':
                     $walking += $leg[2];
                     if ($leg[2] > 0) {
-                        $sections[] = ['id' => 's' . ++$n, 'type' => 'walk', 'mode' => 'walk', 'duration' => $leg[2], 'from' => $stopName($leg[1]), 'to' => 'Arrivée'];
+                        $sections[] = ['id' => 's' . ++$n, 'type' => 'walk', 'mode' => 'walk', 'duration' => $leg[2], 'from' => $stopName($leg[1]), 'to' => 'Arrivée']
+                            + $this->geo($this->at($leg[1]), [$toLat, $toLon]);
                     }
                     break;
             }
@@ -205,6 +209,40 @@ final class TransitPlanner
             'id' => substr(sha1($j['key'] . '|' . $j['departure']), 0, 16), 'departure' => $iso($j['departure']), 'arrival' => $iso($j['arrival']),
             'duration' => $j['arrival'] - $j['departure'], 'walking_duration' => $walking, 'transfers' => max(0, $rides - 1), 'sections' => $sections,
         ];
+    }
+
+    /** Position d'un arrêt [lat, lon] */
+    private function at(int $stop): array
+    {
+        return [$this->feed['stops'][$stop][1], $this->feed['stops'][$stop][2]];
+    }
+
+    /** dc17e0e9 : extrémités et tracé [[lat, lon], …] du tronçon (marche : segment direct ; ligne : arrêts desservis) */
+    private function geo(array $from, array $to, ?array $shape = null): array
+    {
+        $r = static fn (float $v) => round($v, 6);
+
+        return ['from_lat' => $r($from[0]), 'from_lon' => $r($from[1]), 'to_lat' => $r($to[0]), 'to_lon' => $r($to[1]),
+                'shape' => array_map(static fn ($p) => [$r($p[0]), $r($p[1])], $shape ?? [$from, $to])];
+    }
+
+    /** Arrêts desservis entre la montée et la descente, dans l'ordre */
+    private function rideShape(array $day, int $board, int $alight): array
+    {
+        $from = $day['from'][$board];
+        $to = $day['to'][$alight];
+        $points = [];
+        foreach ($this->feed['times'][$day['trip'][$board]] as [$stop]) {
+            if ($points === [] && $stop !== $from) {
+                continue;
+            }
+            $points[] = $this->at($stop);
+            if ($stop === $to && count($points) > 1) {
+                break;
+            }
+        }
+
+        return count($points) >= 2 ? $points : [$this->at($from), $this->at($to)];
     }
 
     /** Nombre d'arrêts parcourus entre la montée et la descente (même course) */

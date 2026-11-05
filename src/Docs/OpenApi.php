@@ -20,10 +20,11 @@ use App\Support\AppSchemas;
  */
 final class OpenApi
 {
-    public const VERSION = '1.4.0';
+    public const VERSION = '1.6.0';
 
     /** Journal des changements (info.version) */
     public const CHANGELOG = [
+        '1.6.0 (05/11/2026)' => 'T2C : sections avec fromLat/fromLon/toLat/toLon et shape [[lat, lon]] ; Clermont IA : champ facultatif clarify { question, style single|multi|text, options } (fixtures/assistant-clarify.json) ; GET /me/wallet-pass : carte membre .pkpass, 403 plus_required hors My Clermont+, 404 tant que le certificat manque.',
         '1.5.0 (04/11/2026)' => 'Ma Ville : /news, /associations (remplace /housing, retiré), balade du jour /itineraries/featured, /explore/selections ; T2C : /transit/journeys et /transit/lines ; PATCH /community/posts/{id} ; photo de profil modérée PUT/DELETE /me/avatar (avatarPending).',
         '1.4.0 (03/11/2026)' => 'Validation des inscriptions commerçant (/admin/merchants, 403 not_verified), avis de la team (/admin/team-reviews, teamReview), session /admin du dashboard.',
         '1.3.0 (03/11/2026)' => 'Photos des visiteurs (/visitor-photos, /pro/visitor-photos), fiche /places/{id}/sheet au format Place, notifications (/me/notifications, préférences, j\'aime sur les commentaires).',

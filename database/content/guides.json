@@ -634,5 +634,96 @@
   ],
   "tip": "Le parc Montjoly ouvre dès 7 h 30 : une pause au vert idéale avant de filer vers les thermes de Royat.",
   "sources": "Sources : office de tourisme Clermont Auvergne Volcans, Wikipédia. Horaires indicatifs, à vérifier avant ta visite."
+ },
+ {
+  "placeId": "nature-puy-de-dome",
+  "name": "Puy de Dôme",
+  "tagline": "Le géant des volcans d'Auvergne, à 1 465 m au-dessus de Clermont",
+  "intro": "Point culminant de la Chaîne des Puys, le puy de Dôme domine la métropole de ses 1 465 mètres. Volcan de type péléen endormi, il offre un panorama à 360° sur la soixantaine de volcans de la chaîne, inscrite au Patrimoine mondial de l'UNESCO. On y monte à pied par le chemin des Muletiers ou en quelques minutes avec le train à crémaillère Panoramique des Dômes. Au sommet : les vestiges du temple de Mercure gallo-romain, les décollages de parapente et, par temps clair, une vue jusqu'au Sancy et au Forez.",
+  "facts": [
+   {
+    "value": 1465,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": " m",
+    "label": "d'altitude",
+    "icon": "mountain.2.fill"
+   },
+   {
+    "value": 2018,
+    "decimals": 0,
+    "isYear": true,
+    "suffix": "",
+    "label": "Chaîne des Puys – faille de Limagne à l'UNESCO",
+    "icon": "globe.europe.africa.fill"
+   },
+   {
+    "value": 80,
+    "decimals": 0,
+    "isYear": false,
+    "suffix": "",
+    "label": "volcans environ dans la Chaîne des Puys",
+    "icon": "flame.fill"
+   }
+  ],
+  "highlights": [
+   {
+    "icon": "binoculars.fill",
+    "title": "Le panorama",
+    "text": "Une vue à 360° sur la Chaîne des Puys, et par temps clair jusqu'au Sancy et au Forez."
+   },
+   {
+    "icon": "building.columns.fill",
+    "title": "Le temple de Mercure",
+    "text": "Les vestiges d'un grand sanctuaire gallo-romain, au sommet."
+   },
+   {
+    "icon": "tram.fill",
+    "title": "Le Panoramique des Dômes",
+    "text": "Le train à crémaillère qui monte au sommet en une quinzaine de minutes."
+   },
+   {
+    "icon": "figure.hiking",
+    "title": "Le chemin des Muletiers",
+    "text": "La montée à pied, raide mais courte, depuis le col de Ceyssat."
+   },
+   {
+    "icon": "wind",
+    "title": "Le parapente",
+    "text": "Un des sites de décollage les plus connus de France."
+   }
+  ],
+  "timeline": [
+   {
+    "when": "IIe siècle",
+    "text": "Construction du temple de Mercure au sommet."
+   },
+   {
+    "when": "2012",
+    "text": "Mise en service du train Panoramique des Dômes."
+   },
+   {
+    "when": "2018",
+    "text": "La Chaîne des Puys – faille de Limagne entre au Patrimoine mondial de l'UNESCO."
+   }
+  ],
+  "hours": {
+   "type": "info",
+   "text": "Sommet accessible toute l'année · horaires du Panoramique des Dômes selon la saison"
+  },
+  "infos": [
+   {
+    "icon": "tram.fill",
+    "title": "Accès",
+    "value": "Panoramique des Dômes ou chemin des Muletiers"
+   },
+   {
+    "icon": "thermometer.snowflake",
+    "title": "Au sommet",
+    "value": "Plus frais et venteux qu'en ville"
+   }
+  ],
+  "tip": "Monte tôt le matin ou en fin de journée pour la lumière et éviter l'affluence ; au sommet il fait plus frais et venteux qu'en ville, prévois une couche.",
+  "sources": "Sources : Panoramique des Dômes, UNESCO, Wikipédia. Informations indicatives, à vérifier avant ta visite."
  }
 ]

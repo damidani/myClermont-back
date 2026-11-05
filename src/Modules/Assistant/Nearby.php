@@ -264,6 +264,10 @@ final class Nearby
     public static function followUp(string $question): ?array
     {
         $q = self::plain($question);
+        // « meilleur moment pour y aller », « c'est cher ? » : pas une question d'horaires ni d'itinéraire, le modèle y répond (4034bb03)
+        if (preg_match('/meilleur moment|quand (y )?aller|quelle (periode|saison|heure)|affluence|du monde|bondee?|\bcher\b|\bprix\b|tarif|meteo/', $q)) {
+            return null;
+        }
         $intent = match (true) {
             (bool) preg_match('/horaire|ouvert|ferme|ouvre|heure|dimanche|lundi|mardi|mercredi|jeudi|vendredi|samedi|ce soir|demain/', $q) => 'hours',
             (bool) preg_match('/numero|telephone|\btel\b|appeler|joindre/', $q) => 'phone',

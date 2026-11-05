@@ -38,6 +38,9 @@ Règles :
 - Utilise les outils pour toute question sur les sorties, lieux, bons plans, emplois, logements, services, carburants ou la météo.
 - Pour un commerce ou service courant autour de l'utilisateur (pharmacie, coiffeur, boulangerie, distributeur, parking…), utilise nearby_search : il renvoie les adresses réelles les plus proches (OpenStreetMap) à citer dans cards.
 - Le « Contexte de la conversation » décrit les échanges précédents et les derniers résultats affichés : « il », « elle », « ses », « y », « le premier » renvoient au n° 1, « le deuxième » au n° 2. Ne relance pas une recherche « le plus proche » pour une question de suite. N'invente jamais d'horaires absents.
+- Question de suite (4034bb03) : une question courte, un pronom ou le nom d'un résultat déjà proposé porte sur le SUJET COURANT de la conversation (indiqué dans le contexte). Reste sur ce sujet : ne lance pas de recherche d'une autre catégorie (boulangeries, restaurants…) sans demande explicite.
+- Réponds à la question réellement posée : « meilleur moment pour y aller » = période, jour, heure, affluence, météo ; « c'est ouvert ? » = horaires ; « c'est cher ? » = prix. Ne réponds pas par un itinéraire si on ne te le demande pas.
+- Clarification (8bf2d917) : seulement si la demande est vraiment trop vague pour répondre utilement et que le contexte ne la précise pas, pose UNE question via le champ clarify de reply (style single, multi ou text ; 3 à 6 options courtes et concrètes) et mets aussi la question dans text. Si tu peux répondre, même en partie, réponds sans clarify. Jamais deux clarifications de suite.
 - Sur l'écran carte (screen = map), privilégie les lieux à épingler.
 - Santé : en cas d'urgence, donne immédiatement le 15 (SAMU) ou le 112, et le 3237 pour la pharmacie de garde. Ne pose jamais de diagnostic.
 - Texte brut uniquement : jamais de Markdown (pas de **gras**, de titres, de listes à puces ni de liens), l'app l'affiche tel quel.
@@ -82,20 +85,28 @@ TXT;
         }
 
         $located = is_numeric($loc['lat'] ?? null) && is_numeric($loc['lon'] ?? null);
+        // Sujet courant (4034bb03) : le résultat que l'utilisateur vient de nommer, sinon celui retenu au tour précédent, passe en n° 1
+        $named = self::named($data['question'], $lastResults);
+        $focus = $named ?? self::named((string) ($memory['focus'] ?? ''), $lastResults);
+        if ($focus !== null) {
+            $lastResults = array_values(array_merge([$lastResults[$focus]], array_diff_key($lastResults, [$focus => true])));
+        }
+        $focusName = $focus !== null ? (string) $lastResults[0]['name'] : null;
         // Question de suite sur un lieu déjà montré (« ses horaires », « le deuxième ») : jamais une nouvelle recherche
         if ($lastResults !== [] && ($follow = Nearby::followUp($data['question'])) !== null) {
             [$intent, $index] = $follow;
             $place = $index === -1 ? end($lastResults) : ($lastResults[$index] ?? $lastResults[0]);
             $d = Nearby::detail($place, $intent, $located ? $lat : Nearby::JAUDE[0], $located ? $lon : Nearby::JAUDE[1], $located);
             $result = ['text' => $d['text'], 'cards' => $d['cards'], 'nearby_searches' => [], 'follow_ups' => $d['follow_ups']];
-            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $d['text'], $lastResults);
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $d['text'], $lastResults, $focusName);
             $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], 'answered', ['followup:' . $intent], 0, 0);
 
             return Response::success(['conversation_id' => $conversationId] + $result);
         }
 
         // Commerce ou service « le plus proche » (iOS 54d34637, afe694b8) : réponse factuelle depuis OpenStreetMap et la base, sans le modèle
-        $kind = Nearby::detect($data['question']);
+        // Pas de nouvelle recherche « le plus proche » quand l'utilisateur parle d'un résultat déjà proposé
+        $kind = $named === null ? Nearby::detect($data['question']) : null;
         if ($kind !== null) {
             $near = Nearby::reply($kind, $located ? $lat : Nearby::JAUDE[0], $located ? $lon : Nearby::JAUDE[1], $located, $screen, $data['question']);
             $result = ['text' => $near['text'], 'cards' => $near['cards'], 'nearby_searches' => [], 'follow_ups' => $near['follow_ups']];
@@ -106,7 +117,7 @@ TXT;
         }
 
         $tools = new AssistantTools($lat, $lon);
-        [$reply, $used, $in, $out, $status] = $this->converse($data['question'], $history, $screen, $lat, $lon, $tools, $conv['summary'], $lastResults);
+        [$reply, $used, $in, $out, $status] = $this->converse($data['question'], $history, $screen, $lat, $lon, $tools, $conv['summary'], $lastResults, $named !== null);
         // Un petit modèle renvoie parfois une liste sous forme de texte (« a, b » ou JSON) : on la remet en liste
         foreach (['cards', 'follow_ups'] as $k) {
             if (is_string($reply[$k] ?? null)) {
@@ -124,6 +135,12 @@ TXT;
             'nearby_searches' => $tools->nearbySearches,
             'follow_ups'      => array_slice(array_values(array_filter(array_map(static fn ($f) => is_string($f) ? mb_substr(trim($f), 0, 80) : null, $reply['follow_ups'] ?? []))), 0, 3),
         ];
+        if (($clarify = self::clarify($reply['clarify'] ?? null)) !== null) {
+            $result['clarify'] = $clarify;
+            if ($result['text'] === '') {
+                $result['text'] = $clarify['question'];
+            }
+        }
         // Filet de sécurité (bugs iOS c3c45faf, 54d34637) : sans carte, retirer les phrases qui annoncent des suggestions ou un affichage
         $promise = '/\\b(voici|voilà|ci-dessous|ci-après|je te propose|je vais te montrer|je te montre|je t\'affiche|l\'app (va )?te montre|sur la carte|quelques (adresses|bons plans|idées|lieux))\\b/iu';
         if ($result['cards'] === [] && preg_match($promise, $result['text'])) {
@@ -135,7 +152,7 @@ TXT;
                 Cache::store()->set($cacheKey, $result, (int) Config::get('assistant.cache_ttl', 600));
             }
             $shown = self::results(array_values(array_filter($tools->seen, static fn ($r) => $r['type'] === 'nearby')));
-            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $result['text'], $shown ?: $lastResults);
+            $this->remember($conversationId, $userId, $deviceId, $history, $data['question'], $result['text'], $shown ?: $lastResults, $shown ? null : $focusName);
         }
         $this->record($userId, $deviceId, $conversationId, $screen, $data['question'], $result['text'], $status, $used, $in, $out);
 
@@ -143,7 +160,7 @@ TXT;
     }
 
     /** @return array{0: array, 1: list<string>, 2: int, 3: int, 4: string} réponse, outils utilisés, jetons, statut */
-    private function converse(string $question, array $history, string $screen, float $lat, float $lon, AssistantTools $tools, string $summary = '', array $lastResults = []): array
+    private function converse(string $question, array $history, string $screen, float $lat, float $lon, AssistantTools $tools, string $summary = '', array $lastResults = [], bool $picked = false): array
     {
         $definitions = AssistantTools::definitions();
         $paris = new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris'));
@@ -155,6 +172,9 @@ TXT;
             $context .= "\nDerniers résultats affichés (« il », « ses », « le premier » = n° 1) :\n" . implode("\n", array_map(
                 static fn ($r, $i) => ($i + 1) . '. ' . $r['name'] . ($r['detail'] !== '' ? ' — ' . $r['detail'] : '') . ($r['phone'] ? ' — tél. ' . $r['phone'] : ''),
                 $lastResults, array_keys($lastResults)));
+        }
+        if ($lastResults !== []) {
+            $context .= "\nSujet courant : " . $lastResults[0]['name'] . ($picked ? ' (l\'utilisateur vient de le choisir parmi les résultats : présente-le — ce que c\'est, pourquoi il correspond à sa demande, infos pratiques connues — sans chercher autre chose)' : '');
         }
         if ($context !== '') {
             $messages[] = ['role' => 'system', 'content' => "Contexte de la conversation :\n" . mb_substr($context, 0, 2400)];
@@ -211,10 +231,43 @@ TXT;
     }
 
     /** Mémoire de conversation : 4 derniers échanges et derniers lieux montrés, 2 h au plus (ce801f2a), jamais dans les journaux */
-    private function remember(string $conversationId, ?int $userId, int $deviceId, array $history, string $question, string $answer, array $results = []): void
+    private function remember(string $conversationId, ?int $userId, int $deviceId, array $history, string $question, string $answer, array $results = [], ?string $focus = null): void
     {
         $turns = array_slice(array_merge($history, [['q' => $question, 'a' => $answer]]), -4);
-        Cache::store()->set('ai:conv:' . $conversationId, ['owner' => $userId ?? 'd' . $deviceId, 'turns' => $turns, 'results' => array_slice($results, 0, 5)], 7200);
+        Cache::store()->set('ai:conv:' . $conversationId, ['owner' => $userId ?? 'd' . $deviceId, 'turns' => $turns, 'results' => array_slice($results, 0, 5), 'focus' => $focus], 7200);
+    }
+
+    /** Rang du résultat dont le nom figure dans la question (« côtes de clermont »), ou null */
+    private static function named(string $question, array $results): ?int
+    {
+        $q = Nearby::plain($question);
+        if (mb_strlen($q) < 4) {
+            return null;
+        }
+        foreach ($results as $i => $r) {
+            $name = trim((string) preg_replace('/^(le|la|les|l\'|parc de|parc du|jardin)\s*/u', '', Nearby::plain((string) ($r['name'] ?? ''))));
+            if (mb_strlen($name) >= 4 && (str_contains($q, $name) || (mb_strlen($q) >= 6 && str_contains($name, $q)))) {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
+    /** Champ clarify du modèle, nettoyé : { question, style single|multi|text, options[] } ; null si absent ou vide */
+    private static function clarify(mixed $c): ?array
+    {
+        if (is_string($c)) {
+            $c = json_decode($c, true);
+        }
+        if (!is_array($c) || !is_string($c['question'] ?? null) || trim($c['question']) === '') {
+            return null;
+        }
+        $options = array_slice(array_values(array_unique(array_filter(array_map(
+            static fn ($o) => is_string($o) ? mb_substr(trim($o), 0, 40) : null, is_array($c['options'] ?? null) ? $c['options'] : []), static fn ($o) => $o !== null && $o !== ''))), 0, 6);
+        $style = in_array($c['style'] ?? null, ['single', 'multi', 'text'], true) ? $c['style'] : 'single';
+
+        return ['question' => mb_substr(trim($c['question']), 0, 200), 'style' => $options === [] ? 'text' : $style, 'options' => $style === 'text' ? [] : $options];
     }
 
     /** Lieux trouvés → format lastResults de l'app */
